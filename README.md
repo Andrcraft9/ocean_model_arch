@@ -1,1 +1,1 @@
-# ocean_model_arch
+# Example of ocean model architecture. PSyKAl approach for simple ocean model kernel.
