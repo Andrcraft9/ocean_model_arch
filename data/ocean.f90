@@ -12,6 +12,7 @@ module ocean_module
         type(data2D_real8_type) :: ssh,    &  ! sea surface height (SSH) at current  time step [m] (internal mode)
                                    ubrtr,  &  ! barotropic velocity      zonal[m/s] at current time step (internal mode)
                                    vbrtr      ! barotropic velocity meridional[m/s] at current time step (internal mode)
+        type(data2D_real8_type) :: div_btr
     contains
         procedure, public  :: init
         procedure, public  :: clear
@@ -29,6 +30,8 @@ contains
         call this%ssh%init(domain)
         call this%ubrtr%init(domain)
         call this%vbrtr%init(domain)
+
+        call this%div_btr%init(domain)
     end subroutine
 
     subroutine clear(this, domain)
@@ -39,6 +42,8 @@ contains
         call this%ssh%clear(domain)
         call this%ubrtr%clear(domain)
         call this%vbrtr%clear(domain)
+
+        call this%div_btr%clear(domain)
     end subroutine
 
 endmodule ocean_module

@@ -1,6 +1,5 @@
 module grid_module
     ! Grid data
-    !** Обернуть все в типы, зачем нужен target? см. E3SM
 
     use decomposition_module, only: domain_type
     use data_types_module, only: data2D_real4_type
