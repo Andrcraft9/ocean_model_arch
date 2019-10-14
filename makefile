@@ -12,14 +12,20 @@ SHARED = \
 CORE = \
 	core/decomposition.f90 \
 	core/data_types.f90 \
+	core/kernel_interface.f90 \
 	core/grid.f90 \
 	core/ocean.f90
 
 TOOLS = \
 	tools/io.f90
 
+PHYSICS = \
+	physics/velocity.f90
+
 CONTROL = \
-	control/init_data.f90
+	control/init_data.f90 \
+	control/output.f90 \
+	control/ocean_model.f90
 
 all: compile
 
@@ -27,4 +33,4 @@ clean:
 	rm model *.mod *.o
 
 compile:
-	$(FC) $(FCFLAGS) -o model $(SHARED) $(CORE) $(TOOLS) $(CONTROL) model.f90 
+	$(FC) $(FCFLAGS) -o model $(SHARED) $(CORE) $(TOOLS) $(PHYSICS) $(CONTROL) model.f90 

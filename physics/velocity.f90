@@ -1,7 +1,7 @@
 module velocity_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use kernel_interface_module, only: nx_start, nx_end, ny_start, ny_end
+    use kernel_interface_module, only: nxs, nxe, nys, nye
 
     implicit none
     save
@@ -11,19 +11,28 @@ module velocity_module
 
 contains
 
-    subroutine div_velocity_kernel(ub,vb,hu,hv,div_btr)
-        real(wp4), intent(in) :: hu(x_start:nx_end, ny_start:ny_end),  &
-                                 hv(x_start:nx_end, ny_start:ny_end)
-
-        real(wp8), intent(in) :: ub(nx_start:nx_end, ny_start:ny_end),  &
-                                 vb(nx_start:nx_end, ny_start:ny_end)
-                
-        real(wp8), intent(inout) :: div_btr(nx_start:nx_end, ny_start:ny_end)
-
+    subroutine div_velocity_kernel(lu, dxh, dyh, sqt, hu, hv, ub, vb, div_btr)
+        ! Compute divergence of velocity vectors.
+        !
+        ! INPUT/OUTPUT:
+        ! Grid data
+        real(wp4), intent(in) :: lu(nxs:nxe, nys:nye),  &
+                                 dxh(nxs:nxe, nys:nye), &
+                                 dyh(nxs:nxe, nys:nye), &
+                                 sqt(nxs:nxe, nys:nye)
+        real(wp4), intent(in) :: hu(nxs:nxe, nys:nye),  &
+                                 hv(nxs:nxe, nys:nye)
+        ! Ocean data
+        real(wp8), intent(in) :: ub(nxs:nxe, nys:nye),  &
+                                 vb(nxs:nxe, nys:nye)
+        real(wp8), intent(inout) :: div_btr(nxs:nxe, nys:nye)
+        ! LOCAL:
         integer m, n
 
-          do n=ny_start,ny_end
-            do m=nx_start,nx_end
+          !do n=nys,nye
+          !  do m=nxs,nxe
+          do n=nys+1,nye-1
+              do m=nxs+1,nxe-1
                 if (lu(m,n)>0.5) then
                 div_btr(m,n) = (  ub(m  ,n  )*hu(m  ,n  )*dyh(m  ,n  )                 &
                                 - ub(m-1,n  )*hu(m-1,n  )*dyh(m-1,n  )                 &

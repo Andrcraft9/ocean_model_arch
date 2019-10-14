@@ -4,6 +4,8 @@ program model
     use grid_module, only: grid_data
     use ocean_module, only: ocean_data
     use init_data_module, only: init_grid_data, init_ocean_data
+    use ocean_model_module, only: envoke_div_velocity
+    use output_module, only: local_output
 
     implicit none
 
@@ -21,6 +23,10 @@ program model
     call init_grid_data(domain_data, grid_data)
 
     ! Solver
+    call envoke_div_velocity(domain_data, grid_data, ocean_data)
+
+    ! Output
+    call local_output(domain_data, grid_data, ocean_data)
 
     ! Clear data
     call ocean_data%clear(domain_data)

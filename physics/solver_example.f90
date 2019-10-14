@@ -19,7 +19,6 @@ contains
     subroutine solve(x, y)
         ! Sub description
         ! ...
-
         real(kind=wp), intent(in) :: x
         real(kind=wp), intent(out) :: y
 
