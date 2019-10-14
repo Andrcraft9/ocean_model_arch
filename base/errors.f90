@@ -1,7 +1,7 @@
 module errors_module
-    ! Module description
-    !use kind_module, only: CL => SHR_KIND_CL
-    use parallel_module
+    ! Error processing module
+
+    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm
 
     implicit none
     save
@@ -11,14 +11,13 @@ module errors_module
 
 contains
 
-    subroutine abort_model(msg, procs)
+    subroutine abort_model(msg)
         ! Subroutine description
         character(len=*), intent(in) :: msg
-        type(procs_type), intent(in) :: procs
         integer :: ierr
         
         print *, msg
-        call mpi_abort(procs%cart_comm, -1, ierr)
+        call mpi_abort(mpp_cart_comm, -1, ierr)
         stop
     end subroutine
 

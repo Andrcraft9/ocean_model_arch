@@ -1,23 +1,24 @@
 program model
-    use parallel_module
-    use decomposition_module
-    use grid_module
-    use ocean_module
-    use init_data_module
+    use mpp_module, only: mpp_init, mpp_finalize
+    use decomposition_module, only: domain_data
+    use grid_module, only: grid_data
+    use ocean_module, only: ocean_data
+    use init_data_module, only: init_grid_data, init_ocean_data
 
     implicit none
 
+    call mpp_init()
+
     ! Make decomposition
-    call procs_data%init()
-    call domain_data%init(procs_data, 2, 2)
+    call domain_data%init(2, 2)
 
     ! Allocate data
     call ocean_data%init(domain_data)
     call grid_data%init(domain_data)
 
     ! Init data (read/set)
-    call init_ocean_data(procs_data, domain_data, ocean_data)
-    call init_grid_data(procs_data, domain_data, grid_data)
+    call init_ocean_data(domain_data, ocean_data)
+    call init_grid_data(domain_data, grid_data)
 
     ! Solver
 
@@ -27,6 +28,7 @@ program model
 
     ! Clear decomposition
     call domain_data%clear()
-    call procs_data%finalize()
+
+    call mpp_finalize()
 
 end program model

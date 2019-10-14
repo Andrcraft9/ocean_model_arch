@@ -1,7 +1,7 @@
 module io_module
     ! Input/Output module
 
-    use parallel_module, only: procs_type
+    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
     use decomposition_module, only: domain_type
     use data_types_module, only: data2D_real4_type, data2D_real8_type
 
@@ -14,9 +14,8 @@ module io_module
 
 contains
 
-    subroutine read_2D_real4(procs, domain, data_field)
+    subroutine read_2D_real4(domain, data_field)
         ! Read real4
-        type(procs_type), intent(in) :: procs
         type(domain_type), intent(in) :: domain
         type(data2D_real4_type), intent(out) :: data_field
         integer :: k, m, n
@@ -34,9 +33,8 @@ contains
         enddo
     end subroutine
 
-    subroutine read_2D_real8(procs, domain, data_field)
+    subroutine read_2D_real8(domain, data_field)
         ! Read real8
-        type(procs_type), intent(in) :: procs
         type(domain_type), intent(in) :: domain
         type(data2D_real8_type), intent(out) :: data_field
         integer :: k, m, n
@@ -54,9 +52,8 @@ contains
         enddo
     end subroutine
 
-    subroutine write_2D_real4(procs, domain, data_field)
+    subroutine write_2D_real4(domain, data_field)
         ! Write real4
-        type(procs_type), intent(in) :: procs
         type(domain_type), intent(in) :: domain
         type(data2D_real4_type), intent(in) :: data_field
         integer :: k, m, n
@@ -74,9 +71,8 @@ contains
         enddo
     end subroutine
 
-    subroutine write_2D_real8(procs, domain, data_field)
+    subroutine write_2D_real8(domain, data_field)
         ! Write real4
-        type(procs_type), intent(in) :: procs
         type(domain_type), intent(in) :: domain
         type(data2D_real8_type), intent(in) :: data_field
         integer :: k, m, n

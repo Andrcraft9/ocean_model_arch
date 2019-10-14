@@ -1,9 +1,9 @@
 module decomposition_module
     ! Decomposition of computational area
 
-    use errors_module, only: abort_model
     use basinpar_module, only: nx, ny
-    use parallel_module
+    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
+    use errors_module, only: abort_model
     
     implicit none
     save
@@ -22,10 +22,9 @@ module decomposition_module
     
 contains
 
-    subroutine init(this, procs, bppnx, bppny)
+    subroutine init(this, bppnx, bppny)
         ! Initialization of each domain
         class(domain_type), intent(inout) :: this
-        type(procs_type), intent(in) :: procs
         integer, intent(in) :: bppnx, bppny
         integer :: k, i, xloc, yloc, xs, ys, ierr
 
@@ -33,16 +32,16 @@ contains
         allocate(this%bnx_start(this%bcount), this%bnx_end(this%bcount))
         allocate(this%bny_start(this%bcount), this%bny_end(this%bcount))
 
-        if (mod(nx, (bppnx * procs%size(1))) /= 0) then
-            call abort_model('Can not decompose direct X axis', procs)
+        if (mod(nx, (bppnx * mpp_size(1))) /= 0) then
+            call abort_model('Can not decompose direct X axis')
         endif
-        if (mod(ny, (bppny * procs%size(2))) /= 0) then
-            call abort_model('Can not decompose direct Y axis', procs)
+        if (mod(ny, (bppny * mpp_size(2))) /= 0) then
+            call abort_model('Can not decompose direct Y axis')
         endif
 
-        xloc = nx / (bppnx * procs%size(1))
+        xloc = nx / (bppnx * mpp_size(1))
         xs = 1
-        yloc = ny / (bppny * procs%size(2))
+        yloc = ny / (bppny * mpp_size(2))
         ys = 1
         do k = 1, this%bcount
             this%bnx_start(k) = xs
@@ -54,16 +53,16 @@ contains
             ys = ys + yloc
         enddo
 
-        if (procs%rank .eq. 0) print *, "MPI pocs: ", procs%count, " Domain decomposition:"
-        do i = 0, procs%count - 1
-            if (procs%rank .eq. i) then
-                print *, "rank, coord", procs%rank, procs%coord
+        if (mpp_rank .eq. 0) print *, "MPI pocs: ", mpp_count, " Domain decomposition:"
+        do i = 0, mpp_count - 1
+            if (mpp_rank .eq. i) then
+                print *, "rank, coord", mpp_rank, mpp_coord
                 do k = 1, this%bcount
                     print *, "block, bnx bounds", k, this%bnx_start(k), this%bnx_end(k)
                     print *, "block, bny bounds", k, this%bny_start(k), this%bny_end(k)
                 enddo
             endif
-            call mpi_barrier(procs%cart_comm, ierr)
+            call mpi_barrier(mpp_cart_comm, ierr)
         enddo
     end subroutine
 

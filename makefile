@@ -4,7 +4,7 @@ FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -ffree-line-length-0 -O3 -Wtabs -fope
 
 BASE = \
 	base/kind.f90 \
-	base/parallel.f90 \
+	base/mpp.f90 \
 	base/errors.f90 \
 	base/basinpar.f90 \
 	base/decomposition.f90 \

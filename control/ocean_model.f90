@@ -1,7 +1,6 @@
 module ocean_module
     ! Module description
 
-    use parallel_module, only: procs_type
     use decomposition_module, only: domain_type
     use ocean_module, only: ocean_type
     use grid_module, only: grid_type
@@ -14,9 +13,8 @@ module ocean_module
 
 contains
 
-    subroutine envoke_div_velocity(prcocs, domain, grid_data, ocean_data)
+    subroutine envoke_div_velocity(domain, grid_data, ocean_data)
         ! Subroutine description
-        type(procs_type), intent(in) :: procs
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(in) :: grid_data
         type(ocean_type), intent(inout) :: ocean_data
