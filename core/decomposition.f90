@@ -44,7 +44,8 @@ module decomposition_module
         procedure, public :: clear
         
         procedure, private :: read_config
-        procedure, private :: create_uniform_distribution
+        procedure, private :: block_uniform_decomposition
+        procedure, private :: create_uniform_decomposition
     end type domain_type
 
     type(domain_type), public, target :: domain_data
@@ -72,10 +73,87 @@ contains
         this%nn = nn
     end subroutine
 
+    subroutine block_uniform_decomposition(this, lbasins,  &
+                                           glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end,  & 
+                                           glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2,  &
+                                           bglob_weight, land_blocks)
+        class(domain_type), intent(in) :: this
+        integer, pointer, intent(in) :: lbasins(:,:) 
+        integer, allocatable, intent(out) :: glob_bnx_start(:, :), glob_bnx_end(:, :),  &
+                                             glob_bny_start(:, :), glob_bny_end(:, :)
+        integer, allocatable, intent(out) :: glob_bbnd_x1(:, :), glob_bbnd_x2(:, :),  &
+                                             glob_bbnd_y1(:, :), glob_bbnd_y2(:, :)
+        real(wp8), allocatable, intent(out) :: bglob_weight(:, :)
+        integer, intent(out) :: land_blocks
+        integer :: m, n, locn
+        
+        associate(bnx => this%bnx,  &
+                  bny => this%bny,  &
+                  nx => this%nx,  &
+                  ny => this%ny)
+            
+            land_blocks = 0
+            bglob_weight = 0.0
+
+            do m = 1, bnx
+                do n = 1, bny
+                    locn = floor(real(nx - 4)/real(bnx))
+                    glob_bnx_start(m, n) = locn*(m-1) + 1 + 2
+                    if (m .eq. bnx) then
+                        locn = (nx - 2) - glob_bnx_start(m, n) + 1
+                    endif
+                    glob_bnx_end(m, n) = glob_bnx_start(m, n) + locn - 1
+                    glob_bnx_start(m, n) = glob_bnx_start(m, n)
+                    ! border area
+                    glob_bbnd_x1(m, n) = glob_bnx_start(m, n) - 2
+                    glob_bbnd_x2(m, n) = glob_bnx_end(m, n) + 2
+
+                    locn = floor(real(ny - 4)/real(bny))
+                    glob_bny_start(m, n) = locn*(n-1) + 1 + 2
+                    if (n .eq. bny) then
+                        locn = (ny - 2) - glob_bny_start(m, n) + 1
+                    endif
+                    glob_bny_end(m, n) = glob_bny_start(m, n) + locn - 1
+                    glob_bny_start(m, n) = glob_bny_start(m, n)
+                    ! border area
+                    glob_bbnd_y1(m, n) = glob_bny_start(m, n) - 2
+                    glob_bbnd_y2(m, n) = glob_bny_end(m, n) + 2
+
+                    ! Compute load-balance
+                    do i = glob_bnx_start(m, n), glob_bnx_end(m, n)
+                        do j = glob_bny_start(m, n), glob_bny_end(m, n)
+                            bglob_weight(m, n) = bglob_weight(m, n) + (1.0d0 - real(lbasins(i, j)))
+                        enddo
+                    enddo
+                    ! Only-land blocks
+                    if (bglob_weight(m, n) == 0.0d0) then
+                        land_blocks = land_blocks + 1
+                    endif
+                enddo
+            enddo
+            if (mpp_rank == 0) print *, "Total land blocks:", land_blocks
+
+            ierr = 0
+            if (bnx*bny - land_blocks < procs) ierr = 1
+            call check_error(ierr,  'procs > computational-blocks... Error!')
+        end associate
+    end subroutine
+
+    subroutine create_uniform_decomposition(this, bglob_weight)
+        class(domain_type), intent(inout) :: this
+        real(wp8), allocatable, intent(in) :: bglob_weight(:, :)
+
+        associate(bnx => this%bnx,  &
+                  bny => this%bny)
+
+        end associate
+    end subroutine
+
     subroutine init(this, bppnx, bppny, lbasins)
         ! Initialization of each domain
         class(domain_type), intent(inout) :: this
         integer, intent(in) :: bppnx, bppny
+        integer, pointer, intent(in) :: lbasins(:,:) 
 
         real(wp8), allocatable :: bglob_weight(:, :)
         real(wp8) :: bweight, max_bweight
@@ -129,67 +207,21 @@ contains
             call check_error(ierr, 'Error in bny or bnx! mod(bnx, p_size(1)) or mod(bny, p_size(2)) not equal 0 !')
 
             allocate(bglob_weight(bnx, bny))
-            allocate(glob_bnx_start(bnx, bny), glob_bnx_end(bnx, bny),  &
-                    glob_bny_start(bnx, bny), glob_bny_end(bnx, bny))
-            allocate(glob_bbnd_x1(bnx, bny), glob_bbnd_x2(bnx, bny),  &
-                    glob_bbnd_y1(bnx, bny), glob_bbnd_y2(bnx, bny))
-            glob_bnx_start = 0; glob_bnx_end = 0
-            glob_bny_start = 0; glob_bny_end = 0
-            glob_bbnd_x1 = 0; glob_bbnd_x2 = 0 
-            glob_bbnd_y1 = 0; glob_bbnd_y2 = 0
-            bglob_weight = 0.0d0
+            allocate(glob_bnx_start(bnx, bny), glob_bnx_end(bnx, bny), glob_bny_start(bnx, bny), glob_bny_end(bnx, bny))
+            allocate(glob_bbnd_x1(bnx, bny), glob_bbnd_x2(bnx, bny), glob_bbnd_y1(bnx, bny), glob_bbnd_y2(bnx, bny))
+            bglob_weight = 0.0
+            glob_bnx_start = 0; glob_bnx_end = 0; glob_bny_start = 0; glob_bny_end = 0
+            glob_bbnd_x1 = 0; glob_bbnd_x2 = 0; glob_bbnd_y1 = 0; glob_bbnd_y2 = 0
 
-            bweight = 0
-            land_blocks = 0
-
-            do m = 1, bnx
-                do n = 1, bny
-                    locn = floor(real(nx - 4)/real(bnx))
-                    glob_bnx_start(m, n) = locn*(m-1) + 1 + 2
-                    if (m .eq. bnx) then
-                        locn = (nx - 2) - glob_bnx_start(m, n) + 1
-                    endif
-                    glob_bnx_end(m, n) = glob_bnx_start(m, n) + locn - 1
-                    glob_bnx_start(m, n) = glob_bnx_start(m, n)
-                    ! border area
-                    glob_bbnd_x1(m, n) = glob_bnx_start(m, n) - 2
-                    glob_bbnd_x2(m, n) = glob_bnx_end(m, n) + 2
-
-                    locn = floor(real(ny - 4)/real(bny))
-                    glob_bny_start(m, n) = locn*(n-1) + 1 + 2
-                    if (n .eq. bny) then
-                        locn = (ny - 2) - glob_bny_start(m, n) + 1
-                    endif
-                    glob_bny_end(m, n) = glob_bny_start(m, n) + locn - 1
-                    glob_bny_start(m, n) = glob_bny_start(m, n)
-                    ! border area
-                    glob_bbnd_y1(m, n) = glob_bny_start(m, n) - 2
-                    glob_bbnd_y2(m, n) = glob_bny_end(m, n) + 2
-
-                    ! Compute load-balance
-                    do i = glob_bnx_start(m, n), glob_bnx_end(m, n)
-                        do j = glob_bny_start(m, n), glob_bny_end(m, n)
-                            bglob_weight(m, n) = bglob_weight(m, n) + (1.0d0 - real(lbasins(i, j)))
-                        enddo
-                    enddo
-                    ! Only-land blocks
-                    if (bglob_weight(m, n) == 0.0d0) then
-                        land_blocks = land_blocks + 1
-                    endif
-                enddo
-            enddo
-            if (rank == 0) print *, "Total land blocks:", land_blocks
-
-            if (bnx*bny - land_blocks < procs) then
-                if (rank == 0) print *, 'procs > computational-blocks... Error!'
-                ierr = 1
-            endif
-            !call parallel_check_err(ierr)
+            call this%block_uniform_decomposition(lbasins,  &
+                                                  glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end,  & 
+                                                  glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2,  &
+                                                  bglob_weight, land_blocks)
 
             ! Compute bglob_proc
             allocate(bglob_proc(bnx, bny))
-            if (rank == 0) print *, "Uniform blocks decomposition!..."
-            call this%create_uniform_decomposition(bglob_proc, bglob_weight, bnx, bny)
+            if (mpp_rank == 0) print *, "Uniform blocks decomposition!..."
+            call this%create_uniform_decomposition(bglob_weight)
 
             ! Compute blocks per proc
             bcount = 0; bweight = 0.0d0
@@ -207,21 +239,14 @@ contains
             call mpi_allreduce(bcount, bcount_min, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
 
             ierr = 0
-            if (bcount <= 0) then
-                print *, mpp_rank, 'Proc with only land-blocks... Error!'
-                ierr = 1
-            endif
-            !call parallel_check_err(ierr)
+            if (bcount <= 0) ierr = 1
+            call check_error(ierr, 'Proc with only land-blocks... Error!')
 
             ! Print information about blocks
-            if (rank == 0) print *, 'Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(procs)),  &
-                                    'max blocks per proc:', bcount_max, 'min blocks per proc:', bcount_min
+            if (mpp_rank == 0) print *, 'Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count)),  &
+                                        'max blocks per proc:', bcount_max, 'min blocks per proc:', bcount_min
             call mpi_barrier(mpp_cart_comm, ierr)
-            if (parallel_dbg >= 2) then
-                print *, mpp_rank, 'Blocks per proc:', bcount, 'Weight per proc:', bweight !/ ((nx-4)*(ny-4))
-                call mpi_barrier(mpp_cart_comm, ierr)
-            endif
-
+            
             ! Allocate blocks arrays per proc
             allocate(bindx(bcount, 2))
             allocate(bnx_start(bcount), bnx_end(bcount),  &
@@ -268,50 +293,6 @@ contains
                 enddo
             endif
         end associate
-    end subroutine
-
-    subroutine init(this, bppnx, bppny)
-        ! Initialization of each domain
-        class(domain_type), intent(inout) :: this
-        integer, intent(in) :: bppnx, bppny
-        integer :: k, i, xloc, yloc, xs, ys, ierr
-
-        this%bcount = bppnx*bppny
-        allocate(this%bnx_start(this%bcount), this%bnx_end(this%bcount))
-        allocate(this%bny_start(this%bcount), this%bny_end(this%bcount))
-
-        if (mod(nx, (bppnx * mpp_size(1))) /= 0) then
-            call abort_model('Can not decompose direct X axis')
-        endif
-        if (mod(ny, (bppny * mpp_size(2))) /= 0) then
-            call abort_model('Can not decompose direct Y axis')
-        endif
-
-        xloc = nx / (bppnx * mpp_size(1))
-        xs = 1
-        yloc = ny / (bppny * mpp_size(2))
-        ys = 1
-        do k = 1, this%bcount
-            this%bnx_start(k) = xs
-            this%bnx_end(k) = xs + xloc - 1
-            xs = xs + xloc
-            
-            this%bny_start(k) = ys
-            this%bny_end(k) = ys + yloc - 1
-            ys = ys + yloc
-        enddo
-
-        if (mpp_rank .eq. 0) print *, "MPI pocs: ", mpp_count, " Domain decomposition:"
-        do i = 0, mpp_count - 1
-            if (mpp_rank .eq. i) then
-                print *, "rank, coord", mpp_rank, mpp_coord
-                do k = 1, this%bcount
-                    print *, "block, bnx bounds", k, this%bnx_start(k), this%bnx_end(k)
-                    print *, "block, bny bounds", k, this%bny_start(k), this%bny_end(k)
-                enddo
-            endif
-            call mpi_barrier(mpp_cart_comm, ierr)
-        enddo
     end subroutine
 
     subroutine clear(this)
