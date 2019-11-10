@@ -11,8 +11,20 @@ module errors_module
 
 contains
 
+    subroutine check_error(loc_err, msg)
+        integer, intent(inout) :: loc_err
+        character(len=*), intent(in) :: msg
+        integer :: tot_err
+        integer :: ierr
+
+        call mpi_allreduce(loc_err, tot_err, 1, mpi_integer,  mpi_sum, mpp_cart_comm, ierr)
+        if (tot_err >= 1) then
+            call abort_model(msg)
+        endif
+        loc_err = tot_err
+    end subroutine
+
     subroutine abort_model(msg)
-        ! Subroutine description
         character(len=*), intent(in) :: msg
         integer :: ierr
         

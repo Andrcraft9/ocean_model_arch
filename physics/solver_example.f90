@@ -17,8 +17,15 @@ module solver
 contains
 
     subroutine solve(x, y)
-        ! Sub description
-        ! ...
+        ! Subroutine description
+        !
+        ! INPUT/OUTPUT:
+        ! Grid data:
+        !
+        ! Ocean data:
+        !
+        ! LOCAL:
+        
         real(kind=wp), intent(in) :: x
         real(kind=wp), intent(out) :: y
 
