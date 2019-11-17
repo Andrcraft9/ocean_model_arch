@@ -142,9 +142,45 @@ contains
     subroutine create_uniform_decomposition(this, bglob_weight)
         class(domain_type), intent(inout) :: this
         real(wp8), allocatable, intent(in) :: bglob_weight(:, :)
+        integer :: m, n, ierr
+        integer :: loc_bnx, loc_bny
+        integer :: xblock_start, yblock_start
+        integer, allocatable :: buf_int(:, :)
 
         associate(bnx => this%bnx,  &
-                  bny => this%bny)
+                  bny => this%bny,  &
+                  bgproc => this%bglob_proc)
+    
+            loc_bnx = bnx / mpp_size(1)
+            loc_bny = bny / mpp_size(2)
+            !bcount = loc_bnx*loc_bny
+            !if (parallel_dbg >= 1) print *, rank, 'loc_bnx, loc_bny and Blocks per proc: ', loc_bnx, loc_bny, bcount
+            !call mpi_barrier(cart_comm, ierr)
+    
+            xblock_start = 1 + mpp_coord(1)*loc_bnx
+            yblock_start = 1 + mpp_coord(2)*loc_bny
+            !if (parallel_dbg >= 2) print *, rank, 'xb_start, yb_start', xblock_start, yblock_start
+            !call mpi_barrier(cart_comm, ierr)
+            bgproc = -1
+            do m = xblock_start, xblock_start + loc_bnx - 1
+                do n = yblock_start, yblock_start + loc_bny - 1
+                    bgproc(m, n) = mpp_rank
+                    if (bglob_weight(m, n) == 0.0) then
+                        bgproc(m, n) = -1
+                    endif
+                enddo
+            enddo
+            ! Sync bglob_proc array
+            allocate(buf_int(bnx, bny))
+            buf_int = bgproc + 1
+            call mpi_allreduce(buf_int, bgproc, bnx*bny, mpi_integer, mpi_sum, mpp_cart_comm, ierr)
+            bgproc = bgproc - 1
+    
+            !if (parallel_dbg >= 3) then
+            !    call parallel_int_output(bgproc, 1, bnx, 1, bny, 'bglob_proc from uniform decomposition')
+            !endif
+    
+            deallocate(buf_int)
 
         end associate
     end subroutine
@@ -301,6 +337,12 @@ contains
         
         deallocate(this%bnx_start, this%bnx_end)
         deallocate(this%bny_start, this%bny_end)
+
+        deallocate(this%bbnd_x1, this%bbnd_x2)
+        deallocate(this%bbnd_y1, this%bbnd_y2)
+
+        deallocate(this%bglob_proc)
+        deallocate(this%bindx)
     end subroutine
 
 end module decomposition_module
