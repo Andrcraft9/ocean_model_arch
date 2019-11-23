@@ -2,7 +2,7 @@ module decomposition_module
     ! Decomposition of computational area
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
+    use mpp_module
     use errors_module, only: abort_model, check_error
     
     implicit none
@@ -48,6 +48,8 @@ module decomposition_module
         procedure, private :: create_uniform_decomposition
     end type domain_type
 
+!------------------------------------------------------------------------------
+
     type(domain_type), public, target :: domain_data
     
 contains
@@ -85,7 +87,7 @@ contains
                                              glob_bbnd_y1(:, :), glob_bbnd_y2(:, :)
         real(wp8), allocatable, intent(out) :: bglob_weight(:, :)
         integer, intent(out) :: land_blocks
-        integer :: m, n, locn
+        integer :: m, n, i, j, locn, ierr
         
         associate(bnx => this%bnx,  &
                   bny => this%bny,  &
@@ -134,7 +136,7 @@ contains
             if (mpp_rank == 0) print *, "Total land blocks:", land_blocks
 
             ierr = 0
-            if (bnx*bny - land_blocks < procs) ierr = 1
+            if (bnx*bny - land_blocks < mpp_count) ierr = 1
             call check_error(ierr,  'procs > computational-blocks... Error!')
         end associate
     end subroutine
@@ -255,7 +257,7 @@ contains
                                                   bglob_weight, land_blocks)
 
             ! Compute bglob_proc
-            allocate(bglob_proc(bnx, bny))
+            allocate(this%bglob_proc(bnx, bny))
             if (mpp_rank == 0) print *, "Uniform blocks decomposition!..."
             call this%create_uniform_decomposition(bglob_weight)
 
@@ -284,11 +286,11 @@ contains
             call mpi_barrier(mpp_cart_comm, ierr)
             
             ! Allocate blocks arrays per proc
-            allocate(bindx(bcount, 2))
-            allocate(bnx_start(bcount), bnx_end(bcount),  &
-                     bny_start(bcount), bny_end(bcount))
-            allocate(bbnd_x1(bcount), bbnd_x2(bcount),  &
-                     bbnd_y1(bcount), bbnd_y2(bcount))
+            allocate(this%bindx(bcount, 2))
+            allocate(this%bnx_start(bcount), this%bnx_end(bcount),  &
+                     this%bny_start(bcount), this%bny_end(bcount))
+            allocate(this%bbnd_x1(bcount), this%bbnd_x2(bcount),  &
+                     this%bbnd_y1(bcount), this%bbnd_y2(bcount))
             bindx = 0
             bnx_start = 0; bnx_end = 0 
             bny_start = 0; bny_end = 0

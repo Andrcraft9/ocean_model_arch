@@ -1,5 +1,4 @@
 module output_module
-    ! Module description
 
     use decomposition_module, only: domain_type
     use ocean_module, only: ocean_type

@@ -18,6 +18,8 @@ module ocean_module
         procedure, public  :: clear
     end type ocean_type
 
+!------------------------------------------------------------------------------
+
     type(ocean_type), public, target :: ocean_data
 
 contains

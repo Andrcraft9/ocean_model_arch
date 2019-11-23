@@ -1,12 +1,24 @@
 module grid_module
     ! Grid data
 
+    use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
+    use mpp_module
     use decomposition_module, only: domain_type
     use data_types_module
+    use errors_module, only: abort_model, check_error
+    use, intrinsic :: iso_fortran_env, only: file_storage_size 
 
     implicit none
     save
     private
+
+    type, public :: grid_global_type
+        real(wp4), allocatable :: mask(:, :)
+    contains
+        procedure, public :: init => init_global_grid_type
+        procedure, public :: read_mask => read_mask_global_grid_type
+        procedure, public :: clear => clear_global_grid_type
+    end type grid_global_type
     
     type, public :: grid_type
         type(data2D_real4_type) :: lu,        &  ! Mask of t-grid
@@ -59,19 +71,60 @@ module grid_module
                                    geo_lon_v,  &  ! Geographical longitudes of V-points
                                    geo_lat_v,  &  ! Geographical latitudes  of V-points
                                    geo_lon_h,  &  ! Geographical longitudes of H-points
-                                   geo_lat_h   &  ! Geographical latitudes  of H-points
+                                   geo_lat_h      ! Geographical latitudes  of H-points
 
         type(data3D_real8_type) :: rotvec_coeff  ! Cos and sin of angles between coordinate lines
     contains
-        procedure, public :: init
-        procedure, public :: clear
+        procedure, public :: init => init_grid_type
+        procedure, public :: clear => clear_grid_type
     end type grid_type
 
+!------------------------------------------------------------------------------
+
+    type(grid_global_type), public, target :: grid_global_data
     type(grid_type), public, target :: grid_data
     
 contains
 
-    subroutine init(this, domain)
+    subroutine init_global_grid_type(this, domain)
+        class(grid_global_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+
+        allocate(this%mask(domain%nx, domain%ny))
+    end subroutine
+
+    subroutine read_mask_global_grid_type(this, domain, file_name)
+        class(grid_global_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        character*(*), intent(in) :: file_name
+        character :: frmt*16, comment*80
+        integer :: m, n, ierr
+
+        write(frmt, 1000) domain%nx
+1000    format('(', i9, 'i1)')
+
+        if (mpp_rank .eq. 0) then
+            open(11, file=file_name, status='old', recl=file_storage_size*domain%nx)
+            read(11, '(a)') comment(1 : min(80, domain%nx))
+            write(*, '(1x,a)') comment
+            do n = domain%ny, 1, -1
+                read(11, frmt, end=99) (this%mask(m,n), m = 1, domain%nx)
+            enddo
+            close(11)
+        endif
+        call mpi_bcast(this%mask, domain%nx * domain%ny, mpi_integer, 0, mpp_cart_comm, ierr)
+
+        return
+99      call abort_model('Error in reading mask')
+    end subroutine
+
+    subroutine clear_global_grid_type(this)
+        class(grid_global_type), intent(inout) :: this
+
+        deallocate(this%mask)
+    end subroutine
+
+    subroutine init_grid_type(this, domain)
         ! Initialization of grid data
         class(grid_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
@@ -102,10 +155,10 @@ contains
         call this%rlh_sqh %init(domain)
         call this%rlh_c   %init(domain)
 
-        call this%z  %init(domain, 1, nz)
-        call this%zw %init(domain, 1, nz+1)
-        call this%hzt%init(domain, 1, nz+1)
-        call this%dz %init(domain, 1, nz)
+        call this%z  %init(domain, 1, domain%nz)
+        call this%zw %init(domain, 1, domain%nz + 1)
+        call this%hzt%init(domain, 1, domain%nz + 1)
+        call this%dz %init(domain, 1, domain%nz)
 
         call this%dxt%init(domain)
         call this%dyt%init(domain)
@@ -135,11 +188,11 @@ contains
         call this%geo_lon_h%init(domain)
         call this%geo_lat_h%init(domain)
 
-        call this%rotvec_coeff%init(domian, 1, 4)
+        call this%rotvec_coeff%init(domain, 1, 4)
 
     end subroutine
 
-    subroutine clear(this, domain)
+    subroutine clear_grid_type(this, domain)
         ! Clear grid data
         class(grid_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
@@ -203,7 +256,7 @@ contains
         call this%geo_lon_h%clear(domain)
         call this%geo_lat_h%clear(domain)
 
-        call this%rotvec_coeff%clear(domian)
+        call this%rotvec_coeff%clear(domain)
 
     end subroutine
 

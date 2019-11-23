@@ -3,19 +3,19 @@ module mpp_module
 
     use mpi
 
-    !include 'mpif.h'
-    include "omp_lib.h"
-
     implicit none
     save
-    private
+    public
+
+    !include 'mpif.h'
+    include "omp_lib.h"
 
     integer, public :: mpp_rank, mpp_count
     integer, public :: mpp_cart_comm
     integer, dimension(2), public :: mpp_size, mpp_coord
     logical, dimension(2), public :: mpp_period
 
-    integer, public :: mpp_num_threads, mpp_count_threads
+    integer, public :: mpp_num_thread, mpp_count_threads
 
     public :: mpp_init
     public :: mpp_finalize

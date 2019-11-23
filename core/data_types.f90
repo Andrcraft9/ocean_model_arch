@@ -52,7 +52,7 @@ module data_types_module
         type(block1D_real8_type), pointer :: block(:)
     contains
         procedure, public :: init => init_data1D_real8
-        procedure, public :: init_from_domian => init_from_domain_data1D_real8
+        procedure, public :: init_from_domain => init_from_domain_data1D_real8
         procedure, public :: clear => clear_data1D_real8
     end type data1D_real8_type
 

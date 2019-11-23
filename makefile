@@ -1,10 +1,15 @@
+## no implicit rules
+.SUFFIXES: 
 
+## definitions
 FC = mpifort
 FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -ffree-line-length-0 -O3 -Wtabs -fopenmp
 
+## sources for the program
 SHARED = \
 	shared/kind.f90 \
-	shared/mpp.f90 \
+	shared/mpp/mpp.f90 \
+	shared/mpp/hilbert_curve.f90 \
 	shared/errors.f90 \
 	shared/constants.f90 \
 	shared/basinpar.f90
@@ -27,10 +32,24 @@ CONTROL = \
 	control/output.f90 \
 	control/ocean_model.f90
 
-all: compile
+## main and clean targets
+model: $(subst .f90,.o, $(SHARED) $(CORE)) #$(TOOLS) $(PHYSICS) $(CONTROL))
+	$(FC) $(FCFLAGS) -o $@ $+
 
+.PHONY: clean
 clean:
-	rm model *.mod *.o
+	-rm -rf *.o *.mod
 
-compile:
-	$(FC) $(FCFLAGS) -o model $(SHARED) $(CORE) $(TOOLS) $(PHYSICS) $(CONTROL) model.f90 
+## compilation rules
+%.o %.mod: %.f90
+	$(FC) $(FCFLAGS) -c -o $*.o $<
+
+## .o -> .mod of the modules it uses
+#main.o: one.mod
+#one@proc.o: two.mod
+#two@proc.o: one.mod
+
+## .o of a submodule -> .smod of its parent module
+#one@proc.o: one.smod
+#two@proc.o: two.smod
+

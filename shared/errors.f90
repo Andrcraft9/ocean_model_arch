@@ -1,13 +1,14 @@
 module errors_module
     ! Error processing module
 
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm
+    use mpp_module
 
     implicit none
     save
     private
 
     public :: abort_model
+    public :: check_error
 
 contains
 
@@ -17,7 +18,7 @@ contains
         integer :: tot_err
         integer :: ierr
 
-        call mpi_allreduce(loc_err, tot_err, 1, mpi_integer,  mpi_sum, mpp_cart_comm, ierr)
+        call mpi_allreduce(loc_err, tot_err, 1, mpi_integer, mpi_sum, mpp_cart_comm, ierr)
         if (tot_err >= 1) then
             call abort_model(msg)
         endif
