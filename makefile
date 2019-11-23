@@ -38,7 +38,8 @@ model: $(subst .f90,.o, $(SHARED) $(CORE)) #$(TOOLS) $(PHYSICS) $(CONTROL))
 
 .PHONY: clean
 clean:
-	-rm -rf *.o *.mod
+	find . -name "*.o" -delete
+	find . -name "*.mod" -delete
 
 ## compilation rules
 %.o %.mod: %.f90
