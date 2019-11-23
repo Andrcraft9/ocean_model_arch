@@ -53,12 +53,48 @@ module mpp_sync_module
     type(block1D_real4_type), dimension(:), pointer :: sync_edge_buf4_recv_nxm_nyp_3D
     type(block1D_real4_type), dimension(:), pointer :: sync_edge_buf4_recv_nxm_nym_3D
 !------------------------------------------------------------------------------
+    integer :: parallel_dbg
+    real(wp8) :: time_sync
+!------------------------------------------------------------------------------
 
-    public :: sync
+    public :: mpp_sync_init
+    public :: mpp_sync_finalize
+
+    public :: syncborder_data2D_real8
+    public :: syncborder_data2D_real4
+    public :: syncborder_data3D_real8
+    public :: syncborder_data3D_real4
+
     private :: allocate_mpp_sync_buffers
     private :: deallocate_mpp_sync_buffers
+    private :: get_local_block_number
+    private :: check_block_status
+    private :: check_cart_coord
+
+    private :: irecv_real8
+    private :: irecv_real4
+    private :: isend_real8
+    private :: isend_real4
+    private :: irecv3D_real8
+    private :: irecv3D_real4
+    private :: isend3D_real8
+    private :: isend3D_real4
 
 contains
+
+    subroutine mpp_sync_init(domain, dbg)
+        type(domain_type), intent(in) :: domain
+        integer, intent(in) :: dbg
+        
+        call allocate_mpp_sync_buffers(domain)
+        parallel_dbg = dbg
+    end subroutine
+
+    subroutine mpp_sync_finalize(domain)
+        type(domain_type), intent(in) :: domain
+
+        call deallocate_mpp_sync_buffers(domain)
+    end subroutine
 
     subroutine allocate_mpp_sync_buffers(domain)
         implicit none
@@ -237,9 +273,11 @@ contains
         end associate
     end subroutine
 
-    integer function get_local_block_number(m, n)
+    integer function get_local_block_number(bindx, bcount, m, n)
         implicit none
-        integer :: m, n
+        integer, pointer, intent(in) :: bindx(:, :)
+        integer, intent(in) :: bcount
+        integer, intent(in) :: m, n
         integer :: k
         get_local_block_number = -1
         do k = 1, bcount
@@ -251,8 +289,10 @@ contains
         return
     end function
 
-    subroutine check_block_status(b_coords, p)
+    subroutine check_block_status(bglob_proc, bnx, bny, b_coords, p)
         implicit none
+        integer, pointer, intent(in) :: bglob_proc(:, :)
+        integer, intent(in) :: bnx, bny
         integer, dimension(2), intent(in) :: b_coords
         integer, intent(out) :: p
         integer, dimension(2) :: bgrid
@@ -270,60 +310,11 @@ contains
         implicit none
         integer, dimension(2), intent(in) :: coord, grid_size
         check_cart_coord = 0
-        !write(*,*) coord,all(coord.ge.0),all((p_size-coord).ge.1)
-        !print *, coord, p_size - coord, all((p_size-coord).ge.1)
         if (all(coord .ge. 0) .and. all((grid_size - coord) .ge. 1)) then
             check_cart_coord = 1
         endif
         return
     end function
-
-    subroutine get_block_and_rank_by_point(m, n, out)
-        implicit none
-        integer :: m, n
-        integer :: out(2)
-        integer :: k, flag_r, r, flag_b, b, ierr
-
-        flag_r = -1
-        flag_b = -1
-        do k = 1, bcount
-            if (m >= bnx_start(k) .and. m <= bnx_end(k)) then
-                if (n >= bny_start(k) .and. n <= bny_end(k)) then
-                    flag_r = rank
-                    flag_b = k
-                endif
-            endif
-        enddo
-
-        call mpi_allreduce(flag_r, r, 1, mpi_integer,      &
-                            mpi_max, cart_comm, ierr)
-
-        call mpi_allreduce(flag_b, b, 1, mpi_integer,      &
-                            mpi_max, cart_comm, ierr)
-
-        out(1) = r
-        out(2) = b
-    end subroutine
-
-    integer function get_rank_by_point(m, n)
-        implicit none
-        integer :: m, n
-        integer :: flag_r, r, ierr
-
-        flag_r = -1
-        if (m >= nx_start .and. m <= nx_end) then
-            if (n >= ny_start .and. n <= ny_end) then
-                flag_r = rank
-            endif
-        endif
-
-        call mpi_allreduce(flag_r, r, 1, mpi_integer,      &
-                            mpi_max, cart_comm, ierr)
-
-        get_rank_by_point = r
-        return
-    end function
-
 
 ! ------------------------------------------------------------------------------- !
 ! ------------------------------------------------------------------------------- !
@@ -335,14 +326,12 @@ contains
         integer, dimension(2) :: src_block
         integer :: k, src_proc, tag
         integer :: buff_size
-        real*8 :: buff(:)
+        real(wp8) :: buff(:)
         integer :: reqst
         integer :: ierr
 
         if (parallel_dbg >= 4) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
-        !call mpi_irecv(blks(k)%vals(dx1:dx2, dy1:dy2), (dx2 - dx1 + 1)*(dy2 - dy1 + 1), &
-        !               mpi_real8, p_src, tag, cart_comm, reqst, ierr)
-        call mpi_irecv(buff, buff_size, mpi_real8, src_proc, tag, cart_comm, reqst, ierr)
+        call mpi_irecv(buff, buff_size, mpi_real8, src_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
     subroutine isend_real8(k, dist_block, dist_proc, buff, buff_size, tag, reqst)
@@ -350,17 +339,15 @@ contains
         integer, dimension(2) :: dist_block
         integer :: k, dist_proc, tag
         integer :: buff_size
-        real*8 :: buff(:)
+        real(wp8) :: buff(:)
         integer :: reqst
         integer :: ierr
 
         if (parallel_dbg >= 4) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
-        !call mpi_isend(blks(k)%vals(sx1:sx2, sy1:sy2), (sx2 - sx1 + 1)*(sy2 - sy1 + 1), &
-        !               mpi_real8, p_dist, tag, cart_comm, reqst, ierr)
-        call mpi_isend(buff, buff_size, mpi_real8, dist_proc, tag, cart_comm, reqst, ierr)
+        call mpi_isend(buff, buff_size, mpi_real8, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
-    subroutine syncborder_block2D_real8(blks)
+    subroutine syncborder_data2D_real8(data2d, domain)
 #define _MPI_TYPE_ mpi_real8
 #define _IRECV_ irecv_real8
 #define _ISEND_ isend_real8
@@ -381,9 +368,27 @@ contains
 #define _SYNC_EDGE_BUF_RECV_NXM_NYM_ sync_edge_buf8_recv_nxm_nym
         
         implicit none
-        type(block2D_real8), dimension(:), pointer :: blks
+        type(data2D_real8_type), intent(inout) :: data2d
+        type(domain_type), intent(in) :: domain
 
-#include "syncborder_block2D_gen.fi"
+        associate(blks => data2d%block,  &
+                  bcount => domain%bcount,  &
+                  bnx_start => domain%bnx_start,  &
+                  bnx_end => domain%bnx_end,  &
+                  bny_start => domain%bny_start,  &
+                  bny_end => domain%bny_end,  &
+                  bbnd_x1 => domain%bbnd_x1,  &
+                  bbnd_x2 => domain%bbnd_x2,  &
+                  bbnd_y1 => domain%bbnd_y1,  &
+                  bbnd_y2 => domain%bbnd_y2,  &
+                  bglob_proc => domain%bglob_proc,  &
+                  bindx => domain%bindx,  &
+                  bnx => domain%bnx,  &
+                  bny => domian%bny)
+
+#include    "syncborder_block2D_gen.fi"
+
+        end associate
 
 #undef _MPI_TYPE_
 #undef _IRECV_
@@ -400,7 +405,6 @@ contains
 #undef _SYNC_EDGE_BUF_RECV_NXP_NYM_
 #undef _SYNC_EDGE_BUF_RECV_NXM_NYP_
 #undef _SYNC_EDGE_BUF_RECV_NXM_NYM_
-
     end subroutine
 
     subroutine irecv_real4(k, src_block, src_proc, buff, buff_size, tag, reqst)
@@ -408,14 +412,12 @@ contains
         integer, dimension(2) :: src_block
         integer :: k, src_proc, tag
         integer :: buff_size
-        real*4 :: buff(:)
+        real(wp4) :: buff(:)
         integer :: reqst
         integer :: ierr
 
         if (parallel_dbg >= 4) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
-        !call mpi_irecv(blks(k)%vals(dx1:dx2, dy1:dy2), (dx2 - dx1 + 1)*(dy2 - dy1 + 1), &
-        !               mpi_real8, p_src, tag, cart_comm, reqst, ierr)
-        call mpi_irecv(buff, buff_size, mpi_real4, src_proc, tag, cart_comm, reqst, ierr)
+        call mpi_irecv(buff, buff_size, mpi_real4, src_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
     subroutine isend_real4(k, dist_block, dist_proc, buff, buff_size, tag, reqst)
@@ -423,17 +425,15 @@ contains
         integer, dimension(2) :: dist_block
         integer :: k, dist_proc, tag
         integer :: buff_size
-        real*4 :: buff(:)
+        real(wp4) :: buff(:)
         integer :: reqst
         integer :: ierr
 
         if (parallel_dbg >= 4) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
-        !call mpi_isend(blks(k)%vals(sx1:sx2, sy1:sy2), (sx2 - sx1 + 1)*(sy2 - sy1 + 1), &
-        !               mpi_real8, p_dist, tag, cart_comm, reqst, ierr)
-        call mpi_isend(buff, buff_size, mpi_real4, dist_proc, tag, cart_comm, reqst, ierr)
+        call mpi_isend(buff, buff_size, mpi_real4, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
-    subroutine syncborder_block2D_real4(blks)
+    subroutine syncborder_data2D_real4(data2d, domain)
 #define _MPI_TYPE_ mpi_real4
 #define _IRECV_ irecv_real4
 #define _ISEND_ isend_real4
@@ -454,9 +454,27 @@ contains
 #define _SYNC_EDGE_BUF_RECV_NXM_NYM_ sync_edge_buf4_recv_nxm_nym
         
         implicit none
-        type(block2D_real4), dimension(:), pointer :: blks
-        
-#include "syncborder_block2D_gen.fi"
+        type(data2D_real4_type), intent(inout) :: data2d
+        type(domain_type), intent(in) :: domain
+
+        associate(blks => data2d%block,  &
+                  bcount => domain%bcount,  &
+                  bnx_start => domain%bnx_start,  &
+                  bnx_end => domain%bnx_end,  &
+                  bny_start => domain%bny_start,  &
+                  bny_end => domain%bny_end,  &
+                  bbnd_x1 => domain%bbnd_x1,  &
+                  bbnd_x2 => domain%bbnd_x2,  &
+                  bbnd_y1 => domain%bbnd_y1,  &
+                  bbnd_y2 => domain%bbnd_y2,  &
+                  bglob_proc => domain%bglob_proc,  &
+                  bindx => domain%bindx,  &
+                  bnx => domain%bnx,  &
+                  bny => domian%bny)
+
+#include    "syncborder_block2D_gen.fi"
+
+        end associate
 
 #undef _MPI_TYPE_
 #undef _IRECV_
@@ -473,7 +491,6 @@ contains
 #undef _SYNC_EDGE_BUF_RECV_NXP_NYM_
 #undef _SYNC_EDGE_BUF_RECV_NXM_NYP_
 #undef _SYNC_EDGE_BUF_RECV_NXM_NYM_
-
     end subroutine
 
 ! ------------------------------------------------------------------------------- !
@@ -486,14 +503,12 @@ contains
         integer, dimension(2) :: src_block
         integer :: k, src_proc, tag
         integer :: buff_size
-        real*8 :: buff(:, :)
+        real(wp8) :: buff(:, :)
         integer :: reqst
         integer :: ierr
 
         if (parallel_dbg >= 4) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
-        !call mpi_irecv(blks(k)%vals(dx1:dx2, dy1:dy2), (dx2 - dx1 + 1)*(dy2 - dy1 + 1), &
-        !               mpi_real8, p_src, tag, cart_comm, reqst, ierr)
-        call mpi_irecv(buff, buff_size, mpi_real8, src_proc, tag, cart_comm, reqst, ierr)
+        call mpi_irecv(buff, buff_size, mpi_real8, src_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
     subroutine isend3D_real8(k, dist_block, dist_proc, buff, buff_size, tag, reqst)
@@ -501,21 +516,19 @@ contains
         integer, dimension(2) :: dist_block
         integer :: k, dist_proc, tag
         integer :: buff_size
-        real*8 :: buff(:, :)
+        real(wp8) :: buff(:, :)
         integer :: reqst
         integer :: ierr
 
         if (parallel_dbg >= 4) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
-        !call mpi_isend(blks(k)%vals(sx1:sx2, sy1:sy2), (sx2 - sx1 + 1)*(sy2 - sy1 + 1), &
-        !               mpi_real8, p_dist, tag, cart_comm, reqst, ierr)
-        call mpi_isend(buff, buff_size, mpi_real8, dist_proc, tag, cart_comm, reqst, ierr)
+        call mpi_isend(buff, buff_size, mpi_real8, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
-    subroutine syncborder_block3D_real8(blks, nz)
+    subroutine syncborder_data3D_real8(data3d, domain, nz)
 #define _MPI_TYPE_ mpi_real8
 #define _IRECV_ irecv3D_real8
 #define _ISEND_ isend3D_real8
-        
+            
 #define _SYNC_BUF_SEND_NYP_ sync_buf8_send_nyp_3D
 #define _SYNC_BUF_SEND_NXP_ sync_buf8_send_nxp_3D
 #define _SYNC_BUF_SEND_NYM_ sync_buf8_send_nym_3D
@@ -530,12 +543,30 @@ contains
 #define _SYNC_EDGE_BUF_RECV_NXP_NYM_ sync_edge_buf8_recv_nxp_nym_3D
 #define _SYNC_EDGE_BUF_RECV_NXM_NYP_ sync_edge_buf8_recv_nxm_nyp_3D
 #define _SYNC_EDGE_BUF_RECV_NXM_NYM_ sync_edge_buf8_recv_nxm_nym_3D
-        
+            
         implicit none
-        type(block3D_real8), dimension(:), pointer :: blks
-        integer :: nz
+        type(data3D_real8_type), intent(inout) :: data3d
+        type(domain_type), intent(in) :: domain
+        integer, intent(in) :: nz
 
-#include "syncborder_block3D_gen.fi"
+        associate(blks => data3d%block,  &
+                  bcount => domain%bcount,  &
+                  bnx_start => domain%bnx_start,  &
+                  bnx_end => domain%bnx_end,  &
+                  bny_start => domain%bny_start,  &
+                  bny_end => domain%bny_end,  &
+                  bbnd_x1 => domain%bbnd_x1,  &
+                  bbnd_x2 => domain%bbnd_x2,  &
+                  bbnd_y1 => domain%bbnd_y1,  &
+                  bbnd_y2 => domain%bbnd_y2,  &
+                  bglob_proc => domain%bglob_proc,  &
+                  bindx => domain%bindx,  &
+                  bnx => domain%bnx,  &
+                  bny => domian%bny)
+
+#include    "syncborder_block3D_gen.fi"
+
+        end associate
 
 #undef _MPI_TYPE_
 #undef _IRECV_
@@ -552,7 +583,6 @@ contains
 #undef _SYNC_EDGE_BUF_RECV_NXP_NYM_
 #undef _SYNC_EDGE_BUF_RECV_NXM_NYP_
 #undef _SYNC_EDGE_BUF_RECV_NXM_NYM_
-
     end subroutine
 
     subroutine irecv3D_real4(k, src_block, src_proc, buff, buff_size, tag, reqst)
@@ -560,14 +590,12 @@ contains
         integer, dimension(2) :: src_block
         integer :: k, src_proc, tag
         integer :: buff_size
-        real*4 :: buff(:, :)
+        real(wp4) :: buff(:, :)
         integer :: reqst
         integer :: ierr
 
         if (parallel_dbg >= 4) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
-        !call mpi_irecv(blks(k)%vals(dx1:dx2, dy1:dy2), (dx2 - dx1 + 1)*(dy2 - dy1 + 1), &
-        !               mpi_real8, p_src, tag, cart_comm, reqst, ierr)
-        call mpi_irecv(buff, buff_size, mpi_real4, src_proc, tag, cart_comm, reqst, ierr)
+        call mpi_irecv(buff, buff_size, mpi_real4, src_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
     subroutine isend3D_real4(k, dist_block, dist_proc, buff, buff_size, tag, reqst)
@@ -575,17 +603,15 @@ contains
         integer, dimension(2) :: dist_block
         integer :: k, dist_proc, tag
         integer :: buff_size
-        real*4 :: buff(:, :)
+        real(wp4) :: buff(:, :)
         integer :: reqst
         integer :: ierr
 
         if (parallel_dbg >= 4) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
-        !call mpi_isend(blks(k)%vals(sx1:sx2, sy1:sy2), (sx2 - sx1 + 1)*(sy2 - sy1 + 1), &
-        !               mpi_real8, p_dist, tag, cart_comm, reqst, ierr)
-        call mpi_isend(buff, buff_size, mpi_real4, dist_proc, tag, cart_comm, reqst, ierr)
+        call mpi_isend(buff, buff_size, mpi_real4, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
-    subroutine syncborder_block3D_real4(blks, nz)
+    subroutine syncborder_data3D_real4(data3d, domain, nz)
 #define _MPI_TYPE_ mpi_real4
 #define _IRECV_ irecv3D_real4
 #define _ISEND_ isend3D_real4
@@ -606,10 +632,28 @@ contains
 #define _SYNC_EDGE_BUF_RECV_NXM_NYM_ sync_edge_buf4_recv_nxm_nym_3D
         
         implicit none
-        type(block3D_real4), dimension(:), pointer :: blks
-        integer :: nz
-        
-#include "syncborder_block3D_gen.fi"
+        type(data3D_real4_type), intent(inout) :: data3d
+        type(domian_type), intent(in) :: domain
+        integer, intent(in) :: nz
+
+        associate(blks => data3d%block,  &
+                  bcount => domain%bcount,  &
+                  bnx_start => domain%bnx_start,  &
+                  bnx_end => domain%bnx_end,  &
+                  bny_start => domain%bny_start,  &
+                  bny_end => domain%bny_end,  &
+                  bbnd_x1 => domain%bbnd_x1,  &
+                  bbnd_x2 => domain%bbnd_x2,  &
+                  bbnd_y1 => domain%bbnd_y1,  &
+                  bbnd_y2 => domain%bbnd_y2,  &
+                  bglob_proc => domain%bglob_proc,  &
+                  bindx => domain%bindx,  &
+                  bnx => domain%bnx,  &
+                  bny => domian%bny)
+
+#include    "syncborder_block3D_gen.fi"
+
+        end associate
 
 #undef _MPI_TYPE_
 #undef _IRECV_
@@ -626,7 +670,6 @@ contains
 #undef _SYNC_EDGE_BUF_RECV_NXP_NYM_
 #undef _SYNC_EDGE_BUF_RECV_NXM_NYP_
 #undef _SYNC_EDGE_BUF_RECV_NXM_NYM_
-
     end subroutine
 
 end module mpp_sync_module
