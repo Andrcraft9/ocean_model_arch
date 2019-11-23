@@ -1,5 +1,5 @@
 module mpp_sync_module
-    ! Module description
+    ! Sync data of different types, depends on domain
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
@@ -53,20 +53,25 @@ module mpp_sync_module
     type(block1D_real4_type), dimension(:), pointer :: sync_edge_buf4_recv_nxm_nyp_3D
     type(block1D_real4_type), dimension(:), pointer :: sync_edge_buf4_recv_nxm_nym_3D
 !------------------------------------------------------------------------------
-    integer :: parallel_dbg
-    real(wp8) :: time_sync
+    integer, private :: parallel_dbg
+    real(wp8), private :: time_sync
 !------------------------------------------------------------------------------
+
+    interface sync
+        module procedure syncborder_data2D_real8
+        module procedure syncborder_data2D_real4
+        module procedure syncborder_data3D_real8
+        module procedure syncborder_data3D_real4
+    end interface
 
     public :: mpp_sync_init
     public :: mpp_sync_finalize
+    public :: sync
 
-    public :: syncborder_data2D_real8
-    public :: syncborder_data2D_real4
-    public :: syncborder_data3D_real8
-    public :: syncborder_data3D_real4
-
+    ! Private
     private :: allocate_mpp_sync_buffers
     private :: deallocate_mpp_sync_buffers
+
     private :: get_local_block_number
     private :: check_block_status
     private :: check_cart_coord
@@ -85,7 +90,7 @@ contains
     subroutine mpp_sync_init(domain, dbg)
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: dbg
-        
+
         call allocate_mpp_sync_buffers(domain)
         parallel_dbg = dbg
     end subroutine
