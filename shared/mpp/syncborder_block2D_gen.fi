@@ -85,7 +85,7 @@ do k = 1, domain%bcount
     call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
-            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXP_NYP_(k), 1, _MPI_TYPE_, src_p, tag, cart_comm, reqst, ierr)
+            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXP_NYP_(k), 1, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
             if (parallel_dbg >= 5) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
@@ -98,7 +98,7 @@ do k = 1, domain%bcount
     call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
-            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXP_NYM_(k), 1, _MPI_TYPE_, src_p, tag, cart_comm, reqst, ierr)
+            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXP_NYM_(k), 1, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
             if (parallel_dbg >= 5) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
@@ -111,7 +111,7 @@ do k = 1, domain%bcount
     call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
-            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXM_NYP_(k), 1, _MPI_TYPE_, src_p, tag, cart_comm, reqst, ierr)
+            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXM_NYP_(k), 1, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
             if (parallel_dbg >= 5) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
@@ -124,7 +124,7 @@ do k = 1, domain%bcount
     call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
-            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXM_NYM_(k), 1, _MPI_TYPE_, src_p, tag, cart_comm, reqst, ierr)
+            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXM_NYM_(k), 1, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
             if (parallel_dbg >= 5) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
@@ -219,7 +219,7 @@ do k = 1, domain%bcount
     call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
     if (dist_p >= 0) then
         if (dist_p /= mpp_rank) then
-            call mpi_isend(data2d%block(k)%field(domain%bnx_end(k), domain%bny_end(k)), 1, _MPI_TYPE_, dist_p, tag, cart_comm, reqst, ierr)
+            call mpi_isend(data2d%block(k)%field(domain%bnx_end(k), domain%bny_end(k)), 1, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
             if (parallel_dbg >= 5) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
@@ -234,7 +234,7 @@ do k = 1, domain%bcount
     call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
     if (dist_p >= 0) then
         if (dist_p /= mpp_rank) then
-            call mpi_isend(data2d%block(k)%field(domain%bnx_end(k), domain%bny_start(k)), 1, _MPI_TYPE_, dist_p, tag, cart_comm, reqst, ierr)
+            call mpi_isend(data2d%block(k)%field(domain%bnx_end(k), domain%bny_start(k)), 1, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
             if (parallel_dbg >= 5) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
@@ -249,7 +249,7 @@ do k = 1, domain%bcount
     call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
     if (dist_p >= 0) then
         if (dist_p /= mpp_rank) then
-            call mpi_isend(data2d%block(k)%field(domain%bnx_start(k), domain%bny_end(k)), 1, _MPI_TYPE_, dist_p, tag, cart_comm, reqst, ierr)
+            call mpi_isend(data2d%block(k)%field(domain%bnx_start(k), domain%bny_end(k)), 1, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
             if (parallel_dbg >= 5) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
@@ -264,7 +264,7 @@ do k = 1, domain%bcount
     call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
     if (dist_p >= 0) then
         if (dist_p /= mpp_rank) then
-            call mpi_isend(data2d%block(k)%field(domain%bnx_start(k), domain%bny_start(k)), 1, _MPI_TYPE_, dist_p, tag, cart_comm, reqst, ierr)
+            call mpi_isend(data2d%block(k)%field(domain%bnx_start(k), domain%bny_start(k)), 1, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
             if (parallel_dbg >= 5) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
