@@ -34,7 +34,7 @@ CONTROL = \
 	control/ocean_model.f90
 
 ## main and clean targets
-model: $(subst .f90,.o, $(SHARED) $(CORE)) #$(TOOLS) $(PHYSICS) $(CONTROL))
+model: $(subst .f90,.o, $(SHARED) $(CORE) $(TOOLS)) # $(PHYSICS) $(CONTROL))
 	$(FC) $(FCFLAGS) -o $@ $+
 
 .PHONY: clean
