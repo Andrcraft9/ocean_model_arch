@@ -8,11 +8,6 @@ integer :: send_size, recv_size
 integer :: ierr
 integer :: tag, icount
 
-real*8 :: t_local
-
-! TIMER
-call start_timer(t_local)
-
 icount = 1
 
 ! Non-blocking Recv calls
@@ -351,7 +346,3 @@ do k = 1, domain%bcount
         endif
     endif
 enddo
-
-! TIMER
-call end_timer(t_local)
-time_sync = time_sync + t_local
