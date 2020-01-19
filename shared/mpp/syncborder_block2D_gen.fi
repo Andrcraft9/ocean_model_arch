@@ -302,7 +302,7 @@ do k = 1, domain%bcount
     endif
     ! ny-
     src_block(1) = bm; src_block(2) = bn + 1
-    call check_block_status(domain%bglob_proc, bnx, domain%bny, src_block, src_p)
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
             data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bbnd_y2(k) - 1) = _SYNC_BUF_RECV_NYM_(k)%field
@@ -310,7 +310,7 @@ do k = 1, domain%bcount
     endif
     ! nx-
     src_block(1) = bm + 1; src_block(2) = bn
-    call check_block_status(domain%bglob_proc, domain%bnx, bny, src_block, src_p)
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
             data2d%block(k)%field(domain%bbnd_x2(k) - 1, domain%bny_start(k):domain%bny_end(k)) = _SYNC_BUF_RECV_NXM_(k)%field
