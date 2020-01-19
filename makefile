@@ -17,6 +17,7 @@ SHARED = \
 CORE = \
 	core/decomposition.f90 \
 	core/data_types.f90 \
+	shared/mpp/sync.f90 \
 	core/kernel_interface.f90 \
 	core/grid.f90 \
 	core/ocean.f90

@@ -197,7 +197,7 @@ contains
 
     subroutine deallocate_mpp_sync_buffers(domain)
         implicit none
-        type(domain), intent(in) :: domain
+        type(domain_type), intent(in) :: domain
         integer :: k
 
         deallocate(reqsts)
@@ -376,24 +376,7 @@ contains
         type(data2D_real8_type), intent(inout) :: data2d
         type(domain_type), intent(in) :: domain
 
-        associate(blks => data2d%block,  &
-                  bcount => domain%bcount,  &
-                  bnx_start => domain%bnx_start,  &
-                  bnx_end => domain%bnx_end,  &
-                  bny_start => domain%bny_start,  &
-                  bny_end => domain%bny_end,  &
-                  bbnd_x1 => domain%bbnd_x1,  &
-                  bbnd_x2 => domain%bbnd_x2,  &
-                  bbnd_y1 => domain%bbnd_y1,  &
-                  bbnd_y2 => domain%bbnd_y2,  &
-                  bglob_proc => domain%bglob_proc,  &
-                  bindx => domain%bindx,  &
-                  bnx => domain%bnx,  &
-                  bny => domian%bny)
-
 #include    "syncborder_block2D_gen.fi"
-
-        end associate
 
 #undef _MPI_TYPE_
 #undef _IRECV_
@@ -462,24 +445,7 @@ contains
         type(data2D_real4_type), intent(inout) :: data2d
         type(domain_type), intent(in) :: domain
 
-        associate(blks => data2d%block,  &
-                  bcount => domain%bcount,  &
-                  bnx_start => domain%bnx_start,  &
-                  bnx_end => domain%bnx_end,  &
-                  bny_start => domain%bny_start,  &
-                  bny_end => domain%bny_end,  &
-                  bbnd_x1 => domain%bbnd_x1,  &
-                  bbnd_x2 => domain%bbnd_x2,  &
-                  bbnd_y1 => domain%bbnd_y1,  &
-                  bbnd_y2 => domain%bbnd_y2,  &
-                  bglob_proc => domain%bglob_proc,  &
-                  bindx => domain%bindx,  &
-                  bnx => domain%bnx,  &
-                  bny => domian%bny)
-
 #include    "syncborder_block2D_gen.fi"
-
-        end associate
 
 #undef _MPI_TYPE_
 #undef _IRECV_
@@ -554,24 +520,7 @@ contains
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: nz
 
-        associate(blks => data3d%block,  &
-                  bcount => domain%bcount,  &
-                  bnx_start => domain%bnx_start,  &
-                  bnx_end => domain%bnx_end,  &
-                  bny_start => domain%bny_start,  &
-                  bny_end => domain%bny_end,  &
-                  bbnd_x1 => domain%bbnd_x1,  &
-                  bbnd_x2 => domain%bbnd_x2,  &
-                  bbnd_y1 => domain%bbnd_y1,  &
-                  bbnd_y2 => domain%bbnd_y2,  &
-                  bglob_proc => domain%bglob_proc,  &
-                  bindx => domain%bindx,  &
-                  bnx => domain%bnx,  &
-                  bny => domian%bny)
-
 #include    "syncborder_block3D_gen.fi"
-
-        end associate
 
 #undef _MPI_TYPE_
 #undef _IRECV_
@@ -638,27 +587,10 @@ contains
         
         implicit none
         type(data3D_real4_type), intent(inout) :: data3d
-        type(domian_type), intent(in) :: domain
+        type(domain_type), intent(in) :: domain
         integer, intent(in) :: nz
 
-        associate(blks => data3d%block,  &
-                  bcount => domain%bcount,  &
-                  bnx_start => domain%bnx_start,  &
-                  bnx_end => domain%bnx_end,  &
-                  bny_start => domain%bny_start,  &
-                  bny_end => domain%bny_end,  &
-                  bbnd_x1 => domain%bbnd_x1,  &
-                  bbnd_x2 => domain%bbnd_x2,  &
-                  bbnd_y1 => domain%bbnd_y1,  &
-                  bbnd_y2 => domain%bbnd_y2,  &
-                  bglob_proc => domain%bglob_proc,  &
-                  bindx => domain%bindx,  &
-                  bnx => domain%bnx,  &
-                  bny => domian%bny)
-
 #include    "syncborder_block3D_gen.fi"
-
-        end associate
 
 #undef _MPI_TYPE_
 #undef _IRECV_
