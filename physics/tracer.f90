@@ -161,7 +161,7 @@ subroutine tracer_corrector_fluxes_kernel(lu, lcu, lcv, dxh, dyh, dz, uh, vh, ww
       call cyclize_x(flux_f_x,nx,ny, 1,mmm,mm)    
     end if
     if(periodicity_y/=0) then
-      call cyclize_y(flux_f_y,nx,ny,nz,nnn,nn)
+      call cyclize_y(flux_f_y,nx,ny, 1,nnn,nn)
     end if
 end subroutine
 
