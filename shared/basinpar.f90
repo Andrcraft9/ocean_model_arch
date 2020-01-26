@@ -1,24 +1,46 @@
-module basinpar_module
+module config_basinpar_module
     ! Base parameters for model
-    !*** Все Inc файлы в модули, возможно брать все параметры из конфигов, оставить параметрами только констнаты, типо GravAcc и тд. ***!
 
-    use kind_module, only: wp8 => SHR_KIND_R8
+    use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
 
     implicit none
     save
     public
+
+    integer :: nx             ! number of total points in x-direction in base arrays
+    integer :: ny             ! number of total points in y-direction in base arrays
+    integer :: nz             ! number of s-levels in vertical direction for 3d arrays
+    integer :: mmm            ! begin of significant area in x-direction
+    integer :: nnn            ! begin of significant area in y-direction
+    integer :: mm             ! end of significant area in x-direction
+    integer :: nn             ! end of significant area in y-direction
+    integer :: periodicity_x  ! Periodicity on x-direction (0 - non-periodic, 1 - periodic)
+    integer :: periodicity_y  ! Periodicity on y-direction (0 - non-periodic, 1 - periodic) 
+    real(wp8) :: dxst         ! longitude step (in degrees) in case of regular grid
+    real(wp8) :: dyst         ! latitude  step (in degrees) in case of regular grid
+    character(len=256) :: mask_file_name ! name of file with temperature point sea-land mask
+    character(len=256) :: bottom_topography_file_name ! name of file with bottom topography
     
-    integer, parameter :: nx = 20,            &  ! number of total points in x-direction in base arrays
-                          ny = 20,            &  ! number of total points in y-direction in base arrays
-                          nz = 10,            &  ! number of s-levels in vertical direction for 3d arrays
-                          mmm = 3,            &  ! begin of significant area in x-direction
-                          nnn = 3,            &  ! begin of significant area in y-direction
-                          mm = nx-2,          &  ! end of significant area in x-direction
-                          nn = ny-2,          &  ! end of significant area in y-direction
-                          periodicity_x = 0,  &  ! Periodicity on x-direction (0 - non-periodic, 1 - periodic)
-                          periodicity_y = 0      ! Periodicity on y-direction (0 - non-periodic, 1 - periodic) 
+contains
 
-    real(wp8), parameter :: dxst = 0.5d0,  &  ! longitude step (in degrees) in case of regular grid
-                            dyst = 0.5d0      ! latitude  step (in degrees) in case of regular grid
+    subroutine load_config_basinpar()
+    ! Here must be reading from config file (parsing)
 
-end module basinpar_module
+        nx = 20
+        ny = 20
+        nz = 10
+        mmm = 3
+        nnn = 3
+        mm = nx-2
+        nn = ny-2
+        periodicity_x = 0
+        periodicity_y = 0
+
+        dxst = 0.5d0
+        dyst = 0.5d0
+
+        mask_file_name = './mask.txt'
+        bottom_topography_file_name = 'none'
+    end subroutine
+
+end module config_basinpar_module

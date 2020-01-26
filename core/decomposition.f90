@@ -32,18 +32,10 @@ module decomposition_module
         integer, pointer :: bglob_proc(:, :)
         ! Map: local block number to block coords
         integer, pointer :: bindx(:, :)
-
-        integer :: nx, ny ! Number of total points in x,y directions
-        integer :: nz     ! Number of s-levels in vertical direction
-        integer :: periodicity_x, periodicity_y ! Periodicity on x,y direction (0 - non-periodic, 1 - periodic)
-        integer :: mmm, mm ! begin and end of significant area in x direction
-        integer :: nnn, nn ! begin and end of significant area in y direction
-        ! Note: full significant area for z direction (from 1 to nz) 
     contains
         procedure, public :: init
         procedure, public :: clear
         
-        procedure, private :: read_config
         procedure, private :: block_uniform_decomposition
         procedure, private :: create_uniform_decomposition
     end type domain_type
@@ -54,31 +46,12 @@ module decomposition_module
     
 contains
 
-    subroutine read_config(this)
-        
-        ! Здесь нужно вместо того, чтобы брать значения из модуля, читать конфиг и брать значения оттуда.
-        ! Это пока заглушка.
-        use basinpar_module
-
-        class(domain_type), intent(inout) :: this
-
-        this%nx = nx
-        this%ny = ny
-        this%nz = nz
-        
-        this%periodicity_x = periodicity_x
-        this%periodicity_y = periodicity_y
-        
-        this%mmm = mmm
-        this%mm = mm
-        this%nnn = nnn
-        this%nn = nn
-    end subroutine
-
     subroutine block_uniform_decomposition(this, lbasins,  &
                                            glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end,  & 
                                            glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2,  &
                                            bglob_weight, land_blocks)
+        use config_basinpar_module, only: nx, ny
+        
         class(domain_type), intent(in) :: this
         integer, pointer, intent(in) :: lbasins(:,:) 
         integer, allocatable, intent(out) :: glob_bnx_start(:, :), glob_bnx_end(:, :),  &
@@ -90,9 +63,7 @@ contains
         integer :: m, n, i, j, locn, ierr
         
         associate(bnx => this%bnx,  &
-                  bny => this%bny,  &
-                  nx => this%nx,  &
-                  ny => this%ny)
+                  bny => this%bny)
             
             land_blocks = 0
             bglob_weight = 0.0
@@ -188,6 +159,8 @@ contains
     end subroutine
 
     subroutine init(this, bppnx, bppny, lbasins)
+        use config_basinpar_module, only: nx, ny
+
         ! Initialization of each domain
         class(domain_type), intent(inout) :: this
         integer, intent(in) :: bppnx, bppny
@@ -226,9 +199,7 @@ contains
                   bcount_max => this%bcount_max,  &
                   bcount_min => this%bcount_min,  &
                   bglob_proc => this%bglob_proc,  &
-                  bindx => this%bindx,  &
-                  nx => this%nx,  &
-                  ny => this%ny)
+                  bindx => this%bindx)
 
             ! Set Cart grid of blocks
             bnx = bppnx * mpp_size(1)
