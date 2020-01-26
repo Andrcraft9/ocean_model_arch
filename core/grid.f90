@@ -2,21 +2,19 @@ module grid_module
     ! Grid data
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module
+    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
     use decomposition_module, only: domain_type
-    use data_types_module
+    use data_types_module, only: data1D_real4_type, data1D_real8_type, data2D_real4_type, data2D_real8_type, data3D_real8_type
     use errors_module, only: abort_model, check_error
-    use, intrinsic :: iso_fortran_env, only: file_storage_size 
 
     implicit none
     save
     private
 
     type, public :: grid_global_type
-        real(wp4), allocatable :: mask(:, :)
+        integer, allocatable :: mask(:, :)
     contains
         procedure, public :: init => init_global_grid_type
-        procedure, public :: read_mask => read_mask_global_grid_type
         procedure, public :: clear => clear_global_grid_type
     end type grid_global_type
     
@@ -86,36 +84,12 @@ module grid_module
     
 contains
 
-    subroutine init_global_grid_type(this, domain)
+    subroutine init_global_grid_type(this)
+        use config_basinpar_module, only: nx, ny
+
         class(grid_global_type), intent(inout) :: this
-        type(domain_type), intent(in) :: domain
 
-        allocate(this%mask(domain%nx, domain%ny))
-    end subroutine
-
-    subroutine read_mask_global_grid_type(this, domain, file_name)
-        class(grid_global_type), intent(inout) :: this
-        type(domain_type), intent(in) :: domain
-        character*(*), intent(in) :: file_name
-        character :: frmt*16, comment*80
-        integer :: m, n, ierr
-
-        write(frmt, 1000) domain%nx
-1000    format('(', i9, 'i1)')
-
-        if (mpp_rank .eq. 0) then
-            open(11, file=file_name, status='old', recl=file_storage_size*domain%nx)
-            read(11, '(a)') comment(1 : min(80, domain%nx))
-            write(*, '(1x,a)') comment
-            do n = domain%ny, 1, -1
-                read(11, frmt, end=99) (this%mask(m,n), m = 1, domain%nx)
-            enddo
-            close(11)
-        endif
-        call mpi_bcast(this%mask, domain%nx * domain%ny, mpi_integer, 0, mpp_cart_comm, ierr)
-
-        return
-99      call abort_model('Error in reading mask')
+        allocate(this%mask(nx, ny))
     end subroutine
 
     subroutine clear_global_grid_type(this)
@@ -125,6 +99,8 @@ contains
     end subroutine
 
     subroutine init_grid_type(this, domain)
+        use config_basinpar_module, only: nz
+
         ! Initialization of grid data
         class(grid_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain

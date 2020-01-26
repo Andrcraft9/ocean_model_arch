@@ -1,7 +1,8 @@
 module errors_module
     ! Error processing module
 
-    use mpp_module
+    use mpi
+    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
 
     implicit none
     save
@@ -15,6 +16,7 @@ contains
     subroutine check_error(loc_err, msg)
         integer, intent(inout) :: loc_err
         character(len=*), intent(in) :: msg
+
         integer :: tot_err
         integer :: ierr
 

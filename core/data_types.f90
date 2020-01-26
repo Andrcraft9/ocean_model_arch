@@ -2,7 +2,7 @@ module data_types_module
     ! Module description
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use decomposition_module
+    use decomposition_module, only: domain_type
 
     implicit none
     save

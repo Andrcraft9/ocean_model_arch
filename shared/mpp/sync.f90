@@ -2,9 +2,12 @@ module mpp_sync_module
     ! Sync data of different types, depends on domain
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module !, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
+    use mpi
+    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
     use errors_module, only: abort_model, check_error
-    use data_types_module
+    use data_types_module, only: block1D_real4_type, block1D_real8_type, block2D_real4_type, block2D_real8_type,  &
+                                 data1D_real4_type, data1D_real8_type, data2D_real4_type, data2D_real8_type,      &
+                                 data3D_real4_type, data3D_real8_type
     use decomposition_module, only: domain_type
 
     implicit none
@@ -102,7 +105,6 @@ contains
     end subroutine
 
     subroutine allocate_mpp_sync_buffers(domain)
-        implicit none
         type(domain_type), intent(in) :: domain
         integer :: k, nx_dir_size, ny_dir_size
         integer :: nzmax
@@ -360,7 +362,7 @@ contains
         call mpi_isend(buff, buff_size, mpi_real8, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
-    subroutine syncborder_data2D_real8(data2d, domain)
+    subroutine syncborder_data2D_real8(domain, data2d)
 #define _MPI_TYPE_ mpi_real8
 #define _IRECV_ irecv_real8
 #define _ISEND_ isend_real8
@@ -433,7 +435,7 @@ contains
         call mpi_isend(buff, buff_size, mpi_real4, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
-    subroutine syncborder_data2D_real4(data2d, domain)
+    subroutine syncborder_data2D_real4(domain, data2d)
 #define _MPI_TYPE_ mpi_real4
 #define _IRECV_ irecv_real4
 #define _ISEND_ isend_real4
@@ -511,7 +513,7 @@ contains
         call mpi_isend(buff, buff_size, mpi_real8, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
-    subroutine syncborder_data3D_real8(data3d, domain, nz)
+    subroutine syncborder_data3D_real8(domain, data3d, nz)
 #define _MPI_TYPE_ mpi_real8
 #define _IRECV_ irecv3D_real8
 #define _ISEND_ isend3D_real8
@@ -585,7 +587,7 @@ contains
         call mpi_isend(buff, buff_size, mpi_real4, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
 
-    subroutine syncborder_data3D_real4(data3d, domain, nz)
+    subroutine syncborder_data3D_real4(domain, data3d, nz)
 #define _MPI_TYPE_ mpi_real4
 #define _IRECV_ irecv3D_real4
 #define _ISEND_ isend3D_real4

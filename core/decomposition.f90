@@ -2,7 +2,8 @@ module decomposition_module
     ! Decomposition of computational area
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module
+    use mpi
+    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
     use errors_module, only: abort_model, check_error
     
     implicit none
@@ -32,6 +33,8 @@ module decomposition_module
         integer, pointer :: bglob_proc(:, :)
         ! Map: local block number to block coords
         integer, pointer :: bindx(:, :)
+
+        integer :: nz
     contains
         procedure, public :: init
         procedure, public :: clear
@@ -159,7 +162,7 @@ contains
     end subroutine
 
     subroutine init(this, bppnx, bppny, lbasins)
-        use config_basinpar_module, only: nx, ny
+        use config_basinpar_module, only: nx, ny, nz
 
         ! Initialization of each domain
         class(domain_type), intent(inout) :: this
@@ -183,6 +186,8 @@ contains
 
         integer :: itot, ishared
         real(wp8) :: icomm_metric, max_icomm_metric
+
+        this%nz = nz
 
         associate(bcount => this%bcount,  &
                   bnx_start => this%bnx_start,  &

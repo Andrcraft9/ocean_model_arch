@@ -9,10 +9,10 @@ FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -ffree-line-length-0 -O3 -Wtabs -fope
 SHARED = \
 	shared/kind.f90 \
 	shared/mpp/mpp.f90 \
-	shared/mpp/hilbert_curve.f90 \
+	shared/configs/basinpar.f90 \
 	shared/errors.f90 \
 	shared/constants.f90 \
-	shared/basinpar.f90
+	shared/mpp/hilbert_curve.f90
 
 CORE = \
 	core/decomposition.f90 \
@@ -28,13 +28,16 @@ TOOLS = \
 PHYSICS = \
 	physics/velocity.f90
 
+SERVICE = \
+	service/gridcon.f90
+
 CONTROL = \
 	control/init_data.f90 \
 	control/output.f90 \
 	control/ocean_model.f90
 
 ## main and clean targets
-model: $(subst .f90,.o, $(SHARED) $(CORE) $(TOOLS)) # $(PHYSICS) $(CONTROL))
+model: $(subst .f90,.o, $(SHARED) $(CORE) $(TOOLS) $(PHYSICS) $(SERVICE) $(CONTROL) model.f90)
 	$(FC) $(FCFLAGS) -o $@ $+
 
 .PHONY: clean
