@@ -3,6 +3,7 @@ module mpp_sync_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpi
+    use debug_module
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
     use errors_module, only: abort_model, check_error
     use data_types_module, only: block1D_real4_type, block1D_real8_type, block2D_real4_type, block2D_real8_type,  &
@@ -90,12 +91,11 @@ module mpp_sync_module
 
 contains
 
-    subroutine mpp_sync_init(domain, dbg)
+    subroutine mpp_sync_init(domain)
         type(domain_type), intent(in) :: domain
-        integer, intent(in) :: dbg
 
         call allocate_mpp_sync_buffers(domain)
-        parallel_dbg = dbg
+        parallel_dbg = debug_level
     end subroutine
 
     subroutine mpp_sync_finalize(domain)

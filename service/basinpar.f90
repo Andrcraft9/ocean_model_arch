@@ -37,8 +37,8 @@ contains
                       _associate_domain_value_(bnd_x2, domain, bbnd_x2, k),  &
                       _associate_domain_value_(bnd_y1, domain, bbnd_y1, k),  &
                       _associate_domain_value_(bnd_y2, domain, bbnd_y2, k),  &
-                      _associate_data_field_(xt, grid_data, xt, k),  &
-                      _associate_data_field_(yt, grid_data, yt, k))
+                      _associate_data_(grid_data, xt, k),  &
+                      _associate_data_(grid_data, yt, k))
   
             if (xgr_type==0) then
                 do m = bnd_x1, bnd_x2
@@ -543,23 +543,23 @@ contains
                       _associate_domain_value_(ny_start, domain, bny_start, k),  &
                       _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
                       ! dx
-                      _associate_data_field_(dxt, grid_data, dxt, k),  &
-                      _associate_data_field_(dxb, grid_data, dxb, k),  &
-                      _associate_data_field_(dx , grid_data, dx,  k),   &
-                      _associate_data_field_(dxh, grid_data, dxh, k),  &
+                      _associate_data_(grid_data, dxt, k),  &
+                      _associate_data_(grid_data, dxb, k),  &
+                      _associate_data_(grid_data, dx,  k),   &
+                      _associate_data_(grid_data, dxh, k),  &
                       ! dy
-                      _associate_data_field_(dyt, grid_data, dyt, k),  &
-                      _associate_data_field_(dyb, grid_data, dyb, k),  &
-                      _associate_data_field_(dy , grid_data, dy,  k),   &
-                      _associate_data_field_(dyh, grid_data, dyh, k),  &
+                      _associate_data_(grid_data, dyt, k),  &
+                      _associate_data_(grid_data, dyb, k),  &
+                      _associate_data_(grid_data, dy,  k),   &
+                      _associate_data_(grid_data, dyh, k),  &
                       ! sq
-                      _associate_data_field_(sqt, grid_data, sqt, k),  &
-                      _associate_data_field_(squ, grid_data, squ, k),  &
-                      _associate_data_field_(sqv, grid_data, sqv, k),  &
-                      _associate_data_field_(sqh, grid_data, sqh, k),  &
+                      _associate_data_(grid_data, sqt, k),  &
+                      _associate_data_(grid_data, squ, k),  &
+                      _associate_data_(grid_data, sqv, k),  &
+                      _associate_data_(grid_data, sqh, k),  &
                       ! rlh
-                      _associate_data_field_(rlh_s,   grid_data, rlh_s,   k),  &
-                      _associate_data_field_(rlh_sqh, grid_data, rlh_sqh, k))
+                      _associate_data_(grid_data, rlh_s,   k),  &
+                      _associate_data_(grid_data, rlh_sqh, k))
                       
                 ! Computing grid areas
                 do n=ny_start-1,ny_end+1

@@ -1,4 +1,5 @@
 module init_data_module
+#include "core/kernel_macros.fi"
     ! Initialize data in model
 
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
@@ -25,9 +26,9 @@ contains
         integer :: k
         
         do k = 1, domain%bcount
-            associate(ssh => ocean_data%ssh%block(k)%field,      &
-                      ubrtr => ocean_data%ubrtr%block(k)%field,  &
-                      vbrtr => ocean_data%vbrtr%block(k)%field)
+            associate(_associate_data_(ocean_data, ssh,   k),  &
+                      _associate_data_(ocean_data, ubrtr, k),  &
+                      _associate_data_(ocean_data, vbrtr, k))
             
               ssh = 0.0
               ubrtr = 0.0
@@ -54,7 +55,7 @@ contains
         !call vgrid
         
         ! define grid geographical coordinates, steps and coriolis parameters
-        call basinpar(domain, grid_data)
+        !call basinpar(domain, grid_data)
 
         call read_data(domain, ' ', bottom_topography_file_name, 1, grid_data%hhq_rest, grid_data%lu, ierr)
         call sync(domain, grid_data%hhq_rest)

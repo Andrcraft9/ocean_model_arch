@@ -1,5 +1,7 @@
 program model
     use mpp_module, only: mpp_init, mpp_finalize
+    use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
+    use config_basinpar_module, only: load_config_basinpar
     use decomposition_module, only: domain_data
     use grid_module, only: grid_global_data, grid_data
     use ocean_module, only: ocean_data
@@ -12,6 +14,9 @@ program model
 
     call mpp_init()
 
+    ! Load all configs
+    call load_config_basinpar()
+
     ! Read mask
     call grid_global_data%init()
     call read_global_mask(grid_global_data)
@@ -19,9 +24,11 @@ program model
     ! Make decomposition
     call domain_data%init(2, 2, grid_global_data%mask)
 
+    ! Sync init
+    call mpp_sync_init(domain_data)
+
     ! Allocate data
     call ocean_data%init(domain_data)
-    
     call grid_data%init(domain_data)
 
     ! Init data (read/set)
@@ -29,7 +36,7 @@ program model
     call init_grid_data(domain_data, grid_global_data, grid_data)
 
     ! Solver
-    call envoke_div_velocity(domain_data, grid_data, ocean_data)
+    !call envoke_div_velocity(domain_data, grid_data, ocean_data)
 
     ! Output
     call local_output(domain_data, grid_data, ocean_data)
@@ -37,6 +44,10 @@ program model
     ! Clear data
     call ocean_data%clear(domain_data)
     call grid_data%clear(domain_data)
+    call grid_global_data%clear()
+
+    ! Clear sync data
+    call mpp_sync_finalize(domain_data)
 
     ! Clear decomposition
     call domain_data%clear()

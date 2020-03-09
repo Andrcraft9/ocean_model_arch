@@ -51,9 +51,9 @@ contains
     subroutine load_config_basinpar()
     ! Here must be reading from config file (parsing)
 
-        nx = 20
-        ny = 20
-        nz = 10
+        nx = 289
+        ny = 163
+        nz = 20
         mmm = 3
         nnn = 3
         mm = nx-2
@@ -61,10 +61,10 @@ contains
         periodicity_x = 0
         periodicity_y = 0
 
-        rlon =   0.125d0
-        rlat = -89.875d0
-        dxst = 0.25d0
-        dyst = 0.25d0
+        rlon = 27.525d0
+        rlat = 40.940d0
+        dxst = 0.05d0
+        dyst = 0.04d0
 
         xgr_type = 0
         ygr_type = 0
@@ -82,7 +82,7 @@ contains
         p_pole = 90.0d0
         q_pole = -90.0d0
 
-        mask_file_name = './mask.txt'
+        mask_file_name = '/home/andr/code/fortran/ocean_model_arch/data/BS4km/mask.txt'
         bottom_topography_file_name = 'none'
     end subroutine
 

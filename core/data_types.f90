@@ -111,9 +111,9 @@ contains
         allocate(this%block(domain%bcount))
         do k = 1, domain%bcount
             if (is_x_direction) then
-                allocate(this%block(k)%field(domain%bnx_start(k) : domain%bnx_end(k)))
+                allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k)))
             else
-                allocate(this%block(k)%field(domain%bny_start(k) : domain%bny_end(k)))
+                allocate(this%block(k)%field(domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             endif
             this%block(k)%field = 0.0
         enddo
@@ -150,9 +150,9 @@ contains
         allocate(this%block(domain%bcount))
         do k = 1, domain%bcount
             if (is_x_direction) then
-                allocate(this%block(k)%field(domain%bnx_start(k) : domain%bnx_end(k)))
+                allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k)))
             else
-                allocate(this%block(k)%field(domain%bny_start(k) : domain%bny_end(k)))
+                allocate(this%block(k)%field(domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             endif
             this%block(k)%field = 0.0
         enddo
@@ -177,7 +177,7 @@ contains
         integer :: k
         allocate(this%block(domain%bcount))
         do k = 1, domain%bcount
-            allocate(this%block(k)%field(domain%bnx_start(k) : domain%bnx_end(k), domain%bny_start(k) : domain%bny_end(k)))
+            allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             this%block(k)%field = 0.0
         enddo
     end subroutine
@@ -199,7 +199,7 @@ contains
         integer :: k
         allocate(this%block(domain%bcount))
         do k = 1, domain%bcount
-            allocate(this%block(k)%field(domain%bnx_start(k) : domain%bnx_end(k), domain%bny_start(k) : domain%bny_end(k)))
+            allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             this%block(k)%field = 0.0
         enddo
     end subroutine
@@ -224,7 +224,7 @@ contains
         integer :: k
         allocate(this%block(domain%bcount))
         do k = 1, domain%bcount
-            allocate(this%block(k)%field(domain%bnx_start(k) : domain%bnx_end(k), domain%bny_start(k) : domain%bny_end(k), nz_start : nz_end))
+            allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
             this%block(k)%field = 0.0
         enddo
     end subroutine
@@ -247,7 +247,7 @@ contains
         integer :: k
         allocate(this%block(domain%bcount))
         do k = 1, domain%bcount
-            allocate(this%block(k)%field(domain%bnx_start(k) : domain%bnx_end(k), domain%bny_start(k) : domain%bny_end(k), nz_start : nz_end))
+            allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
             this%block(k)%field = 0.0
         enddo
     end subroutine

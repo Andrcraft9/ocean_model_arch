@@ -12,6 +12,7 @@ SHARED = \
 	shared/mpp/mpp.f90 \
 	shared/configs/basinpar.f90 \
 	shared/errors.f90 \
+	shared/debug.f90 \
 	shared/mpp/hilbert_curve.f90
 
 CORE = \

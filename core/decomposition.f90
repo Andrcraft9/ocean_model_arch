@@ -3,6 +3,7 @@ module decomposition_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpi
+    use debug_module
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
     use errors_module, only: abort_model, check_error
     
@@ -57,11 +58,11 @@ contains
         
         class(domain_type), intent(in) :: this
         integer, pointer, intent(in) :: lbasins(:,:) 
-        integer, allocatable, intent(out) :: glob_bnx_start(:, :), glob_bnx_end(:, :),  &
+        integer, allocatable, intent(inout) :: glob_bnx_start(:, :), glob_bnx_end(:, :),  &
                                              glob_bny_start(:, :), glob_bny_end(:, :)
-        integer, allocatable, intent(out) :: glob_bbnd_x1(:, :), glob_bbnd_x2(:, :),  &
+        integer, allocatable, intent(inout) :: glob_bbnd_x1(:, :), glob_bbnd_x2(:, :),  &
                                              glob_bbnd_y1(:, :), glob_bbnd_y2(:, :)
-        real(wp8), allocatable, intent(out) :: bglob_weight(:, :)
+        real(wp8), allocatable, intent(inout) :: bglob_weight(:, :)
         integer, intent(out) :: land_blocks
         integer :: m, n, i, j, locn, ierr
         
@@ -135,8 +136,10 @@ contains
     
             xblock_start = 1 + mpp_coord(1)*loc_bnx
             yblock_start = 1 + mpp_coord(2)*loc_bny
-            !if (parallel_dbg >= 2) print *, rank, 'xb_start, yb_start', xblock_start, yblock_start
-            !call mpi_barrier(cart_comm, ierr)
+            if (debug_level >= 2) then 
+                print *, mpp_rank, 'xb_start, yb_start', xblock_start, yblock_start
+                call mpi_barrier(mpp_cart_comm, ierr)
+            endif
             bgproc = -1
             do m = xblock_start, xblock_start + loc_bnx - 1
                 do n = yblock_start, yblock_start + loc_bny - 1
@@ -152,9 +155,9 @@ contains
             call mpi_allreduce(buf_int, bgproc, bnx*bny, mpi_integer, mpi_sum, mpp_cart_comm, ierr)
             bgproc = bgproc - 1
     
-            !if (parallel_dbg >= 3) then
-            !    call parallel_int_output(bgproc, 1, bnx, 1, bny, 'bglob_proc from uniform decomposition')
-            !endif
+            if (debug_level >= 3) then
+                call parallel_int_output(bgproc, 1, bnx, 1, bny, 'bglob_proc from uniform decomposition')
+            endif
     
             deallocate(buf_int)
 
@@ -194,17 +197,11 @@ contains
                   bnx_end => this%bnx_end,  &
                   bny_start => this%bny_start,  &
                   bny_end => this%bny_end,  &
-                  bbnd_x1 => this%bbnd_x1,  &
-                  bbnd_x2 => this%bbnd_x2,  &
-                  bbnd_y1 => this%bbnd_y1,  &
-                  bbnd_y2 => this%bbnd_y2,  &
                   bnx => this%bnx,  & 
                   bny => this%bny,  &
                   total_blocks => this%total_blocks,  &
                   bcount_max => this%bcount_max,  &
-                  bcount_min => this%bcount_min,  &
-                  bglob_proc => this%bglob_proc,  &
-                  bindx => this%bindx)
+                  bcount_min => this%bcount_min)
 
             ! Set Cart grid of blocks
             bnx = bppnx * mpp_size(1)
@@ -241,7 +238,7 @@ contains
             bcount = 0; bweight = 0.0d0
             do m = 1, bnx
                 do n = 1, bny
-                    if (bglob_proc(m, n) == mpp_rank) then
+                    if (this%bglob_proc(m, n) == mpp_rank) then
                         bcount = bcount + 1
                         bweight = bweight + bglob_weight(m, n)
                     endif
@@ -267,29 +264,29 @@ contains
                      this%bny_start(bcount), this%bny_end(bcount))
             allocate(this%bbnd_x1(bcount), this%bbnd_x2(bcount),  &
                      this%bbnd_y1(bcount), this%bbnd_y2(bcount))
-            bindx = 0
-            bnx_start = 0; bnx_end = 0 
-            bny_start = 0; bny_end = 0
-            bbnd_x1 = 0; bbnd_x2 = 0 
-            bbnd_y1 = 0; bbnd_y2 = 0
+            this%bindx = 0
+            this%bnx_start = 0; this%bnx_end = 0 
+            this%bny_start = 0; this%bny_end = 0
+            this%bbnd_x1 = 0; this%bbnd_x2 = 0 
+            this%bbnd_y1 = 0; this%bbnd_y2 = 0
 
             k = 1
             do m = 1, bnx
                 do n = 1, bny
-                    if (bglob_proc(m, n) == mpp_rank) then
+                    if (this%bglob_proc(m, n) == mpp_rank) then
                         ! Map local block numeration to block coords
-                        bindx(k, 1) = m
-                        bindx(k, 2) = n
+                        this%bindx(k, 1) = m
+                        this%bindx(k, 2) = n
 
-                        bnx_start(k) = glob_bnx_start(m, n)
-                        bnx_end(k) = glob_bnx_end(m, n)
-                        bny_start(k) = glob_bny_start(m, n)
-                        bny_end(k) = glob_bny_end(m, n)
+                        this%bnx_start(k) = glob_bnx_start(m, n)
+                        this%bnx_end(k) = glob_bnx_end(m, n)
+                        this%bny_start(k) = glob_bny_start(m, n)
+                        this%bny_end(k) = glob_bny_end(m, n)
 
-                        bbnd_x1(k) = glob_bbnd_x1(m, n)
-                        bbnd_x2(k) = glob_bbnd_x2(m, n)
-                        bbnd_y1(k) = glob_bbnd_y1(m, n)
-                        bbnd_y2(k) = glob_bbnd_y2(m, n)
+                        this%bbnd_x1(k) = glob_bbnd_x1(m, n)
+                        this%bbnd_x2(k) = glob_bbnd_x2(m, n)
+                        this%bbnd_y1(k) = glob_bbnd_y1(m, n)
+                        this%bbnd_y2(k) = glob_bbnd_y2(m, n)
 
                         k = k + 1
                     endif
@@ -301,10 +298,13 @@ contains
             deallocate(glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2)
 
             ! DEBUG
-            if (mpp_rank == 0) then
-                do k = 1, bcount
-                    write(*, '(i5, i5,i5,i5,i5)') k, bnx_start(k), bnx_end(k), bny_start(k), bny_end(k)
-                enddo
+            if (debug_level >= 2) then
+                if (mpp_rank == 0) then
+                    do k = 1, bcount
+                        write(*, '(i5, i5,i5,i5,i5)') k, this%bnx_start(k), this%bnx_end(k), this%bny_start(k), this%bny_end(k)
+                        write(*, '(i5, i5,i5,i5,i5)') k, this%bbnd_x1(k), this%bbnd_x2(k), this%bbnd_y1(k), this%bbnd_y2(k)
+                    enddo
+                endif
             endif
         end associate
     end subroutine
