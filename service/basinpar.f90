@@ -1,16 +1,16 @@
 module basinpar_module
+#include "core/kernel_macros.fi"
     ! Initializing basin grid parameters
 
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
-    use constants_module, only: RadEarth, EarthAngVel, HeatCapWater, RefDen, FreeFallAcc
-    use config_basinpar_module, only: nx, ny, mmm, nnn, dsxt, dyst, rlon, rlat,  &
-                                      curve_grid, xgr_type, ygr_type, x_levels, y_levels,  &
+    use constants_module, only: RadEarth, EarthAngVel, HeatCapWater, RefDen, FreeFallAcc, pip180
+    use config_basinpar_module, only: nx, ny, nz, mm, mmm, nn, nnn, dxst, dyst, rlon, rlat,    &
+                                      curve_grid, xgr_type, ygr_type, x_levels, y_levels,      &
                                       rotation_on_lon, rotation_on_lat, x_pole, y_pole, p_pole, q_pole
     use decomposition_module, only: domain_type
     use grid_module, only: grid_type
     use mpp_sync_module, only: sync
     use grid_parameters_module, only: grid_parameters_carthesian, grid_parameters_spherical, grid_parameters_curvilinear
-
 
     implicit none
     save
@@ -25,17 +25,20 @@ contains
     subroutine basinpar(domain, grid_data)
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(inout) :: grid_data
-        integer :: m, n, k, ierr
+        
+        integer :: m, n, k
 
         ! temperature grid initialization
 
         ! x-coordinate (in degrees)
         ! in case of regular grid
         do k = 1, domain%bcount
-            associate(bnd_x1 => domain%bbnd_x1(k), bnd_x2 => domain%bbnd_x2(k),  &
-                      bnd_y1 => domain%bbnd_y1(k), bnd_y2 => domain%bbnd_y2(k),  &
-                      xt => grid_data%xt%block(k)%field,  &
-                      yt => grid_data%yt%block(k)%field)
+            associate(_associate_domain_value_(bnd_x1, domain, bbnd_x1, k),  &
+                      _associate_domain_value_(bnd_x2, domain, bbnd_x2, k),  &
+                      _associate_domain_value_(bnd_y1, domain, bbnd_y1, k),  &
+                      _associate_domain_value_(bnd_y2, domain, bbnd_y2, k),  &
+                      _associate_data_field_(xt, grid_data, xt, k),  &
+                      _associate_data_field_(yt, grid_data, yt, k))
   
             if (xgr_type==0) then
                 do m = bnd_x1, bnd_x2
@@ -535,26 +538,29 @@ contains
         enddo
 
         do k = 1, domain%bcount
-            associate(nx_start => domain%bnx_start(k), nx_end => domain%bnx_end(k),  &
-                      ny_start => domain%bny_start(k), ny_end => domain%bny_end(k),  &
+            associate(_associate_domain_value_(nx_start, domain, bnx_start, k),  &
+                      _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
+                      _associate_domain_value_(ny_start, domain, bny_start, k),  &
+                      _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
                       ! dx
-                      dxt => grid_data%dxt%block(k)%field,  &
-                      dxb => grid_data%dxb%block(k)%field,  &
-                      dx  => grid_data%dx%block(k)%field,   &
-                      dxh => grid_data%dxh%block(k)%field,  &
+                      _associate_data_field_(dxt, grid_data, dxt, k),  &
+                      _associate_data_field_(dxb, grid_data, dxb, k),  &
+                      _associate_data_field_(dx , grid_data, dx,  k),   &
+                      _associate_data_field_(dxh, grid_data, dxh, k),  &
                       ! dy
-                      dyt => grid_data%dyt%block(k)%field,  &
-                      dyb => grid_data%dyb%block(k)%field,  &
-                      dy  => grid_data%dy%block(k)%field,   &
-                      dyh => grid_data%dyh%block(k)%field,  &
+                      _associate_data_field_(dyt, grid_data, dyt, k),  &
+                      _associate_data_field_(dyb, grid_data, dyb, k),  &
+                      _associate_data_field_(dy , grid_data, dy,  k),   &
+                      _associate_data_field_(dyh, grid_data, dyh, k),  &
                       ! sq
-                      sqt => grid_data%sqt%block(k)%field,  &
-                      squ => grid_data%squ%block(k)%field,  &
-                      sqv => grid_data%sqv%block(k)%field,  &
-                      sqh => grid_data%sqh%block(k)%field,  &
+                      _associate_data_field_(sqt, grid_data, sqt, k),  &
+                      _associate_data_field_(squ, grid_data, squ, k),  &
+                      _associate_data_field_(sqv, grid_data, sqv, k),  &
+                      _associate_data_field_(sqh, grid_data, sqh, k),  &
                       ! rlh
-                      rlh_s => grid_data%rlh_s%block(k)%field)
-
+                      _associate_data_field_(rlh_s,   grid_data, rlh_s,   k),  &
+                      _associate_data_field_(rlh_sqh, grid_data, rlh_sqh, k))
+                      
                 ! Computing grid areas
                 do n=ny_start-1,ny_end+1
                     do m=nx_start-1,nx_end+1

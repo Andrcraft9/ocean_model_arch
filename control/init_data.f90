@@ -7,6 +7,7 @@ module init_data_module
     use grid_module, only: grid_type, grid_global_type
     use io_module, only: read_data
     use gridcon_module, only: gridcon
+    use basinpar_module, only: basinpar
     use mpp_sync_module, only: sync 
 
     implicit none
@@ -44,7 +45,7 @@ contains
         type(grid_global_type), intent(inout) :: grid_global_data
         type(grid_type), intent(inout) :: grid_data
 
-        integer :: k, ierr
+        integer :: ierr
 
         ! area mask initialization
         call gridcon(domain, grid_global_data, grid_data)
@@ -53,7 +54,7 @@ contains
         !call vgrid
         
         ! define grid geographical coordinates, steps and coriolis parameters
-        !call basinpar(domain, grid_data)
+        call basinpar(domain, grid_data)
 
         call read_data(domain, ' ', bottom_topography_file_name, 1, grid_data%hhq_rest, grid_data%lu, ierr)
         call sync(domain, grid_data%hhq_rest)

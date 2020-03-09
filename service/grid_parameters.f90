@@ -2,8 +2,8 @@ module grid_parameters_module
     ! Module description
 
     use math_tools_module
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
-    use constants_module, only: RadEarth, EarthAngVel, HeatCapWater, RefDen, FreeFallAcc
+    use mpp_module, only: mpp_rank
+    use constants_module, only: RadEarth, EarthAngVel, HeatCapWater, RefDen, FreeFallAcc, lat_extr
 
     implicit none
     save
@@ -310,7 +310,7 @@ contains
 
       alpha_scale=2./dsqrt(a**2+b**2)
       
-      if(rank==0) then
+      if (mpp_rank==0) then
        write(*,'(a,f6.4)') 'alpha-scale is ', alpha_scale
       endif
 

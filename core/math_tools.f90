@@ -1,13 +1,11 @@
 module math_tools_module
-    
+    use constants_module, only: m_dpi => dPi, m_pi => Pi
+
     implicit none
     save
     public
 
 #ifndef __INTEL_COMPILER
-
-    real*8, parameter:: m_dpi = 3.14159265358979d0
-    real, parameter :: m_pi = 3.141597
 
     contains
 

@@ -1,0 +1,2 @@
+#define _associate_data_field_(curval, data, value, k) curval => data%value%block(k)%field
+#define _associate_domain_value_(curval, domain, value, k) curval => domain%value(k)

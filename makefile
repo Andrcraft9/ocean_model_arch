@@ -3,18 +3,19 @@
 
 ## definitions
 FC = mpifort
-FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -ffree-line-length-0 -O3 -Wtabs -fopenmp
+FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -ffree-line-length-0 -O3 -Wtabs -fopenmp -I ./
 
 ## sources for the program
 SHARED = \
 	shared/kind.f90 \
+	shared/constants.f90 \
 	shared/mpp/mpp.f90 \
 	shared/configs/basinpar.f90 \
 	shared/errors.f90 \
-	shared/constants.f90 \
 	shared/mpp/hilbert_curve.f90
 
 CORE = \
+	core/math_tools.f90 \
 	core/decomposition.f90 \
 	core/data_types.f90 \
 	shared/mpp/sync.f90 \
@@ -29,7 +30,9 @@ PHYSICS = \
 	physics/velocity.f90
 
 SERVICE = \
-	service/gridcon.f90
+	service/gridcon.f90 \
+	service/grid_parameters.f90 \
+	service/basinpar.f90
 
 CONTROL = \
 	control/init_data.f90 \
