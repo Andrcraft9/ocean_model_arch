@@ -1,5 +1,8 @@
 module rw_ctl_routes
-implicit none
+
+  implicit none
+  save
+  public
 
 contains
 

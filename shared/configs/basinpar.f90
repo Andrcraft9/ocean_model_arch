@@ -83,7 +83,7 @@ contains
         q_pole = -90.0d0
 
         mask_file_name = '/home/andr/code/fortran/ocean_model_arch/data/BS4km/mask.txt'
-        bottom_topography_file_name = 'none'
+        bottom_topography_file_name = '/home/andr/code/fortran/ocean_model_arch/data/BS4km/topo.dat'
     end subroutine
 
 end module config_basinpar_module

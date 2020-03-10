@@ -15,6 +15,10 @@ SHARED = \
 	shared/debug.f90 \
 	shared/mpp/hilbert_curve.f90
 
+LEGACY = \
+	legacy/service/input_output_data.f90 \
+	legacy/service/rw_ctl_file.f90
+
 CORE = \
 	core/math_tools.f90 \
 	core/decomposition.f90 \
@@ -41,7 +45,7 @@ CONTROL = \
 	control/ocean_model.f90
 
 ## main and clean targets
-model: $(subst .f90,.o, $(SHARED) $(CORE) $(TOOLS) $(PHYSICS) $(SERVICE) $(CONTROL) model.f90)
+model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(PHYSICS) $(SERVICE) $(CONTROL) model.f90)
 	$(FC) $(FCFLAGS) -o $@ $+
 
 .PHONY: clean

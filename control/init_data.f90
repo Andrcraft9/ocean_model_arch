@@ -55,7 +55,7 @@ contains
         !call vgrid
         
         ! define grid geographical coordinates, steps and coriolis parameters
-        !call basinpar(domain, grid_data)
+        call basinpar(domain, grid_data)
 
         call read_data(domain, ' ', bottom_topography_file_name, 1, grid_data%hhq_rest, grid_data%lu, ierr)
         call sync(domain, grid_data%hhq_rest)

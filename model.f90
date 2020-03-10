@@ -39,7 +39,7 @@ program model
     !call envoke_div_velocity(domain_data, grid_data, ocean_data)
 
     ! Output
-    call local_output(domain_data, grid_data, ocean_data)
+    call local_output(domain_data, grid_data, ocean_data, 1, 2019, 2, 10, 12, 30, 3600.0, 1)
 
     ! Clear data
     call ocean_data%clear(domain_data)
