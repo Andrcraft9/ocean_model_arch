@@ -1,34 +1,35 @@
-module velssh_routes
-implicit none
-  
+module velssh_sw_module
+
+  use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
+  use kernel_interface_module, only: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+
+  implicit none
+  save
+  private
+
+  public :: uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
+
 contains
 
-subroutine uv_trans( u, v, vort,    &
-                   hq, hu, hv, hh,         &
-                   RHSx, RHSy, nlev    )
+subroutine uv_trans_vort_kernel(luu,                 &
+                                dxt, dyt, dxb, dyb,  &
+                                u, v, vort,          &
+                                nlev)
 
+ real(wp4), intent(in) :: luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
- integer nlev
+ real(wp4), intent(in) :: dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
- real(8) u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),        & !Transporting zonal velocity
-         v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)           !Transporting meridional velocity
+ integer, intent(in) :: nlev
+ real(wp8), intent(inout) :: vort(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
+ real(wp8), intent(in) :: u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),        & !Transporting zonal velocity
+                          v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)           !Transporting meridional velocity
 
- real(8) RHSx(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !Zonal source function
-         RHSy(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev )         !meridional source function
+ integer :: m, n, k
 
-
- real(8) hq(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-         hu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-         hv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-         hh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
-
-real(8) vort(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
-
-real(8) fx_p,fx_m,fy_p,fy_m   !fluxes through cell edges
-
-integer m,n,k
-
-!$omp parallel do private(m,n,k)
  do n=ny_start, ny_end
    do m=nx_start, nx_end
     if(luu(m,n)>0.5) then
@@ -40,19 +41,42 @@ integer m,n,k
     endif
    enddo
  enddo
-!$omp end parallel do
 
-      call syncborder_real8(vort, nlev)
+ !call syncborder_real8(vort, nlev)
+end subroutine uv_trans_vort_kernel
 
-      if(periodicity_x/=0) then
-       call cyclize8_x(vort,nx,ny,nlev,mmm,mm)
-	  end if
+subroutine uv_trans_kernel(lcu, lcv, luu,   &
+                           dxh, dyh,        &
+                           u, v, vort,      &
+                           hq, hu, hv, hh,  &
+                           RHSx, RHSy, nlev)
 
-      if(periodicity_y/=0) then
-       call cyclize8_y(vort,nx,ny,nlev,nnn,nn)
-	  end if
+ integer, intent(in) :: nlev
 
-!$omp parallel do private(m,n,k,fx_p,fx_m,fy_p,fy_m)
+ real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
+                          lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+
+ real(wp4), intent(in) :: dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+
+ real(wp8), intent(in) :: u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),        & !Transporting zonal velocity
+                          v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)           !Transporting meridional velocity
+
+ real(wp8), intent(inout) :: RHSx(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !Zonal source function
+                             RHSy(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev )         !meridional source function
+
+ real(wp8), intent(in) :: hq(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
+                          hu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
+                          hv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
+                          hh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+ real(wp8), intent(in) :: vort(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
+
+ real(wp8) :: fx_p, fx_m, fy_p, fy_m   !fluxes through cell edges
+
+ integer :: m, n, k
+
   do n=ny_start,ny_end
     do m=nx_start,nx_end
 
@@ -92,10 +116,10 @@ integer m,n,k
          fy_m=(v(m  ,n  ,k)*dxh(m,n)*hv(m,n) + v(m  ,n-1,k)*dxh(m,n-1)*hv(m,n-1))/2.0d0    &
              *(v(m  ,n  ,k) + v(m  ,n-1,k))/2.0d0
 
-	   fx_p=(u(m  ,n  ,k)*dyh(m  ,n)*hu(m  ,n) + u(m  ,n+1,k)*dyh(m  ,n+1)*hu(m  ,n+1))/2.0d0    &
+         fx_p=(u(m  ,n  ,k)*dyh(m  ,n)*hu(m  ,n) + u(m  ,n+1,k)*dyh(m  ,n+1)*hu(m  ,n+1))/2.0d0    &
              *(v(m+1,n  ,k) + v(m  ,n  ,k))/2.0d0
 
-	   fx_m=(u(m-1,n  ,k)*dyh(m-1,n)*hu(m-1,n) + u(m-1,n+1,k)*dyh(m-1,n+1)*hu(m-1,n+1))/2.0d0    &
+         fx_m=(u(m-1,n  ,k)*dyh(m-1,n)*hu(m-1,n) + u(m-1,n+1,k)*dyh(m-1,n+1)*hu(m-1,n+1))/2.0d0    &
              *(v(m-1,n  ,k) + v(m  ,n  ,k))/2.0d0
 
          RHSy(m,n,k)= - (fx_p - fx_m + fy_p - fy_m)          &
@@ -107,37 +131,46 @@ integer m,n,k
 
     end do
   end do
-!$omp end parallel do
 
 !  call syncborder_real8(RHSx, nlev)
 !  call syncborder_real8(RHSy, nlev)
-endsubroutine uv_trans
+endsubroutine uv_trans_kernel
 
-subroutine uv_diff2( mu, str_t, str_s,    &
-                     hq, hu, hv, hh,      &
-                     RHSx, RHSy, nlev     )
-use main_basin_pars
-use mpi_parallel_tools
-use basin_grid
-implicit none
+subroutine uv_diff2_kernel(lcu, lcv,                              &
+                           dx, dy, dxt, dyt, dxh, dyh, dxb, dyb,  &
+                           mu, str_t, str_s,                      &
+                           hq, hu, hv, hh,                        &
+                           RHSx, RHSy, nlev)
 
- integer nlev
- real(8) muh_p, muh_m
+ integer, intent(in) :: nlev
+ real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
+                          lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
- real(8) mu(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !lateral viscosity coefficient
-       RHSx(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !Zonal source function
-       RHSy(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !meridional source function
-      str_t(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !Tension stress
-      str_s(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev )         !Shearing stress
+ real(wp4), intent(in) :: dx(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
+                          dy(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
+                          dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                          dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
- real(8) hq(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-         hu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-         hv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-         hh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
 
-integer m,n,k
+ real(wp8), intent(in) :: mu(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !lateral viscosity coefficient
+                       str_t(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !Tension stress
+                       str_s(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev )         !Shearing stress
 
-!$omp parallel do private(muh_p, muh_m)
+ real(wp8), intent(inout) :: RHSx(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),  & !Zonal source function
+                             RHSy(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)     !meridional source function
+
+ real(wp8), intent(in) :: hq(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
+                          hu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
+                          hv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
+                          hh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+ real(wp8) :: muh_p, muh_m
+ integer :: m, n, k
+
   do n=ny_start,ny_end
     do m=nx_start,nx_end
 
@@ -175,11 +208,10 @@ integer m,n,k
 
     end do
   end do
-!$omp end parallel do
 
 !  call syncborder_real8(RHSx, nlev)
 !  call syncborder_real8(RHSy, nlev)
 
-endsubroutine uv_diff2
+endsubroutine uv_diff2_kernel
 
-endmodule velssh_routes
+endmodule velssh_sw_module

@@ -11,6 +11,7 @@ SHARED = \
 	shared/constants.f90 \
 	shared/mpp/mpp.f90 \
 	shared/configs/basinpar.f90 \
+	shared/configs/sw.f90 \
 	shared/errors.f90 \
 	shared/debug.f90 \
 	shared/mpp/hilbert_curve.f90
@@ -38,16 +39,20 @@ SERVICE = \
 
 # Kernel Layer
 PHYSICS = \
-	#physics/velocity.f90
+	physics/shallow_water/depth.f90 \
+	physics/shallow_water/vel_ssh.f90
+#physics/velocity.f90
 
 # Parallel System Layer
 INTERFACE = \
-	#interface/ocean_interface.f90
+	interface/shallow_water/sw_interface.f90
+#interface/ocean_interface.f90
 
 # Algorithm Layer
 CONTROL = \
 	control/init_data.f90 \
 	control/output.f90
+#control/shallow_water/shallow_water.f90
 
 ## main and clean targets
 model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL) model.f90)

@@ -1,11 +1,14 @@
 module depth_module
 
-        use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-        use kernel_interface_module, only: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
-    
-        implicit none
-        save
-        private
+  use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
+  use config_sw_module, only: full_free_surface, time_smooth
+  use kernel_interface_module, only: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+
+  implicit none
+  save
+  private
+
+  public :: hh_init_kernel, hh_update_kernel, hh_shift_kernel
 
 contains
 
