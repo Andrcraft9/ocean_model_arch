@@ -28,20 +28,27 @@ module grid_module
                                    llu,       &  ! Mask of u-grid (1 on boundary)
                                    llv           ! Mask of v-grid (1 on boundary)
 
-        type(data2D_real4_type) :: hhh,       &  ! Ocean depth on luh (h-points)
+        ! Temporairly using of real8 instead of real4 for depths
+        !type(data2D_real4_type) :: hhh,       &  ! Ocean depth on luh (h-points)
+        type(data2D_real8_type) :: hhh,       &  ! Ocean depth on luh (h-points)
                                    hhh_n,     &  ! Ocean depth on luh (h-points) at previous step
+                                   hhh_p,     &  ! Ocean depth on luh (h-points) at pre-previous step
                                    hhq_rest,  &  ! Ocean depth on lu  (t-points) at rest state
                                    hhu_rest,  &  ! Ocean depth on lcu (u-points) at rest state
                                    hhv_rest,  &  ! Ocean depth on lcv (v-points) at rest state
                                    hhq,       &  ! Ocean depth on lu  (t-points) 
                                    hhq_n,     &  ! Ocean depth on lu  (t-points) at previous step
+                                   hhq_p,     &  ! Ocean depth on lu  (t-points) at pre-previous step
                                    hhts,      &
                                    hhts_n,    &
                                    hhu,       &  ! Ocean depth on lcu (u-points)
                                    hhu_n,     &  ! Ocean depth on lcu (u-points) at previous step
+                                   hhu_p,     &  ! Ocean depth on lcu (u-points) at pre-previous step
                                    hhv,       &  ! Ocean depth on lcv (v-points)
-                                   hhv_n,     &  ! Ocean depth on lcv (v-points) at pre-previous step
-                                   rlh_s,     &  ! Main (sin) coriolis parameter on h-points
+                                   hhv_n,     &  ! Ocean depth on lcv (v-points) at previous step
+                                   hhv_p         ! Ocean depth on lcv (v-points) at pre-previous step
+
+        type(data2D_real4_type) :: rlh_s,     &  ! Main (sin) coriolis parameter on h-points
                                    rlh_sqh,   &  ! Main (sin) coriolis parameter on h-points by area
                                    rlh_c         ! 2-nd (cos) coriolis parameter on h-points
 
@@ -166,6 +173,13 @@ contains
 
         call this%rotvec_coeff%init(domain, 1, 4)
 
+        ! Data from pre-previous time step
+        call this%hhh_p%init(domain)  ! Ocean depth on luh (h-points) at pre-previous step
+        call this%hhq_p%init(domain)  ! Ocean depth on lu  (t-points) at pre-previous step
+        call this%hhu_p%init(domain)  ! Ocean depth on lcu (u-points) at pre-previous step
+        call this%hhv_p%init(domain)  ! Ocean depth on lcv (v-points) at pre-previous step
+        
+
     end subroutine
 
     subroutine clear_grid_type(this, domain)
@@ -233,6 +247,12 @@ contains
         call this%geo_lat_h%clear(domain)
 
         call this%rotvec_coeff%clear(domain)
+
+        ! Data from pre-previous time step
+        call this%hhh_p%clear(domain)  ! Ocean depth on luh (h-points) at pre-previous step
+        call this%hhq_p%clear(domain)  ! Ocean depth on lu  (t-points) at pre-previous step
+        call this%hhu_p%clear(domain)  ! Ocean depth on lcu (u-points) at pre-previous step
+        call this%hhv_p%clear(domain)  ! Ocean depth on lcv (v-points) at pre-previous step
 
     end subroutine
 

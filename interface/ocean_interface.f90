@@ -1,4 +1,4 @@
-module ocean_model_module
+module ocean_interface_module
     ! Module description
 
     use decomposition_module, only: domain_type
@@ -47,4 +47,4 @@ contains
         
     end subroutine envoke_div_velocity
 
-end module ocean_model_module
+end module ocean_interface_module

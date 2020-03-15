@@ -7,7 +7,7 @@ program model
     use ocean_module, only: ocean_data
     use io_module, only: read_global_mask
     use init_data_module, only: init_grid_data, init_ocean_data
-    use ocean_model_module, only: envoke_div_velocity
+    !use ocean_interface_module, only: envoke_div_velocity
     use output_module, only: local_output
 
     implicit none

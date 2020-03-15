@@ -1,7 +1,7 @@
 module velocity_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use kernel_interface_module, only: nxs, nxe, nys, nye
+    use kernel_interface_module, only: nxs => bnd_x1, nxe => bnd_x2, nys => bnd_y1, nye => bnd_y2
 
     implicit none
     save

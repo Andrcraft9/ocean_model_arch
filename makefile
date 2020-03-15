@@ -31,21 +31,26 @@ CORE = \
 TOOLS = \
 	tools/io.f90
 
-PHYSICS = \
-	physics/velocity.f90
-
 SERVICE = \
 	service/gridcon.f90 \
 	service/grid_parameters.f90 \
 	service/basinpar.f90
 
+# Kernel Layer
+PHYSICS = \
+	#physics/velocity.f90
+
+# Parallel System Layer
+INTERFACE = \
+	#interface/ocean_interface.f90
+
+# Algorithm Layer
 CONTROL = \
 	control/init_data.f90 \
-	control/output.f90 \
-	control/ocean_model.f90
+	control/output.f90
 
 ## main and clean targets
-model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(PHYSICS) $(SERVICE) $(CONTROL) model.f90)
+model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL) model.f90)
 	$(FC) $(FCFLAGS) -o $@ $+
 
 .PHONY: clean
