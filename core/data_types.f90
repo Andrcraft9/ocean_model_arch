@@ -62,6 +62,8 @@ module data_types_module
     contains
         procedure, public :: init => init_data2D_real4
         procedure, public :: clear => clear_data2D_real4
+        procedure, public :: copy => copy_data2D_real4_from_real4
+        procedure, public :: copy_real8 => copy_data2D_real4_from_real8
     end type data2D_real4_type
 
     type, public :: data2D_real8_type
@@ -69,6 +71,8 @@ module data_types_module
     contains
         procedure, public :: init => init_data2D_real8
         procedure, public :: clear => clear_data2D_real8
+        procedure, public :: copy => copy_data2D_real8_from_real8
+        procedure, public :: copy_real4 => copy_data2D_real8_from_real4
     end type data2D_real8_type
 
     ! 3D data
@@ -85,6 +89,15 @@ module data_types_module
         procedure, public :: init => init_data3D_real8
         procedure, public :: clear => clear_data3D_real8
     end type data3D_real8_type
+
+    !interface copy_data2D_real4
+    !    module procedure copy_data2D_real4_from_real4
+    !    module procedure copy_data2D_real4_from_real8
+    !end interface copy_data2D_real4
+    !interface copy_data2D_real8
+    !    module procedure copy_data2D_real8_from_real4
+    !    module procedure copy_data2D_real8_from_real8
+    !end interface copy_data2D_real8
 
 contains
 
@@ -192,6 +205,26 @@ contains
         deallocate(this%block)
     end subroutine
 
+    subroutine copy_data2D_real4_from_real4(this, domain, copy_data)
+        class(data2D_real4_type), intent(inout) :: this
+        type(data2D_real4_type), intent(in) :: copy_data
+        type(domain_type), intent(in) :: domain
+        integer :: k
+        do k = 1, domain%bcount
+            this%block(k)%field = copy_data%block(k)%field
+        enddo
+    end subroutine
+
+    subroutine copy_data2D_real4_from_real8(this, domain, copy_data)
+        class(data2D_real4_type), intent(inout) :: this
+        type(data2D_real8_type), intent(in) :: copy_data
+        type(domain_type), intent(in) :: domain
+        integer :: k
+        do k = 1, domain%bcount
+            this%block(k)%field = copy_data%block(k)%field
+        enddo
+    end subroutine
+
     ! real8 base type
     subroutine init_data2D_real8(this, domain)
         class(data2D_real8_type), intent(inout) :: this
@@ -212,6 +245,26 @@ contains
             deallocate(this%block(k)%field)
         enddo
         deallocate(this%block)
+    end subroutine
+
+    subroutine copy_data2D_real8_from_real4(this, domain, copy_data)
+        class(data2D_real8_type), intent(inout) :: this
+        type(data2D_real4_type), intent(in) :: copy_data
+        type(domain_type), intent(in) :: domain
+        integer :: k
+        do k = 1, domain%bcount
+            this%block(k)%field = dble(copy_data%block(k)%field)
+        enddo
+    end subroutine
+
+    subroutine copy_data2D_real8_from_real8(this, domain, copy_data)
+        class(data2D_real8_type), intent(inout) :: this
+        type(data2D_real8_type), intent(in) :: copy_data
+        type(domain_type), intent(in) :: domain
+        integer :: k
+        do k = 1, domain%bcount
+            this%block(k)%field = copy_data%block(k)%field
+        enddo
     end subroutine
 
 !------------------------------------------------------------------------------

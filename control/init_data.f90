@@ -3,6 +3,7 @@ module init_data_module
     ! Initialize data in model
 
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
+    use data_types_module, only: data2D_real4_type
     use decomposition_module, only: domain_type
     use ocean_module, only: ocean_type
     use grid_module, only: grid_type, grid_global_type
@@ -46,6 +47,7 @@ contains
         type(grid_global_type), intent(inout) :: grid_global_data
         type(grid_type), intent(inout) :: grid_data
 
+        type(data2D_real4_type) :: tmp_data
         integer :: ierr
 
         ! area mask initialization
@@ -57,8 +59,12 @@ contains
         ! define grid geographical coordinates, steps and coriolis parameters
         call basinpar(domain, grid_data)
 
-        call read_data(domain, ' ', bottom_topography_file_name, 1, grid_data%hhq_rest, grid_data%lu, ierr)
+        ! Read bottom topograhy (real4 binary file)
+        call tmp_data%init(domain)
+        call read_data(domain, ' ', bottom_topography_file_name, 1, tmp_data, grid_data%lu, ierr)
+        call grid_data%hhq_rest%copy_real4(domain, tmp_data)
         call sync(domain, grid_data%hhq_rest)
+        call tmp_data%clear(domain)
 
     end subroutine init_grid_data
 
