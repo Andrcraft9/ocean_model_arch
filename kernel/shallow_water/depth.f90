@@ -94,16 +94,6 @@ subroutine hh_init_kernel(lu, llu, llv, luh,  &
        end do
     end do
 
-      !call syncborder_real8(hu, 1)
-      !call syncborder_real8(hup, 1)
-      !call syncborder_real8(hun, 1)
-      !call syncborder_real8(hv, 1)
-      !call syncborder_real8(hvp, 1)
-      !call syncborder_real8(hvn, 1)
-      !call syncborder_real8(hh, 1)
-      !call syncborder_real8(hhp, 1)
-      !call syncborder_real8(hhn, 1)
-
 endsubroutine hh_init_kernel
 
 subroutine hh_update_kernel(lu, llu, llv, luh,  &
@@ -163,10 +153,6 @@ subroutine hh_update_kernel(lu, llu, llv, luh,  &
 
        end do
     end do
-
-      !call syncborder_real8(hun, 1)
-      !call syncborder_real8(hvn, 1)
-      !call syncborder_real8(hhn, 1)
 
 endsubroutine hh_update_kernel
 

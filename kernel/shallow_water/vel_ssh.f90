@@ -42,7 +42,6 @@ subroutine uv_trans_vort_kernel(luu,                 &
    enddo
  enddo
 
- !call syncborder_real8(vort, nlev)
 end subroutine uv_trans_vort_kernel
 
 subroutine uv_trans_kernel(lcu, lcv, luu,   &
@@ -132,8 +131,6 @@ subroutine uv_trans_kernel(lcu, lcv, luu,   &
     end do
   end do
 
-!  call syncborder_real8(RHSx, nlev)
-!  call syncborder_real8(RHSy, nlev)
 endsubroutine uv_trans_kernel
 
 subroutine uv_diff2_kernel(lcu, lcv,                              &
@@ -208,9 +205,6 @@ subroutine uv_diff2_kernel(lcu, lcv,                              &
 
     end do
   end do
-
-!  call syncborder_real8(RHSx, nlev)
-!  call syncborder_real8(RHSy, nlev)
 
 endsubroutine uv_diff2_kernel
 

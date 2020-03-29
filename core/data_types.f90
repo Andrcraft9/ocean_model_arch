@@ -62,8 +62,8 @@ module data_types_module
     contains
         procedure, public :: init => init_data2D_real4
         procedure, public :: clear => clear_data2D_real4
-        procedure, public :: copy => copy_data2D_real4_from_real4
-        procedure, public :: copy_real8 => copy_data2D_real4_from_real8
+        procedure, public :: copy_from => copy_data2D_real4_from_real4
+        procedure, public :: copy_from_real8 => copy_data2D_real4_from_real8
     end type data2D_real4_type
 
     type, public :: data2D_real8_type
@@ -71,8 +71,8 @@ module data_types_module
     contains
         procedure, public :: init => init_data2D_real8
         procedure, public :: clear => clear_data2D_real8
-        procedure, public :: copy => copy_data2D_real8_from_real8
-        procedure, public :: copy_real4 => copy_data2D_real8_from_real4
+        procedure, public :: copy_from => copy_data2D_real8_from_real8
+        procedure, public :: copy_from_real4 => copy_data2D_real8_from_real4
     end type data2D_real8_type
 
     ! 3D data

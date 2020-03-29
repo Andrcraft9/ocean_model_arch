@@ -39,8 +39,8 @@ SERVICE = \
 
 # Kernel Layer
 PHYSICS = \
-	physics/shallow_water/depth.f90 \
-	physics/shallow_water/vel_ssh.f90
+	kernel/shallow_water/depth.f90 \
+	kernel/shallow_water/vel_ssh.f90
 #physics/velocity.f90
 
 # Parallel System Layer

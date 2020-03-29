@@ -62,7 +62,7 @@ contains
         ! Read bottom topograhy (real4 binary file)
         call tmp_data%init(domain)
         call read_data(domain, ' ', bottom_topography_file_name, 1, tmp_data, grid_data%lu, ierr)
-        call grid_data%hhq_rest%copy_real4(domain, tmp_data)
+        call grid_data%hhq_rest%copy_from_real4(domain, tmp_data)
         call sync(domain, grid_data%hhq_rest)
         call tmp_data%clear(domain)
 
