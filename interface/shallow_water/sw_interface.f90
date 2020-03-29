@@ -1,6 +1,7 @@
 module shallow_water_interface_module
 #include "core/kernel_macros.fi"
 
+    use kernel_interface_module, only: set_kernel_interface
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
     use decomposition_module, only: domain_type
     use data_types_module, only: data2D_real8_type, data3D_real8_type
@@ -29,6 +30,8 @@ contains
         integer :: k
 
         do k = 1, domain%bcount
+            
+            call set_kernel_interface(domain, k)
 
             call hh_init_kernel(grid_data   %lu        %block(k)%field,  &
                                 grid_data   %llu       %block(k)%field,  &
@@ -82,6 +85,8 @@ contains
 
         do k = 1, domain%bcount
 
+            call set_kernel_interface(domain, k)
+
             call hh_update_kernel(grid_data   %lu        %block(k)%field,  & 
                                   grid_data   %llu       %block(k)%field,  & 
                                   grid_data   %llv       %block(k)%field,  & 
@@ -118,6 +123,8 @@ contains
 
         do k = 1, domain%bcount
 
+            call set_kernel_interface(domain, k)
+
             call hh_shift_kernel(grid_data  %lu     %block(k)%field,  &
                                  grid_data  %llu    %block(k)%field,  &
                                  grid_data  %llv    %block(k)%field,  &
@@ -150,6 +157,8 @@ contains
         integer :: k
 
         do k = 1, domain%bcount
+            
+            call set_kernel_interface(domain, k)
 
             call uv_trans_vort_kernel(grid_data  %luu   %block(k)%field,  &
                                       grid_data  %dxt   %block(k)%field,  &
@@ -179,6 +188,8 @@ contains
         integer :: k
 
         do k = 1, domain%bcount
+            
+            call set_kernel_interface(domain, k)
 
             call uv_trans_kernel(grid_data  %lcu   %block(k)%field,  &
                                  grid_data  %lcv   %block(k)%field,  &
@@ -210,6 +221,8 @@ contains
         integer :: k
 
         do k = 1, domain%bcount
+            
+            call set_kernel_interface(domain, k)
             
             call uv_diff2_kernel(grid_data  %lcu    %block(k)%field,  &
                                  grid_data  %lcv    %block(k)%field,  &
