@@ -14,7 +14,7 @@ contains
 
 subroutine sw_update_ssh_kernel(tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp, ubrtr, vbrtr)
 
-  real(wp4), intent(in) :: tau
+  real(wp8), intent(in) :: tau
 
   real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
@@ -57,7 +57,7 @@ subroutine sw_update_uv(tau, lcu, lcv,  &
                         rdis, rlh_s,  &
                         RHSx, RHSy, RHSx_adv, RHSy_adv, RHSx_dif, RHSy_dif)
 
-  real(wp4), intent(in) :: tau
+  real(wp8), intent(in) :: tau
   
   real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                            lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
