@@ -2,14 +2,185 @@ module velssh_sw_module
 
   use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
   use kernel_interface_module, only: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+  use constants_module, only: FreeFallAcc
 
   implicit none
   save
   private
 
-  public :: uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
+  public :: sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
 
 contains
+
+subroutine sw_update_ssh_kernel(tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp, ubrtr, vbrtr)
+
+  real(wp4), intent(in) :: tau
+
+  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+
+  real(wp4), intent(in) :: dx(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
+                           dy(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
+                           dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
+                           dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+
+ real(wp8), intent(in) :: hhu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                          hhv(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp8), intent(inout) :: sshn(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp8), intent(in) :: sshp(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+                           ubrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                           vbrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  
+  integer :: m, n
+
+  do n=ny_start,ny_end
+    do m=nx_start,nx_end
+
+        if(lu(m,n)>0.5) then
+            sshn(m,n) = sshp(m,n) + 2.0d0*tau*(  &
+            - ( ubrtr(m,n)*hhu(m,n)*dyh(m,n) - ubrtr(m-1,n)*hhu(m-1,n)*dyh(m-1,n)             &
+              + vbrtr(m,n)*hhv(m,n)*dxh(m,n) - vbrtr(m,n-1)*hhv(m,n-1)*dxh(m,n-1) )/(dx(m,n)*dy(m,n))  )
+        endif
+
+    enddo
+  enddo
+
+end subroutine
+
+subroutine sw_update_uv(tau, lcu, lcv,  &
+                        dxt, dyt, dxh, dyh, dxb, dyb,  &
+                        hhu, hhun, hhup,  &
+                        hhv, hhvn, hhvp,  &
+                        hhh, ssh,  &
+                        ubrtr, ubrtrn, ubrtrp, vbrtr, vbrtrn, vbrtrp,  &
+                        rdis, rlh_s,  &
+                        RHSx, RHSy, RHSx_adv, RHSy_adv, RHSx_dif, RHSy_dif)
+
+  real(wp4), intent(in) :: tau
+  
+  real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
+                           lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+
+  real(wp4), intent(in) :: dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                           dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                           dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                           dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                           dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                           dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+
+  real(wp8), intent(in) :: hhu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+                           hhun(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                           hhup(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                           hhv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+                           hhvn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                           hhvp(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                           hhh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp8), intent(in) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp8), intent(inout) :: ubrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  & 
+                              vbrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp8), intent(in) :: ubrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+                           vbrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+                           ubrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                           vbrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp4), intent(in) :: rdis(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
+                           rlh_s(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+
+ real(wp8), intent(in) :: RHSx(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
+                          RHSy(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
+                          RHSx_adv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                          RHSy_adv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                          RHSx_dif(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                          RHSy_dif(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  integer :: m, n
+  real(wp8) :: bp, bp0, slx, sly, grx, gry
+
+  do n=ny_start,ny_end
+    do m=nx_start,nx_end
+        !zonal flux
+        if(lcu(m,n)>0.5) then
+            bp  = hhun(m,n)*dxt(m,n)*dyh(m,n)/2.0d0/tau
+            bp0 = hhup(m,n)*dxt(m,n)*dyh(m,n)/2.0d0/tau
+
+            slx = - FreeFallAcc * ( ssh(m+1,n) - ssh(m,n))*dyh(m,n)* hhu(m,n)
+            grx = RHSx(m,n) + slx + RHSx_dif(m,n) + RHSx_adv(m,n)      &
+                - (rdis(m,n)+rdis(m+1,n))/2.0d0 *ubrtrp(m,n)*dxt(m,n)*dyh(m,n)*hhu(m,n)        &
+                + ( rlh_s(m,n  )*hhh(m,n  )*dxb(m,n  )*dyb(m,n  )*(vbrtr(m+1,n  ) + vbrtr(m,n  ))          &
+                +   rlh_s(m,n-1)*hhh(m,n-1)*dxb(m,n-1)*dyb(m,n-1)*(vbrtr(m+1,n-1) + vbrtr(m,n-1)) )/4.0d0
+
+            ubrtrn(m,n) = (ubrtrp(m,n)*bp0 + grx )/(bp)
+        endif
+
+        !meridional flux
+        if(lcv(m,n)>0.5) then
+            bp  = hhvn(m,n)*dyt(m,n)*dxh(m,n)/2.0d0/tau
+            bp0 = hhvp(m,n)*dyt(m,n)*dxh(m,n)/2.0d0/tau
+
+            sly = - FreeFallAcc * ( ssh(m,n+1)- ssh(m,n))*dxh(m,n)* hhv(m,n)
+            gry = RHSy(m,n) + sly  + RHSy_dif(m,n) + RHSy_adv(m,n)      &
+                - (rdis(m,n)+rdis(m,n+1))/2.0d0 *vbrtrp(m,n)*dxh(m,n)*dyt(m,n)*hhv(m,n)        &
+                - ( rlh_s(m  ,n)*hhh(m  ,n)*dxb(m  ,n)*dyb(m  ,n)*(ubrtr(m  ,n+1)+ubrtr(m  ,n))             &
+                +   rlh_s(m-1,n)*hhh(m-1,n)*dxb(m-1,n)*dyb(m-1,n)*(ubrtr(m-1,n+1)+ubrtr(m-1,n)) )/4.0d0
+
+            vbrtrn(m,n) = (vbrtrp(m,n)*bp0 + gry )/(bp)
+        endif
+    enddo
+  enddo
+
+end subroutine
+
+subroutine sw_next_step(time_smooth,  &
+                        lu, lcu, lcv,  &
+                        ssh, sshn, sshp,  &
+                        ubrtr, ubrtrn, ubrtrp,  &
+                        vbrtr, vbrtrn, vbrtrp)
+
+  real(wp8), intent(in) :: time_smooth
+
+    
+  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
+                           lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
+                           lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+
+  real(wp8), intent(inout) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+                              sshn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                              sshp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp8), intent(inout) :: ubrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+                              ubrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                              ubrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp8), intent(inout) :: vbrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+                              vbrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
+                              vbrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  integer :: m, n
+
+  do n=ny_start-1,ny_end+1
+    do m=nx_start-1,nx_end+1
+
+        if(lu(m,n)>0.5) then
+            sshp(m,n) = ssh(m,n)+time_smooth*(sshn(m,n)-2.0d0*ssh(m,n)+sshp(m,n))/2.0d0
+            ssh(m,n) = sshn(m,n)
+        endif
+        if(lcu(m,n)>0.5) then
+            ubrtrp(m,n) = ubrtr(m,n) + time_smooth*(ubrtrn(m,n)-2.0d0*ubrtr(m,n)+ubrtrp(m,n))/2.0d0
+            ubrtr(m,n) = ubrtrn(m,n)
+        endif
+        if(lcv(m,n)>0.5) then
+            vbrtrp(m,n) = vbrtr(m,n) + time_smooth*(vbrtrn(m,n)-2.0d0*vbrtr(m,n)+vbrtrp(m,n))/2.0d0
+            vbrtr(m,n) = vbrtrn(m,n)
+        endif
+
+    enddo
+  enddo
+
+end subroutine
 
 subroutine uv_trans_vort_kernel(luu,                 &
                                 dxt, dyt, dxb, dyb,  &
