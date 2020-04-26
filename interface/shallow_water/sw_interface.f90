@@ -5,10 +5,11 @@ module shallow_water_interface_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
     use decomposition_module, only: domain_type
-    use data_types_module, only: data2D_real8_type, data2D_real4_type, data3D_real8_type
+    use data_types_module, only: data2D_real8_type, data2D_real4_type
     use ocean_module, only: ocean_type
     use grid_module, only: grid_type
     use mpp_sync_module, only: sync 
+    use mixing_module, only: stress_components_kernel
     use depth_module, only: hh_init_kernel, hh_update_kernel, hh_shift_kernel
     use velssh_sw_module, only: sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
 
@@ -16,11 +17,51 @@ module shallow_water_interface_module
     save
     private
 
+    public :: envoke_stress_components_kernel
     public :: envoke_hh_init_kernel, envoke_hh_update_kernel, envoke_hh_shift_kernel
     public :: envoke_uv_trans_vort_kernel, envoke_uv_trans_kernel, envoke_uv_diff2_kernel
     public :: envoke_sw_update_ssh_kernel, envoke_sw_update_uv, envoke_sw_next_step
 
 contains
+
+    subroutine envoke_stress_components_kernel(domain, grid_data, u, v, str_t, str_s)
+    
+        type(domain_type), intent(in) :: domain
+        type(grid_type), intent(inout) :: grid_data
+        type(data2D_real8_type), intent(in) :: u, v
+        type(data2D_real8_type), intent(inout) :: str_t, str_s
+
+        ! Interface only for 2D call
+        integer, parameter :: nlev = 1
+
+        integer :: k
+
+        do k = 1, domain%bcount
+            
+            call set_kernel_interface(domain, k)
+
+            call stress_components_kernel(grid_data  %lu     %block(k)%field,  & 
+                                          grid_data  %luu    %block(k)%field,  & 
+                                          grid_data  %dx     %block(k)%field,  & 
+                                          grid_data  %dy     %block(k)%field,  & 
+                                          grid_data  %dxt    %block(k)%field,  & 
+                                          grid_data  %dyt    %block(k)%field,  & 
+                                          grid_data  %dxh    %block(k)%field,  & 
+                                          grid_data  %dyh    %block(k)%field,  & 
+                                          grid_data  %dxb    %block(k)%field,  & 
+                                          grid_data  %dyb    %block(k)%field,  & 
+                                                      u      %block(k)%field,  & 
+                                                      v      %block(k)%field,  & 
+                                                      str_t  %block(k)%field,  &
+                                                      str_s  %block(k)%field,  &
+                                          nlev)
+
+        enddo
+
+        call sync(domain, str_t)
+        call sync(domain, str_s)
+
+    end subroutine
 
     subroutine envoke_hh_init_kernel(domain, grid_data, ssh, sshp)
 
@@ -147,13 +188,15 @@ contains
 
     end subroutine
 
-    subroutine envoke_uv_trans_vort_kernel(domain, grid_data, u, v, vort, nlev)
+    subroutine envoke_uv_trans_vort_kernel(domain, grid_data, u, v, vort)
 
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(in) :: grid_data
         type(data2D_real8_type), intent(in) :: u, v
-        type(data3D_real8_type), intent(inout) :: vort
-        integer, intent(in) :: nlev
+        type(data2D_real8_type), intent(inout) :: vort
+
+        ! Interface only for 2D call
+        integer, parameter :: nlev = 1
 
         integer :: k
 
@@ -169,22 +212,24 @@ contains
                                                   u     %block(k)%field,  &
                                                   v     %block(k)%field,  &
                                                   vort  %block(k)%field,  &
-                                                  nlev)
+                                      nlev)
 
         enddo
 
-        call sync(domain, vort, nlev)
+        call sync(domain, vort)
 
     end subroutine
 
-    subroutine envoke_uv_trans_kernel(domain, grid_data, u, v, vort, RHSx, RHSy, nlev)
+    subroutine envoke_uv_trans_kernel(domain, grid_data, u, v, vort, RHSx, RHSy)
 
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(in) :: grid_data
         type(data2D_real8_type), intent(in) :: u, v
-        type(data3D_real8_type), intent(in) :: vort
+        type(data2D_real8_type), intent(in) :: vort
         type(data2D_real8_type), intent(inout) :: RHSx, RHSy
-        integer, intent(in) :: nlev
+        
+        ! Interface only for 2D call
+        integer, parameter :: nlev = 1
 
         integer :: k
 
@@ -211,13 +256,15 @@ contains
     
     end subroutine
 
-    subroutine envoke_uv_diff2_kernel(domain, grid_data, mu, str_t, str_s, RHSx, RHSy, nlev)
+    subroutine envoke_uv_diff2_kernel(domain, grid_data, mu, str_t, str_s, RHSx, RHSy)
 
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(in) :: grid_data
         type(data2D_real8_type), intent(in) :: mu, str_t, str_s
         type(data2D_real8_type), intent(inout) :: RHSx, RHSy
-        integer, intent(in) :: nlev
+        
+        ! Interface only for 2D call
+        integer, parameter :: nlev = 1
 
         integer :: k
 
