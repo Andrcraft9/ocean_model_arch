@@ -19,9 +19,11 @@ contains
     ! explicit shallow water equation sloving
     subroutine expl_shallow_water(tau, domain, grid_data, ocean_data)
 
+        implicit none
+
         real(wp8), intent(in) :: tau
         type(domain_type), intent(in) :: domain
-        type(grid_type), intent(in) :: grid_data
+        type(grid_type), intent(inout) :: grid_data
         type(ocean_type), intent(inout) :: ocean_data
 
         !computing ssh
@@ -42,10 +44,10 @@ contains
             call envoke_uv_diff2_kernel(domain, grid_data, ocean_data%mu, ocean_data%str_t, ocean_data%str_s, ocean_data%RHSx_dif, ocean_data%RHSy_dif)
         endif
 
-        call envoke_sw_update_uv(domain, grid_data, tau, ocean_data%ssh, 
+        call envoke_sw_update_uv(domain, grid_data, tau, ocean_data%ssh, &
                                  ocean_data%ubrtr, ocean_data%ubrtrn, ocean_data%ubrtrp, &
                                  ocean_data%vbrtr, ocean_data%vbrtrn, ocean_data%vbrtrp, &
-                                 ocean_data%rdis, &
+                                 ocean_data%r_diss, &
                                  ocean_data%RHSx, ocean_data%RHSy, ocean_data%RHSx_adv, ocean_data%RHSy_adv, ocean_data%RHSx_dif, ocean_data%RHSy_dif)
 
         !shifting time indices

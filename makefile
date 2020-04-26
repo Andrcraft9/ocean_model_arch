@@ -52,8 +52,8 @@ INTERFACE = \
 # Algorithm Layer
 CONTROL = \
 	control/init_data.f90 \
-	control/output.f90
-#control/shallow_water/shallow_water.f90
+	control/output.f90 \
+	control/shallow_water/shallow_water.f90
 
 ## main and clean targets
 model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL) model.f90)

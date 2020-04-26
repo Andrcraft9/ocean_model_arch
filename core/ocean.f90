@@ -27,6 +27,9 @@ module ocean_module
                                    vbrtrp       !barotropic velocity meridional[m/s] at previous time step
 
         type(data2D_real4_type) :: r_diss       !Rayleigh friction scale (1/s)
+
+        type(data2D_real8_type) :: RHSx, RHSy, RHSx_dif, RHSy_dif, RHSx_adv, RHSy_adv
+        type(data2D_real8_type) :: mu, str_t, str_s, vort
     contains
         procedure, public  :: init
         procedure, public  :: clear
@@ -59,6 +62,17 @@ contains
         call this%vbrtrp%init(domain)
 
         call this%r_diss%init(domain)
+
+        call this%RHSx%init(domain) 
+        call this%RHSy%init(domain) 
+        call this%RHSx_dif%init(domain) 
+        call this%RHSy_dif%init(domain) 
+        call this%RHSx_adv%init(domain) 
+        call this%RHSy_adv%init(domain)
+        call this%mu%init(domain) 
+        call this%str_t%init(domain) 
+        call this%str_s%init(domain) 
+        call this%vort%init(domain)
     end subroutine
 
     subroutine clear(this, domain)
@@ -82,6 +96,17 @@ contains
         call this%vbrtrp%clear(domain)
 
         call this%r_diss%clear(domain)
+
+        call this%RHSx%clear(domain) 
+        call this%RHSy%clear(domain) 
+        call this%RHSx_dif%clear(domain) 
+        call this%RHSy_dif%clear(domain) 
+        call this%RHSx_adv%clear(domain) 
+        call this%RHSy_adv%clear(domain)
+        call this%mu%clear(domain) 
+        call this%str_t%clear(domain) 
+        call this%str_s%clear(domain) 
+        call this%vort%clear(domain)
     end subroutine
 
 endmodule ocean_module

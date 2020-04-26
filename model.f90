@@ -1,4 +1,5 @@
 program model
+    use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module, only: mpp_init, mpp_finalize
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar
@@ -9,8 +10,13 @@ program model
     use init_data_module, only: init_grid_data, init_ocean_data
     !use ocean_interface_module, only: envoke_div_velocity
     use output_module, only: local_output
+    use shallow_water_module, only: expl_shallow_water
 
     implicit none
+
+    integer, parameter :: num_step_max = 10
+    real(wp8), parameter :: tau = 1
+    integer :: num_step = 0
 
     call mpp_init()
 
@@ -36,7 +42,13 @@ program model
     call init_grid_data(domain_data, grid_global_data, grid_data)
 
     ! Solver
-    !call envoke_div_velocity(domain_data, grid_data, ocean_data)
+    do while(num_step<num_step_max)
+        ! Computing one step of ocean dynamics
+        print *, "STEP: ", num_step
+        call expl_shallow_water(tau, domain_data, grid_data, ocean_data)
+        num_step = num_step + 1
+    enddo
+    
 
     ! Output
     call local_output(domain_data, grid_data, ocean_data, 1, 2019, 2, 10, 12, 30, 3600.0, 1)

@@ -8,14 +8,18 @@ module config_sw_module
     public
 
     integer :: full_free_surface
-    real(wp4) :: time_smooth
+    integer :: trans_terms
+    integer :: ksw_lat
+    real(wp8) :: time_smooth
 
 contains
 
     subroutine load_config_sw
         
         full_free_surface = 1
-        time_smooth = 0.5
+        time_smooth = 0.5d0
+        trans_terms = 1
+        ksw_lat = 1
         
     end subroutine 
 
