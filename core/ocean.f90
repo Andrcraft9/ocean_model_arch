@@ -2,7 +2,7 @@ module ocean_module
     ! Ocean data
 
     use decomposition_module, only: domain_type
-    use data_types_module, only: data2D_real8_type
+    use data_types_module, only: data2D_real8_type, data2D_real4_type
 
     implicit none
     save
@@ -25,6 +25,8 @@ module ocean_module
                                    ubrtrp,   &  !barotropic velocity      zonal[m/s] at previous time step
                                    vbrtrn,   &
                                    vbrtrp       !barotropic velocity meridional[m/s] at previous time step
+
+        type(data2D_real4_type) :: r_diss       !Rayleigh friction scale (1/s)
     contains
         procedure, public  :: init
         procedure, public  :: clear
@@ -55,6 +57,8 @@ contains
         call this%ubrtrp%init(domain)
         call this%vbrtrn%init(domain)
         call this%vbrtrp%init(domain)
+
+        call this%r_diss%init(domain)
     end subroutine
 
     subroutine clear(this, domain)
@@ -76,6 +80,8 @@ contains
         call this%ubrtrp%clear(domain)
         call this%vbrtrn%clear(domain)
         call this%vbrtrp%clear(domain)
+
+        call this%r_diss%clear(domain)
     end subroutine
 
 endmodule ocean_module

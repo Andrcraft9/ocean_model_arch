@@ -2,15 +2,15 @@ module shallow_water_interface_module
 #include "core/kernel_macros.fi"
 
     use kernel_interface_module, only: set_kernel_interface
+    use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
     use decomposition_module, only: domain_type
-    use data_types_module, only: data2D_real8_type, data3D_real8_type
+    use data_types_module, only: data2D_real8_type, data2D_real4_type, data3D_real8_type
     use ocean_module, only: ocean_type
     use grid_module, only: grid_type
     use mpp_sync_module, only: sync 
     use depth_module, only: hh_init_kernel, hh_update_kernel, hh_shift_kernel
-    use velssh_sw_module, only: uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
-
+    use velssh_sw_module, only: sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
 
     implicit none
     save
@@ -18,6 +18,7 @@ module shallow_water_interface_module
 
     public :: envoke_hh_init_kernel, envoke_hh_update_kernel, envoke_hh_shift_kernel
     public :: envoke_uv_trans_vort_kernel, envoke_uv_trans_kernel, envoke_uv_diff2_kernel
+    public :: envoke_sw_update_ssh_kernel, envoke_sw_update_uv, envoke_sw_next_step
 
 contains
 
@@ -245,6 +246,126 @@ contains
                                              RHSy   %block(k)%field,  &
                                  nlev)
 
+        enddo
+    
+    end subroutine
+
+    subroutine envoke_sw_update_ssh_kernel(domain, grid_data, tau, sshn, sshp, ubrtr, vbrtr)
+
+        type(domain_type), intent(in) :: domain
+        type(grid_type), intent(in) :: grid_data
+        real(wp8), intent(in) :: tau
+        type(data2D_real8_type), intent(in) :: ubrtr, vbrtr, sshp
+        type(data2D_real8_type), intent(inout) :: sshn
+
+        integer :: k
+
+        do k = 1, domain%bcount
+            
+            call set_kernel_interface(domain, k)
+            
+            call sw_update_ssh_kernel(tau,                                &
+                                     grid_data  %lu     %block(k)%field,  & 
+                                     grid_data  %dx     %block(k)%field,  & 
+                                     grid_data  %dy     %block(k)%field,  & 
+                                     grid_data  %dxh    %block(k)%field,  & 
+                                     grid_data  %dyh    %block(k)%field,  & 
+                                     grid_data  %hhu    %block(k)%field,  & 
+                                     grid_data  %hhv    %block(k)%field,  & 
+                                                 sshn   %block(k)%field,  & 
+                                                 sshp   %block(k)%field,  & 
+                                                 ubrtr  %block(k)%field,  & 
+                                                 vbrtr  %block(k)%field)
+
+        enddo
+
+        call sync(domain, sshn)
+    
+    end subroutine
+
+    subroutine envoke_sw_update_uv(domain, grid_data, tau, ssh, ubrtr, ubrtrn, ubrtrp, vbrtr, vbrtrn, vbrtrp, rdis, &
+                                   RHSx, RHSy, RHSx_adv, RHSy_adv, RHSx_dif, RHSy_dif)
+
+        type(domain_type), intent(in) :: domain
+        type(grid_type), intent(in) :: grid_data
+        real(wp8), intent(in) :: tau
+        type(data2D_real4_type), intent(in) :: rdis
+        type(data2D_real8_type), intent(in) :: ssh, ubrtr, ubrtrp, vbrtr, vbrtrp,  &
+                                               RHSx, RHSy, RHSx_adv, RHSy_adv, RHSx_dif, RHSy_dif
+        type(data2D_real8_type), intent(inout) :: ubrtrn, vbrtrn
+
+        integer :: k
+
+        do k = 1, domain%bcount
+            
+            call set_kernel_interface(domain, k)
+            
+            call sw_update_uv(tau,                                    &
+                              grid_data  %lcu       %block(k)%field,  &
+                              grid_data  %lcv       %block(k)%field,  &
+                              grid_data  %dxt       %block(k)%field,  &
+                              grid_data  %dyt       %block(k)%field,  &
+                              grid_data  %dxh       %block(k)%field,  &
+                              grid_data  %dyh       %block(k)%field,  &
+                              grid_data  %dxb       %block(k)%field,  &
+                              grid_data  %dyb       %block(k)%field,  &
+                              grid_data  %hhu       %block(k)%field,  &
+                              grid_data  %hhu_n      %block(k)%field,  &
+                              grid_data  %hhu_p      %block(k)%field,  &
+                              grid_data  %hhv       %block(k)%field,  &
+                              grid_data  %hhv_n      %block(k)%field,  &
+                              grid_data  %hhv_p      %block(k)%field,  &
+                              grid_data  %hhh       %block(k)%field,  &
+                                          ssh       %block(k)%field,  &
+                                          ubrtr     %block(k)%field,  &
+                                          ubrtrn    %block(k)%field,  &
+                                          ubrtrp    %block(k)%field,  &
+                                          vbrtr     %block(k)%field,  &
+                                          vbrtrn    %block(k)%field,  &
+                                          vbrtrp    %block(k)%field,  &
+                                          rdis      %block(k)%field,  &
+                              grid_data  %rlh_s     %block(k)%field,  &
+                                          RHSx      %block(k)%field,  &
+                                          RHSy      %block(k)%field,  &
+                                          RHSx_adv  %block(k)%field,  &
+                                          RHSy_adv  %block(k)%field,  &
+                                          RHSx_dif  %block(k)%field,  &
+                                          RHSy_dif  %block(k)%field)
+
+        enddo
+
+        call sync(domain, ubrtrn)
+        call sync(domain, vbrtrn)
+    
+    end subroutine
+
+    subroutine envoke_sw_next_step(domain, grid_data, time_smooth, ssh, sshn, sshp, ubrtr, ubrtrn, ubrtrp, vbrtr, vbrtrn, vbrtrp)
+
+        type(domain_type), intent(in) :: domain
+        type(grid_type), intent(in) :: grid_data
+        real(wp8), intent(in) :: time_smooth
+        type(data2D_real8_type), intent(in) :: sshn, ubrtrn, vbrtrn
+        type(data2D_real8_type), intent(inout) :: ssh, sshp, ubrtr, ubrtrp, vbrtr, vbrtrp
+
+        integer :: k
+
+        do k = 1, domain%bcount
+            
+            call set_kernel_interface(domain, k)
+            
+            call sw_next_step(time_smooth,                         &
+                              grid_data  %lu      %block(k)%field,  &
+                              grid_data  %lcu     %block(k)%field,  &
+                              grid_data  %lcv     %block(k)%field,  &
+                                          ssh     %block(k)%field,  &
+                                          sshn    %block(k)%field,  &
+                                          sshp    %block(k)%field,  &
+                                          ubrtr   %block(k)%field,  &
+                                          ubrtrn  %block(k)%field,  &
+                                          ubrtrp  %block(k)%field,  &
+                                          vbrtr   %block(k)%field,  &
+                                          vbrtrn  %block(k)%field,  &
+                                          vbrtrp  %block(k)%field)
         enddo
     
     end subroutine
