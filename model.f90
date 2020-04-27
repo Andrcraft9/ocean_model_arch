@@ -3,6 +3,10 @@ program model
     use mpp_module, only: mpp_init, mpp_finalize
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar
+    use time_manager_module, only: num_step, num_step_max, tau,  &
+                                   init_time_manager, time_manager_def, time_manager_print, is_local_print_step,  &
+                                   year_loc, mon_loc, day_loc, hour_loc, min_loc, nrec_loc,  &
+                                   loc_data_tstep, time_manager_update_nrec, yr_type
     use decomposition_module, only: domain_data
     use grid_module, only: grid_global_data, grid_data
     use ocean_module, only: ocean_data
@@ -14,14 +18,13 @@ program model
 
     implicit none
 
-    integer, parameter :: num_step_max = 10
-    real(wp8), parameter :: tau = 1
-    integer :: num_step = 0
-
     call mpp_init()
 
     ! Load all configs
     call load_config_basinpar()
+
+    ! Init Time Manager
+    call init_time_manager('ocean_run.par')
 
     ! Read mask
     call grid_global_data%init()
@@ -46,12 +49,30 @@ program model
         ! Computing one step of ocean dynamics
         print *, "STEP: ", num_step
         call expl_shallow_water(tau, domain_data, grid_data, ocean_data)
+        
+        ! Next time step
         num_step = num_step + 1
-    enddo
-    
+        call time_manager_def()
 
-    ! Output
-    call local_output(domain_data, grid_data, ocean_data, 1, 2019, 2, 10, 12, 30, 3600.0, 1)
+        ! Output
+        if (is_local_print_step() > 0) then
+            call time_manager_update_nrec ()
+            
+            call local_output(domain_data, &
+                              grid_data,   &
+                              ocean_data,  &
+                             nrec_loc,  &
+                             year_loc,  &
+                              mon_loc,  & 
+                              day_loc,  &
+                             hour_loc,  &
+                              min_loc,  &
+                       loc_data_tstep,  &
+                              yr_type  )
+
+            call time_manager_print ()
+        endif
+    enddo
 
     ! Clear data
     call ocean_data%clear(domain_data)

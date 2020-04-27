@@ -1,5 +1,7 @@
 module time_routes
-use mpi_parallel_tools
+
+use mpp_module, only: rank => mpp_rank
+
 implicit none
 
 contains

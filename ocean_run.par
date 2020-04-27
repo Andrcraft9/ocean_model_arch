@@ -1,0 +1,35 @@
+            0  : 0 - start from minimum conditions, 1 - start from the full checkpoint
+         5.0d0 : Model time step in seconds
+         0.25  : Duration of the run (in days)
+            0  : Time step number (0 matches to 01 January 00:00:00)
+         2012  : Initial year (i4.4)
+         10.0  : Periodicity for writing local  instantaneous data (in minutes). If >1440.0, then output is once per day. If <=0 then no local output is done
+      -1440.0  : Periodicity for writing global time averaged data (in minutes). If >1440.0, then output is once per month. If <0 then only checkpoints are written
+            0  : Number of internal steps for ice dynamics (0 - do not use ice block at all)
+            1  : Number of internal steps for barotropic dynamics
+CPT                                                     : Path to the checkpoints and results
+/home/andr/modelling/INMOM/data/BS_AS_4km/BC_OGRID            : Path to the sea surface data on the oceanic grid
+sst.dat                                                       : Sea surface temperature
+sss.dat                                                       : Sea surface salinity
+rof.dat                                                       : River runoff
+tlbc.dat                                                      : Temperature at the open boundary
+slbc.dat                                                      : Salinity at the open boundary
+ulbc.dat                                                      : Zonal velocity at the open boundary
+vlbc.dat                                                      : Meridional velocity at the open boundary
+hlbc.dat                                                      : SSH at the open boundary
+/home/andr/modelling/INMOM/data/ATM/ERA075                    : Path to the sea surface data on the oceanic grid
+taux.dat                                                      : SS Zonal wind stress (prescribed)
+tauy.dat                                                      : SS Meridional wind stress (prescribed)
+qbal.dat                                                      : SS Heat balance (prescribed)
+qswr.dat                                                      : SS Solar radiation balance (prescribed)
+qsal.dat                                                      : SS fresh water balance (prescribed)
+t2mE0.dat                                                     : Air temperature at some height
+q2mE0.dat                                                     : Air humidity at some height
+u10E0.dat                                                     : Air zonal wind speed at some height
+v10E0.dat                                                     : Air meridional wind speed at some height
+slpE0.dat                                                     : Sea level pressure
+trdE12.dat                                                    : Downwelling thermal radiation
+srdE12.dat                                                    : Downwelling solar radiation
+tprE12.dat                                                    : Liquid precipitation rate (rain)
+snow.dat                                                      : Liquid precipitation rate (snow)
+NONE                                                          : Sea-land mask on atmospheric grid (if available, NONE otherwise)

@@ -18,7 +18,9 @@ SHARED = \
 
 LEGACY = \
 	legacy/service/input_output_data.f90 \
-	legacy/service/rw_ctl_file.f90
+	legacy/service/rw_ctl_file.f90 \
+	legacy/service/read_write_parameters.f90 \
+	legacy/service/time_tools.f90
 
 CORE = \
 	core/math_tools.f90 \
@@ -30,7 +32,8 @@ CORE = \
 	core/ocean.f90
 
 TOOLS = \
-	tools/io.f90
+	tools/io.f90 \
+	tools/time_manager.f90
 
 SERVICE = \
 	service/gridcon.f90 \
