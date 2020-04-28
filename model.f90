@@ -13,7 +13,7 @@ program model
     use io_module, only: read_global_mask
     use init_data_module, only: init_grid_data, init_ocean_data
     !use ocean_interface_module, only: envoke_div_velocity
-    use output_module, only: local_output
+    use output_module, only: local_output, output_init_buffers, output_clear_buffers
     use shallow_water_module, only: expl_shallow_water
 
     implicit none
@@ -31,7 +31,7 @@ program model
     call read_global_mask(grid_global_data)
 
     ! Make decomposition
-    call domain_data%init(2, 2, grid_global_data%mask)
+    call domain_data%init_from_config(grid_global_data%mask, 'parallel.par')
 
     ! Sync init
     call mpp_sync_init(domain_data)
@@ -39,6 +39,7 @@ program model
     ! Allocate data
     call ocean_data%init(domain_data)
     call grid_data%init(domain_data)
+    call output_init_buffers(domain_data)
 
     ! Init data (read/set)
     call init_ocean_data(domain_data, ocean_data)
@@ -47,7 +48,6 @@ program model
     ! Solver
     do while(num_step<num_step_max)
         ! Computing one step of ocean dynamics
-        print *, "STEP: ", num_step
         call expl_shallow_water(tau, domain_data, grid_data, ocean_data)
         
         ! Next time step
@@ -78,6 +78,7 @@ program model
     call ocean_data%clear(domain_data)
     call grid_data%clear(domain_data)
     call grid_global_data%clear()
+    call output_clear_buffers(domain_data)
 
     ! Clear sync data
     call mpp_sync_finalize(domain_data)

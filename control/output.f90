@@ -4,6 +4,7 @@ module output_module
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
     use decomposition_module, only: domain_type
     use ocean_module, only: ocean_type
+    use data_types_module, only: data2D_real4_type
     use grid_module, only: grid_type
     use io_module, only: write_data
 
@@ -11,9 +12,24 @@ module output_module
     save
     private
 
-    public :: local_output
+    public :: local_output, output_init_buffers, output_clear_buffers
+    
+    ! PRIVATE, buffers
+    type(data2D_real4_type) :: bufwp4
 
 contains
+    
+    subroutine output_init_buffers(domain)
+        type(domain_type), intent(in) :: domain
+
+        call bufwp4%init(domain)
+    end subroutine
+
+    subroutine output_clear_buffers(domain)
+        type(domain_type), intent(in) :: domain
+
+        call bufwp4%clear(domain)
+    end subroutine
 
     subroutine local_output(domain, grid_data, ocean_data,  &
                             nrec,    &
@@ -50,6 +66,7 @@ contains
             write(*,*) 'Writing local output, record number ', nrec
           endif
           
+        ! HHQ  
         if(nrec==1) then
 
             ierr = 0
@@ -83,6 +100,41 @@ contains
                                     'HHQ, m',  &     !title of dataset
                                     'hhq')           !variable name
             endif
+        endif
+
+        ! SSH
+        ! writing SSH
+        call bufwp4%copy_from_real8(domain, ocean_data%ssh)
+        ierr = 0
+        call write_data(domain, 'RESULTS/', 'ssh.dat', nrec, bufwp4, grid_data%lu, ierr)
+        if(mpp_rank == 0) print *, 'ssh is written'
+
+        call fulfname(fname, 'RESULTS/', 'ssh.dat', ierr)
+        if (mpp_rank == 0) then
+            call ctl_file_write(fname,    &     !file name
+                                undef,    &     !value for undefined points
+                                nx - 4,   &     !x-dimension
+                                ny - 4,   &     !y-dimension
+                                     1,   &     !z-dimension
+                                  nrec,   &     !t-dimension
+                              xgr_type,   &     !x-grid type (0 - linear, 1 - levels)
+                               xtm1loc,   &     !first x-value (if linear) or x-array (if levels)
+                                 dxst,    &     !x-step (if linear)
+                             ygr_type,    &     !y-grid type (0 - linear, 1 - levels)
+                               ytn1loc,   &     !first y-value (if linear) or x-array (if levels)
+                                 dyst,    &     !y-step (if linear)
+                                 0,       &     !z-grid type (0 - linear, 1 - levels)
+                                 z0,      &     !first z-value (if linear) or x-array (if levels)
+                                 1.0d0,   &     !z-step (if linear)
+                              calendar,   &     !type   of calendar (0 - without leap-year, 1 - with leap-year)
+                                  year,   &     !year   of the first field
+                                 month,   &     !month  of the first field
+                                   day,   &     !day    of the first field
+                                  hour,   &     !hour   of the first field
+                                minute,   &     !minute of the first field
+                                 tstep,   &     !time step (in seconds)
+                              'SSH, m',   &     !title of dataset
+                              'ssh')            !variable name
         endif
     end subroutine local_output
 

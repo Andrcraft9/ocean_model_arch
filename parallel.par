@@ -1,7 +1,7 @@
 1       : Block decomposition: 0 - unifrom, no load balancing; 1 - load balancing with using Hilbert curve; 2 - decomposition from file
-/home/andr/modelling/Load_balance/as250m/256b_16p_metis.txt     : File with decomposition (optional). Set bnx, bny, pnx, pny like in this file otherwise program stops with error
+none    : File with decomposition (optional). Set bnx, bny, pnx, pny like in this file otherwise program stops with error
 4       : blocks per one proc in x-direction
 4       : blocks per one proc in y-direction
-2       : debug parameter
+0       : debug parameter
 0       : mode: 0 - default run, >0 - stop after decomposition
-/home/andr/modelling/Load_balance/dd.txt    : output file
+none    : output file

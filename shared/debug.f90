@@ -9,7 +9,7 @@ module debug_module
     save
     public
 
-    integer, parameter :: debug_level = 5
+    integer, parameter :: debug_level = 1
 
 contains
 

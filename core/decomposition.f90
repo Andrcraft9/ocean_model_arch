@@ -37,11 +37,13 @@ module decomposition_module
 
         integer :: nz
     contains
+        procedure, public :: init_from_config
         procedure, public :: init
         procedure, public :: clear
         
         procedure, private :: block_uniform_decomposition
         procedure, private :: create_uniform_decomposition
+        procedure, private :: create_hilbert_curve_decomposition
     end type domain_type
 
 !------------------------------------------------------------------------------
@@ -116,6 +118,85 @@ contains
         end associate
     end subroutine
 
+    subroutine create_hilbert_curve_decomposition(this, bglob_weight, land_blocks)
+        
+        use hilbert_curve_module
+
+        class(domain_type), intent(in) :: this
+        real(wp8), intent(in) :: bglob_weight(:, :)
+        integer, intent(in) :: land_blocks
+
+        integer :: k, i, ierr
+        integer :: hilbert_index, hilbert_coord_x, hilbert_coord_y
+        integer :: ks, sea_blocks
+        real(wp8) :: weight, tot_weight, mean_weight, last_weight
+
+        hilbert_index = int(log(real(this%bnx))/ log(2.0))
+        ierr = 0
+        if (this%bnx /= this%bny) then
+            if (mpp_rank == 0) print *, 'bnx not equal to bny! Can`t build Hilbert curve for this geometry!'
+            ierr = 1
+        endif
+        if (2**hilbert_index /= this%bnx) then
+            if (mpp_rank == 0) print *, '2**M not eqal to bnx! Can`t build Hilbert curve for this geometry!'
+            ierr = 1
+        endif
+        call check_error(ierr, 'Can`t build Hilbert curve for this geometry!')
+
+        if (mpp_rank == 0) print *, 'Hilbert curve index:', hilbert_index
+
+        tot_weight = sum(bglob_weight)
+        mean_weight = tot_weight / mpp_count
+        sea_blocks = this%bnx * this%bny - land_blocks
+
+        if (debug_level >= 1) then
+            if (mpp_rank == 0 ) print *, 'Total blocks weigth:', tot_weight, "Mean blocks weigth:", mean_weight
+        endif
+
+        weight = 0.0d0
+        last_weight = 0.0d0
+        i = 0; ks = 0
+        do k = 1, this%bnx * this%bny
+            call hilbert_d2xy(hilbert_index, k-1, hilbert_coord_x, hilbert_coord_y)
+            hilbert_coord_x = hilbert_coord_x + 1; hilbert_coord_y = hilbert_coord_y + 1
+
+            ! Skip land blocks
+            if (bglob_weight(hilbert_coord_x, hilbert_coord_y) == 0.0d0) then
+                this%bglob_proc(hilbert_coord_x, hilbert_coord_y) = -1
+                cycle
+            else
+                ks = ks + 1
+            endif
+
+            weight = weight + bglob_weight(hilbert_coord_x, hilbert_coord_y)
+
+            !if (sea_blocks - ks >= mpp_count - i - 1) then
+                if (weight + (weight - bglob_weight(hilbert_coord_x, hilbert_coord_y)) > 2.0*mean_weight) then
+                    ! Recompute mean value
+                    mean_weight = (tot_weight - last_weight) / (mpp_count - i - 1)
+                    ! Go to next proc
+                    i = i + 1
+                    weight = bglob_weight(hilbert_coord_x, hilbert_coord_y)
+                    if (i > mpp_count - 1) then
+                        i = mpp_count - 1
+                        !if (rank == 0 .and. parallel_dbg < 2) print *, 'Warning! Last procs ...'
+                        if (mpp_rank == 0) print *, k, 'Warning! Last procs ...'
+                    endif
+                endif
+            !else
+            !    i = i + 1
+            !    weight = bglob_weight(hilbert_coord_x, hilbert_coord_y)
+            !endif
+
+            this%bglob_proc(hilbert_coord_x, hilbert_coord_y) = i
+            last_weight = last_weight + bglob_weight(hilbert_coord_x, hilbert_coord_y)
+        enddo
+
+        if (debug_level >= 3) then
+            call parallel_int_output(this%bglob_proc, 1, this%bnx, 1, this%bny, 'bglob_proc from load-balanced hilbert curve decomposition')
+        endif
+    end subroutine
+
     subroutine create_uniform_decomposition(this, bglob_weight)
         class(domain_type), intent(inout) :: this
         real(wp8), allocatable, intent(in) :: bglob_weight(:, :)
@@ -164,12 +245,13 @@ contains
         end associate
     end subroutine
 
-    subroutine init(this, bppnx, bppny, lbasins)
+    subroutine init(this, bppnx, bppny, mod_create, lbasins)
         use config_basinpar_module, only: nx, ny, nz
 
         ! Initialization of each domain
         class(domain_type), intent(inout) :: this
         integer, intent(in) :: bppnx, bppny
+        integer, intent(in) :: mod_create
         integer, pointer, intent(in) :: lbasins(:,:) 
 
         real(wp8), allocatable :: bglob_weight(:, :)
@@ -231,8 +313,17 @@ contains
 
             ! Compute bglob_proc
             allocate(this%bglob_proc(bnx, bny))
-            if (mpp_rank == 0) print *, "Uniform blocks decomposition!..."
-            call this%create_uniform_decomposition(bglob_weight)
+            
+            if (mod_create == 0) then
+                if (mpp_rank == 0) print *, "Uniform blocks decomposition!..."
+                call this%create_uniform_decomposition(bglob_weight)
+            elseif (mod_create == 1) then
+                if (mpp_rank == 0) print *, "Hilber Curve blocks decomposition!..."
+                call this%create_hilbert_curve_decomposition(bglob_weight, land_blocks)
+            else
+                if (mpp_rank == 0) print *, "Unknown mode!"
+                call abort_model("Unknown decomposition mode!")
+            endif
 
             ! Compute blocks per proc
             bcount = 0; bweight = 0.0d0
@@ -321,6 +412,56 @@ contains
 
         deallocate(this%bglob_proc)
         deallocate(this%bindx)
+    end subroutine
+
+    subroutine init_from_config(this, lbasins, name)
+        use rwpar_routes
+
+        class(domain_type), intent(inout) :: this
+        integer, pointer, intent(in) :: lbasins(:,:) 
+        character(*) :: name
+
+        integer :: nofcom
+        character(128) :: comments(128)
+        integer :: ierr
+
+        integer :: mod_decomposition
+        character(128) :: file_decomposition
+        integer :: bppnx, bppny
+        integer :: parallel_dbg
+        integer :: parallel_mod
+        character(128) :: file_output
+
+        if (mpp_rank .eq. 0) then
+            print *, 'Read decomposition config...'
+            call readpar(name, comments, nofcom)
+            read(comments(1),*) mod_decomposition
+            call get_first_lexeme(comments(2), file_decomposition)
+            read(comments(3),*) bppnx
+            read(comments(4),*) bppny
+            read(comments(5),*) parallel_dbg
+            read(comments(6),*) parallel_mod
+            call get_first_lexeme(comments(7), file_output)
+
+            print *, 'mod_decomposition=', mod_decomposition
+            print *, '(ignore this) decomposition file:', file_decomposition
+            print *, 'bppnx=', bppnx
+            print *, 'bppny=', bppny
+            print *, '(ignore this) parallel_dbg=', parallel_dbg
+            print *, '(ignore this) parallel_mod=', parallel_mod
+            print *, '(ignore this) output file:', file_output
+        endif
+
+        call mpi_bcast(file_decomposition, 128, mpi_character, 0, mpp_cart_comm, ierr)
+        call mpi_bcast(mod_decomposition, 1, mpi_integer, 0, mpp_cart_comm, ierr)
+        call mpi_bcast(bppnx, 1, mpi_integer, 0, mpp_cart_comm, ierr)
+        call mpi_bcast(bppny, 1, mpi_integer, 0, mpp_cart_comm, ierr)
+        call mpi_bcast(parallel_dbg, 1, mpi_integer, 0, mpp_cart_comm, ierr)
+        call mpi_bcast(parallel_mod, 1, mpi_integer, 0, mpp_cart_comm, ierr)
+        call mpi_bcast(file_output, 128, mpi_character, 0, mpp_cart_comm, ierr)
+
+        call this%init(bppnx, bppny, mod_decomposition, lbasins)
+
     end subroutine
 
 end module decomposition_module
