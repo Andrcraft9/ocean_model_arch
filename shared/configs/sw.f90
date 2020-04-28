@@ -11,6 +11,8 @@ module config_sw_module
     integer :: trans_terms
     integer :: ksw_lat
     real(wp8) :: time_smooth
+    
+    real(wp8) :: lvisc_2
 
 contains
 
@@ -20,6 +22,8 @@ contains
         time_smooth = 0.5d0
         trans_terms = 1
         ksw_lat = 1
+
+        lvisc_2 = 1.0d+03
         
     end subroutine 
 

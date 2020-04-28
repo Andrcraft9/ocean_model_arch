@@ -4,7 +4,7 @@ module shallow_water_module
     use decomposition_module, only: domain_type
     use ocean_module, only: ocean_type
     use grid_module, only: grid_type
-    use config_sw_module, only: full_free_surface, time_smooth, trans_terms, ksw_lat
+    use config_sw_module, only: full_free_surface, time_smooth, trans_terms, ksw_lat, lvisc_2
     use shallow_water_interface_module
 
     implicit none
@@ -25,6 +25,9 @@ contains
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(inout) :: grid_data
         type(ocean_type), intent(inout) :: ocean_data
+
+        ! init
+        call ocean_data%mu%fill(domain, lvisc_2)
 
         !computing ssh
         call envoke_sw_update_ssh_kernel(domain, grid_data, tau, ocean_data%sshn, ocean_data%sshp, ocean_data%ubrtr, ocean_data%vbrtr)

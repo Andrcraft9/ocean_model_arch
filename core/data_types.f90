@@ -64,6 +64,7 @@ module data_types_module
         procedure, public :: clear => clear_data2D_real4
         procedure, public :: copy_from => copy_data2D_real4_from_real4
         procedure, public :: copy_from_real8 => copy_data2D_real4_from_real8
+        procedure, public :: fill => fill_data2D_real4
     end type data2D_real4_type
 
     type, public :: data2D_real8_type
@@ -73,6 +74,7 @@ module data_types_module
         procedure, public :: clear => clear_data2D_real8
         procedure, public :: copy_from => copy_data2D_real8_from_real8
         procedure, public :: copy_from_real4 => copy_data2D_real8_from_real4
+        procedure, public :: fill => fill_data2D_real8
     end type data2D_real8_type
 
     ! 3D data
@@ -225,6 +227,16 @@ contains
         enddo
     end subroutine
 
+    subroutine fill_data2D_real4(this, domain, val)
+        class(data2D_real4_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        real(wp4), intent(in) :: val
+        integer :: k
+        do k = 1, domain%bcount
+            this%block(k)%field = val
+        enddo
+    end subroutine
+
     ! real8 base type
     subroutine init_data2D_real8(this, domain)
         class(data2D_real8_type), intent(inout) :: this
@@ -264,6 +276,16 @@ contains
         integer :: k
         do k = 1, domain%bcount
             this%block(k)%field = copy_data%block(k)%field
+        enddo
+    end subroutine
+
+    subroutine fill_data2D_real8(this, domain, val)
+        class(data2D_real8_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        real(wp8), intent(in) :: val
+        integer :: k
+        do k = 1, domain%bcount
+            this%block(k)%field = val
         enddo
     end subroutine
 
