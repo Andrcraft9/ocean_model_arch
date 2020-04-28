@@ -21,22 +21,27 @@ module init_data_module
 
 contains
 
-    subroutine init_ocean_data(domain, ocean_data)
-        type(domain_type), intent(in) :: domain
-        type(ocean_type), intent(inout) :: ocean_data
-        integer :: k
-        
-        do k = 1, domain%bcount
-            associate(_associate_data_(ocean_data, ssh,   k),  &
-                      _associate_data_(ocean_data, ubrtr, k),  &
-                      _associate_data_(ocean_data, vbrtr, k))
-            
-              ssh = 0.0
-              ubrtr = 0.0
-              vbrtr = 0.0
+    subroutine init_ocean_data(domain, grid_data, ocean_data)
+        use config_sw_module, only: ssh_init_file_name
+        use shallow_water_interface_module, only: envoke_hh_init_kernel
 
-            end associate
-        enddo
+        type(domain_type), intent(in) :: domain
+        type(grid_type), intent(inout) :: grid_data
+        type(ocean_type), intent(inout) :: ocean_data
+        
+        type(data2D_real4_type) :: tmp_data
+        integer :: k, ierr
+
+        call tmp_data%init(domain)
+        call read_data(domain, 'INIT/', ssh_init_file_name, 1, tmp_data, grid_data%lu, ierr)
+        call ocean_data%ssh%copy_from_real4(domain, tmp_data)
+        call sync(domain, ocean_data%ssh)
+        call tmp_data%clear(domain)
+
+        call ocean_data%sshn%copy_from(domain, ocean_data%ssh)
+        call ocean_data%sshp%copy_from(domain, ocean_data%ssh)
+
+        call envoke_hh_init_kernel(domain, grid_data, ocean_data%ssh, ocean_data%sshp)
 
     end subroutine init_ocean_data
 

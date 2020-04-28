@@ -1,8 +1,9 @@
 program model
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module, only: mpp_init, mpp_finalize
+    use mpp_module, only: mpp_init, mpp_finalize, mpp_rank
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar
+    use config_sw_module, only: load_config_sw
     use time_manager_module, only: num_step, num_step_max, tau,  &
                                    init_time_manager, time_manager_def, time_manager_print, is_local_print_step,  &
                                    year_loc, mon_loc, day_loc, hour_loc, min_loc, nrec_loc,  &
@@ -22,6 +23,7 @@ program model
 
     ! Load all configs
     call load_config_basinpar()
+    call load_config_sw()
 
     ! Init Time Manager
     call init_time_manager('ocean_run.par')
@@ -42,8 +44,8 @@ program model
     call output_init_buffers(domain_data)
 
     ! Init data (read/set)
-    call init_ocean_data(domain_data, ocean_data)
     call init_grid_data(domain_data, grid_global_data, grid_data)
+    call init_ocean_data(domain_data, grid_data, ocean_data)
 
     ! Solver
     do while(num_step<num_step_max)

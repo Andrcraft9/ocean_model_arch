@@ -69,8 +69,9 @@ contains
         ! HHQ  
         if(nrec==1) then
 
+            call bufwp4%copy_from_real8(domain, grid_data%hhq_rest)
             ierr = 0
-            call write_data(domain, 'RESULTS/', 'hhq.dat', nrec, grid_data%hhq_rest, grid_data%lu, ierr)
+            call write_data(domain, 'RESULTS/', 'hhq.dat', nrec, bufwp4, grid_data%lu, ierr)
             if(mpp_rank == 0) print *, 'hhq is written'
             
             call fulfname(fname, 'RESULTS/', 'hhq.dat', ierr)

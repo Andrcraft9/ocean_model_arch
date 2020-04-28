@@ -53,7 +53,7 @@ contains
 
         nx = 289
         ny = 163
-        nz = 20
+        nz = 1
         mmm = 3
         nnn = 3
         mm = nx-2

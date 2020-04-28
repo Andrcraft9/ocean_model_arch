@@ -14,6 +14,8 @@ module config_sw_module
     
     real(wp8) :: lvisc_2
 
+    character(128) :: ssh_init_file_name
+
 contains
 
     subroutine load_config_sw
@@ -24,6 +26,8 @@ contains
         ksw_lat = 1
 
         lvisc_2 = 1.0d+03
+
+        ssh_init_file_name = 'slf.dat'
         
     end subroutine 
 
