@@ -149,8 +149,8 @@ contains
 
             !Initialization of x-steps
             if (xgr_type>0) then
-                do n = ny_start, ny_end
-                    do m = nx_start, nx_end
+                do n = ny_start - 1, ny_end + 1
+                    do m = nx_start - 1, nx_end + 1
                         !-----initialization of t- and v-grid x-steps in metres
                         dxt(m,n) = sngl(xt(m+1)-xt(m))*pip180*RadEarth
                         dxb(m,n) = sngl(xt(m+1)-xt(m))*pip180*RadEarth
@@ -160,8 +160,8 @@ contains
                     end do
                 end do
             else
-                do n = ny_start, ny_end
-                    do m = nx_start, nx_end
+                do n = ny_start - 1, ny_end + 1
+                    do m = nx_start - 1, nx_end + 1
                         !-----initialization of t- and v-grid x-steps in centimeters
                         dxt(m,n) = sngl(dxst)*pip180*RadEarth
                         dxb(m,n) = sngl(dxst)*pip180*RadEarth
@@ -174,8 +174,8 @@ contains
 
             !Initialization of y-steps
             if (ygr_type>0) then      
-                do n = ny_start, ny_end
-                    do m = nx_start, nx_end
+                do n = ny_start - 1, ny_end + 1
+                    do m = nx_start - 1, nx_end + 1
                         !-----initialization of t- and u-grid y-steps in centimeters
                         dyt(m,n) = sngl(yt(n+1)-yt(n))*pip180*RadEarth
                         dyb(m,n) = sngl(yt(n+1)-yt(n))*pip180*RadEarth
@@ -185,8 +185,8 @@ contains
                     end do
                 end do
             else
-                do n = ny_start, ny_end
-                    do m = nx_start, nx_end
+                do n = ny_start - 1, ny_end + 1
+                    do m = nx_start - 1, nx_end + 1
                         !-----initialization of t- and u-grid y-steps in centimeters
                         dyt(m,n) = sngl(dyst)*pip180*RadEarth
                         dyb(m,n) = sngl(dyst)*pip180*RadEarth
