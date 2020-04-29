@@ -8,9 +8,35 @@ module velssh_sw_module
   save
   private
 
-  public :: sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
+  public :: check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
 
 contains
+
+subroutine check_ssh_err_kernel(lu, ssh, name)
+  use mpp_module, only: rank => mpp_rank
+  use errors_module, only: abort_model
+  
+  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+  real(wp8), intent(in) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  character(*), intent(in) :: name
+  integer :: m, n, ierr
+
+  do n = ny_start-1,ny_end+1
+      do m = nx_start-1,nx_end+1
+          if (lu(m,n)>0.5) then
+              if (ssh(m,n)<10000.0d0 .and. ssh(m,n)>-10000.0d0) then
+                continue
+              else
+                  write(*,*) rank, 'ERROR!!! In the point m=', m, 'n=', n, name, '=', ssh(m,n)
+                  !write(*,*) rank, 'ERR: Block k=', k, 'In the point m=', m, 'n=', n, 'ssh=', ssh(k)%vals(m,n),   &
+                  !    'step: ', num_step, 'lon: ', geo_lon_t(k)%vals(m, n), 'lat: ', geo_lat_t(k)%vals(m, n)
+
+                  call abort_model('SIGFPRE predict error')
+              endif
+          endif
+      enddo
+  enddo
+end subroutine
 
 subroutine sw_update_ssh_kernel(tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp, ubrtr, vbrtr)
 

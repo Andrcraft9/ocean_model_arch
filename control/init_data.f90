@@ -10,7 +10,8 @@ module init_data_module
     use io_module, only: read_data
     use gridcon_module, only: gridcon
     use basinpar_module, only: basinpar
-    use mpp_sync_module, only: sync 
+    use mpp_sync_module, only: sync
+    use errors_module, only: abort_model
 
     implicit none
     save
@@ -23,7 +24,7 @@ contains
 
     subroutine init_ocean_data(domain, grid_data, ocean_data)
         use config_sw_module, only: ssh_init_file_name
-        use shallow_water_interface_module, only: envoke_hh_init_kernel
+        use shallow_water_interface_module, only: envoke_hh_init_kernel, envoke_check_ssh_err_kernel
 
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(inout) :: grid_data

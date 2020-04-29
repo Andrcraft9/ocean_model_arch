@@ -11,18 +11,40 @@ module shallow_water_interface_module
     use mpp_sync_module, only: sync 
     use mixing_module, only: stress_components_kernel
     use depth_module, only: hh_init_kernel, hh_update_kernel, hh_shift_kernel
-    use velssh_sw_module, only: sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
+    use velssh_sw_module, only: check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
 
     implicit none
     save
     private
 
+    public :: envoke_check_ssh_err_kernel
     public :: envoke_stress_components_kernel
     public :: envoke_hh_init_kernel, envoke_hh_update_kernel, envoke_hh_shift_kernel
     public :: envoke_uv_trans_vort_kernel, envoke_uv_trans_kernel, envoke_uv_diff2_kernel
     public :: envoke_sw_update_ssh_kernel, envoke_sw_update_uv, envoke_sw_next_step
 
 contains
+
+    subroutine envoke_check_ssh_err_kernel(domain, grid_data, ssh, name)
+    
+    type(domain_type), intent(in) :: domain
+    type(grid_type), intent(in) :: grid_data
+    type(data2D_real8_type), intent(in) :: ssh
+    character(*), intent(in) :: name
+
+    integer :: k
+
+    do k = 1, domain%bcount
+            
+        call set_kernel_interface(domain, k)
+
+        call check_ssh_err_kernel(grid_data  %lu   %block(k)%field,  &
+                                              ssh  %block(k)%field,  &
+                                  name)
+
+    enddo
+    
+    end subroutine
 
     subroutine envoke_stress_components_kernel(domain, grid_data, u, v, str_t, str_s)
     

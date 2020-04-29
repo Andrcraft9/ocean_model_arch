@@ -5,6 +5,7 @@ module shallow_water_module
     use ocean_module, only: ocean_type
     use grid_module, only: grid_type
     use config_sw_module, only: full_free_surface, time_smooth, trans_terms, ksw_lat, lvisc_2
+    use mpp_module, only: mpp_rank
     use shallow_water_interface_module
 
     implicit none
@@ -67,6 +68,9 @@ contains
             !initialize depth for external mode
             call envoke_hh_init_kernel(domain, grid_data, ocean_data%ssh, ocean_data%sshp)
         endif
+
+        ! Check error
+        call envoke_check_ssh_err_kernel(domain, grid_data, ocean_data%ssh, 'ssh')
 
     endsubroutine expl_shallow_water
 
