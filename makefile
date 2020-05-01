@@ -3,7 +3,15 @@
 
 ## definitions
 FC = mpifort
-FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -ffree-line-length-0 -O3 -Wtabs -fopenmp -I ./
+
+# For gfortran, degug only:
+#FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -ffree-line-length-0 -O3 -Wtabs -fopenmp -I ./
+
+# For gfortran, default options:
+FCFLAGS = -cpp -dM -ffree-line-length-0 -O3 -fopenmp -I ./
+
+#OMP parrallel options
+#FCFLAGS = -O3 -openmp -auto -stack_temps -I ./
 
 ## sources for the program
 SHARED = \
