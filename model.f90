@@ -47,6 +47,23 @@ program model
     call init_grid_data(domain_data, grid_global_data, grid_data)
     call init_ocean_data(domain_data, grid_data, ocean_data)
 
+    if (is_local_print_step() > 0) then
+        if (mpp_rank == 0) print *, "Output initial local data..."
+        call local_output(domain_data, &
+                          grid_data,   &
+                          ocean_data,  &
+                          1,  &
+                          year_loc,  &
+                          mon_loc,  &
+                          day_loc,  &
+                          hour_loc,  &
+                          min_loc,  &
+                          loc_data_tstep,  &
+                          yr_type  )
+
+        call time_manager_print ()
+    endif
+
     ! Solver
     do while(num_step<num_step_max)
         ! Computing one step of ocean dynamics
@@ -63,7 +80,7 @@ program model
             call local_output(domain_data, &
                               grid_data,   &
                               ocean_data,  &
-                             nrec_loc,  &
+                             nrec_loc + 1,  &
                              year_loc,  &
                               mon_loc,  & 
                               day_loc,  &
