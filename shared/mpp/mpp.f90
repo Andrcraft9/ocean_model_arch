@@ -22,7 +22,7 @@ module mpp_module
     public :: mpp_finalize
 
     ! Timers
-    real(wp8) :: mpp_time_model_step
+    real(wp8) :: mpp_time_model_step, mpp_time_sync
 contains
 
     subroutine mpp_init()
@@ -53,15 +53,24 @@ contains
         !$omp end parallel
         call mpi_barrier(mpp_cart_comm, ierr)
 
+        ! Timers
         mpp_time_model_step = 0.0d0
+        mpp_time_sync = 0.0d0
     end subroutine
 
     subroutine mpp_finalize()
         integer :: ierr
         real(wp8) :: maxtime_model_step, mintime_model_step
+        real(wp8) :: maxtime_sync, mintime_sync
+        
+        ! Timers
         call mpi_allreduce(mpp_time_model_step, maxtime_model_step, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_time_model_step, mintime_model_step, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
         if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time full of model step (max and min): ", maxtime_model_step, mintime_model_step
+        call mpi_allreduce(mpp_time_sync, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_time_sync, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time sync (max and min): ", maxtime_sync, mintime_sync
+
         call mpi_barrier(mpp_cart_comm, ierr)
 
         call mpi_finalize(ierr)
