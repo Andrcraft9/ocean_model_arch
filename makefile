@@ -5,10 +5,10 @@
 FC = mpif90
 
 # For gfortran, degug only:
-FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -finit-real=nan -ffree-line-length-0 -O3 -Wtabs -fopenmp -I ./
+#FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -finit-real=nan -ffree-line-length-0 -O3 -Wtabs -fopenmp -I ./
 
 # For gfortran, default options:
-#FCFLAGS = -cpp -dM -ffree-line-length-0 -O3 -fopenmp -I ./
+FCFLAGS = -cpp -dM -ffree-line-length-0 -O3 -fopenmp -I ./
 
 #OMP parrallel options
 #FCFLAGS = -O3 -openmp -auto -stack_temps -I ./
