@@ -24,7 +24,7 @@ contains
 
     subroutine init_ocean_data(domain, grid_data, ocean_data)
         use config_sw_module, only: ssh_init_file_name
-        use shallow_water_interface_module, only: envoke_hh_init_kernel, envoke_check_ssh_err_kernel
+        use shallow_water_interface_module, only: envoke_hh_init_kernel
 
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(inout) :: grid_data
@@ -43,6 +43,16 @@ contains
         call ocean_data%sshp%copy_from(domain, ocean_data%ssh)
 
         call envoke_hh_init_kernel(domain, grid_data, ocean_data%ssh, ocean_data%sshp)
+
+        ! Zero velocity
+        ! U
+        call ocean_data%ubrtr%fill(domain, 0.0d0)
+        call ocean_data%ubrtrn%fill(domain, 0.0d0)
+        call ocean_data%ubrtrp%fill(domain, 0.0d0)
+        ! V
+        call ocean_data%vbrtr%fill(domain, 0.0d0)
+        call ocean_data%vbrtrn%fill(domain, 0.0d0)
+        call ocean_data%vbrtrp%fill(domain, 0.0d0)
 
     end subroutine init_ocean_data
 
