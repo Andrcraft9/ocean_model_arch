@@ -1,6 +1,6 @@
 program model
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module, only: mpp_init, mpp_finalize, mpp_rank
+    use mpp_module, only: mpp_init, mpp_finalize, mpp_rank, start_timer, end_timer, mpp_time_model_step
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar
     use config_sw_module, only: load_config_sw
@@ -18,6 +18,8 @@ program model
     use shallow_water_module, only: expl_shallow_water
 
     implicit none
+
+    real(wp8) :: t_local
 
     call mpp_init()
 
@@ -76,8 +78,11 @@ program model
 
     ! Solver
     do while(num_step<num_step_max)
+        call start_timer(t_local)
         ! Computing one step of ocean dynamics
         call expl_shallow_water(tau, domain_data, grid_data, ocean_data)
+        call end_timer(t_local)
+        mpp_time_model_step = mpp_time_model_step + t_local
         
         ! Next time step
         num_step = num_step + 1

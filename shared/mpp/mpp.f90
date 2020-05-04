@@ -2,6 +2,7 @@ module mpp_module
     ! MPI massively parallel processing library
 
     use mpi
+    use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
 
     implicit none
     save
@@ -20,6 +21,8 @@ module mpp_module
     public :: mpp_init
     public :: mpp_finalize
 
+    ! Timers
+    real(wp8) :: mpp_time_model_step
 contains
 
     subroutine mpp_init()
@@ -49,12 +52,31 @@ contains
         if (mpp_num_thread .eq. 0) print *, "rank and OMP Threads: ", mpp_rank, mpp_count_threads
         !$omp end parallel
         call mpi_barrier(mpp_cart_comm, ierr)
+
+        mpp_time_model_step = 0.0d0
     end subroutine
 
     subroutine mpp_finalize()
         integer :: ierr
+        real(wp8) :: maxtime_model_step, mintime_model_step
+        call mpi_allreduce(mpp_time_model_step, maxtime_model_step, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_time_model_step, mintime_model_step, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time full of model step (max and min): ", maxtime_model_step, mintime_model_step
+        call mpi_barrier(mpp_cart_comm, ierr)
 
         call mpi_finalize(ierr)
+    end subroutine
+
+    subroutine start_timer(time)
+        real(wp8), intent(inout) :: time
+        time = mpi_wtime()
+        return
+    end subroutine
+
+    subroutine end_timer(time)
+        real(wp8), intent(inout) :: time
+        time = mpi_wtime() - time
+        return
     end subroutine
 
 end module mpp_module
