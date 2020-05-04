@@ -20,8 +20,6 @@ contains
     ! explicit shallow water equation sloving
     subroutine expl_shallow_water(tau, domain, grid_data, ocean_data)
 
-        implicit none
-
         real(wp8), intent(in) :: tau
         type(domain_type), intent(in) :: domain
         type(grid_type), intent(inout) :: grid_data
@@ -34,7 +32,7 @@ contains
         call envoke_sw_update_ssh_kernel(domain, grid_data, tau, ocean_data%sshn, ocean_data%sshp, ocean_data%ubrtr, ocean_data%vbrtr)
 
         if (full_free_surface>0) then
-            call envoke_hh_update_kernel(domain, grid_data, ocean_data%ssh)
+            call envoke_hh_update_kernel(domain, grid_data, ocean_data%sshn)
         endif
 
         !computing advective and lateral-viscous terms for 2d-velocity
