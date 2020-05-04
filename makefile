@@ -16,6 +16,7 @@ FCFLAGS = -cpp -dM -ffree-line-length-0 -O3 -fopenmp -I ./
 ## sources for the program
 SHARED = \
 	shared/kind.f90 \
+	shared/kernel_runtime.f90 \
 	shared/constants.f90 \
 	shared/mpp/mpp.f90 \
 	shared/configs/basinpar.f90 \

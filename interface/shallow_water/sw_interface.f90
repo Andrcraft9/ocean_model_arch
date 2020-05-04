@@ -1,7 +1,7 @@
 module shallow_water_interface_module
-#include "core/kernel_macros.fi"
+#include "macros/kernel_macros.fi"
 
-    use kernel_interface_module, only: set_kernel_interface
+    use kernel_interface_module, only: set_kernel_interface, start_kernel_timer, end_kernel_timer
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
     use decomposition_module, only: domain_type
@@ -58,6 +58,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('stress_components_kernel')
         do k = 1, domain%bcount
             
             call set_kernel_interface(domain, k)
@@ -79,6 +80,7 @@ contains
                                           nlev)
 
         enddo
+        call end_kernel_timer('stress_components_kernel')
 
         call sync(domain, str_t)
         call sync(domain, str_s)
@@ -93,6 +95,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('hh_init_kernel')
         do k = 1, domain%bcount
             
             call set_kernel_interface(domain, k)
@@ -126,6 +129,7 @@ contains
                                 grid_data   %hhq_rest  %block(k)%field)
 
         enddo
+        call end_kernel_timer('hh_init_kernel')
 
         call sync(domain, grid_data%hhu)
         call sync(domain, grid_data%hhu_p)
@@ -147,6 +151,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('hh_update_kernel')
         do k = 1, domain%bcount
 
             call set_kernel_interface(domain, k)
@@ -171,6 +176,7 @@ contains
                                   grid_data   %hhq_rest  %block(k)%field)
 
         enddo
+        call end_kernel_timer('hh_update_kernel')
 
         call sync(domain, grid_data%hhu_n)
         call sync(domain, grid_data%hhv_n)
@@ -185,6 +191,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('hh_shift_kernel')
         do k = 1, domain%bcount
 
             call set_kernel_interface(domain, k)
@@ -207,6 +214,7 @@ contains
                                  grid_data  %hhh_n  %block(k)%field)
 
         enddo
+        call end_kernel_timer('hh_shift_kernel')
 
     end subroutine
 
@@ -222,6 +230,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('uv_trans_vort_kernel')
         do k = 1, domain%bcount
             
             call set_kernel_interface(domain, k)
@@ -237,6 +246,7 @@ contains
                                       nlev)
 
         enddo
+        call end_kernel_timer('uv_trans_vort_kernel')
 
         call sync(domain, vort)
 
@@ -255,6 +265,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('uv_trans_kernel')
         do k = 1, domain%bcount
             
             call set_kernel_interface(domain, k)
@@ -275,6 +286,7 @@ contains
                                              RHSy  %block(k)%field,  &
                                  nlev)
         enddo
+        call end_kernel_timer('uv_trans_kernel')
     
     end subroutine
 
@@ -290,6 +302,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('uv_diff2_kernel')
         do k = 1, domain%bcount
             
             call set_kernel_interface(domain, k)
@@ -316,6 +329,7 @@ contains
                                  nlev)
 
         enddo
+        call end_kernel_timer('uv_diff2_kernel')
     
     end subroutine
 
@@ -329,6 +343,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('sw_update_ssh_kernel')
         do k = 1, domain%bcount
             
             call set_kernel_interface(domain, k)
@@ -347,6 +362,7 @@ contains
                                                  vbrtr  %block(k)%field)
 
         enddo
+        call end_kernel_timer('sw_update_ssh_kernel')
 
         call sync(domain, sshn)
     
@@ -365,6 +381,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('sw_update_uv')
         do k = 1, domain%bcount
             
             call set_kernel_interface(domain, k)
@@ -402,6 +419,7 @@ contains
                                           RHSy_dif  %block(k)%field)
 
         enddo
+        call end_kernel_timer('sw_update_uv')
 
         call sync(domain, ubrtrn)
         call sync(domain, vbrtrn)
@@ -418,6 +436,7 @@ contains
 
         integer :: k
 
+        call start_kernel_timer('sw_next_step')
         do k = 1, domain%bcount
             
             call set_kernel_interface(domain, k)
@@ -436,7 +455,8 @@ contains
                                           vbrtrn  %block(k)%field,  &
                                           vbrtrp  %block(k)%field)
         enddo
-    
+        call end_kernel_timer('sw_next_step')
+
     end subroutine
 
 end module shallow_water_interface_module

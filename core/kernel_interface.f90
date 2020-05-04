@@ -1,21 +1,21 @@
 module kernel_interface_module
-    ! Module description
 
     use decomposition_module, only: domain_type
+    use kernel_runtime_module
+    use mpp_module
 
     implicit none
     save
-    private
+    public
 
-    integer, public :: bnd_x1, bnd_x2, bnd_y1, bnd_y2
-    integer, public :: nx_start, nx_end, ny_start, ny_end
+    integer :: bnd_x1, bnd_x2, bnd_y1, bnd_y2
+    integer :: nx_start, nx_end, ny_start, ny_end
 
-    public :: set_kernel_interface
+    real(wp8) :: kernel_time_local
 
 contains
 
     subroutine set_kernel_interface(domain, k)
-        ! Subroutine description
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: k
 
@@ -28,6 +28,24 @@ contains
         nx_end   = domain%bnx_end(k)
         ny_start = domain%bny_start(k)
         ny_end   = domain%bny_end(k)
-    end subroutine 
+    end subroutine
+
+    subroutine end_kernel_timer(kernel_name)
+        character(*), intent(in) :: kernel_name
+        integer :: kernel_id
+
+        call end_timer(kernel_time_local)
+        call get_kernel_id(kernel_name, kernel_id)
+        mpp_calls_kernels(kernel_id) = mpp_calls_kernels(kernel_id) + 1
+        mpp_time_kernels(kernel_id) = mpp_time_kernels(kernel_id) + kernel_time_local
+    end subroutine
+
+    subroutine start_kernel_timer(kernel_name)
+        character(*), intent(in) :: kernel_name
+        integer :: kernel_id
+
+        call start_timer(kernel_time_local)
+
+    end subroutine
 
 end module kernel_interface_module

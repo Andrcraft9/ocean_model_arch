@@ -2,6 +2,7 @@ module mpp_module
     ! MPI massively parallel processing library
 
     use mpi
+    use kernel_runtime_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
 
     implicit none
@@ -23,6 +24,8 @@ module mpp_module
 
     ! Timers
     real(wp8) :: mpp_time_model_step, mpp_time_sync
+    real(wp8), allocatable :: mpp_time_kernels(:)
+    integer, allocatable :: mpp_calls_kernels(:)
 contains
 
     subroutine mpp_init()
@@ -56,12 +59,19 @@ contains
         ! Timers
         mpp_time_model_step = 0.0d0
         mpp_time_sync = 0.0d0
+
+        allocate(mpp_time_kernels(max_kernels))
+        allocate(mpp_calls_kernels(max_kernels))
+        mpp_time_kernels = 0.0d0
+        mpp_calls_kernels = 0
     end subroutine
 
     subroutine mpp_finalize()
-        integer :: ierr
+        integer :: k, ierr
         real(wp8) :: maxtime_model_step, mintime_model_step
         real(wp8) :: maxtime_sync, mintime_sync
+        real(wp8) :: maxtime_kernel, mintime_kernel
+        character(80) :: kernel_name
         
         ! Timers
         call mpi_allreduce(mpp_time_model_step, maxtime_model_step, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
@@ -70,6 +80,17 @@ contains
         call mpi_allreduce(mpp_time_sync, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_time_sync, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
         if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time sync (max and min): ", maxtime_sync, mintime_sync
+
+        do k = 1, max_kernels
+            call mpi_allreduce(mpp_time_kernels(k), maxtime_kernel, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+            call mpi_allreduce(mpp_time_kernels(k), mintime_kernel, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
+            if (maxtime_kernel > 0.0d0) then
+                call get_kernel_name(k, kernel_name)
+                if (mpp_rank == 0) then
+                    write(*,'(a25, a25, I10, F12.2, F12.2)') kernel_name, "Time (calls, max and min): ", mpp_calls_kernels(k), maxtime_kernel, mintime_kernel
+                endif
+            endif
+        enddo
 
         call mpi_barrier(mpp_cart_comm, ierr)
 

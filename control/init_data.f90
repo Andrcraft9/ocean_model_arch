@@ -1,5 +1,5 @@
 module init_data_module
-#include "core/kernel_macros.fi"
+#include "macros/kernel_macros.fi"
     ! Initialize data in model
 
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period

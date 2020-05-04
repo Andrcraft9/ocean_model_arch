@@ -1,7 +1,7 @@
 module io_module
     ! Input/Output module
 
-#include "core/kernel_macros.fi"
+#include "macros/kernel_macros.fi"
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpi

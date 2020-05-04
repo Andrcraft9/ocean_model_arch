@@ -1,5 +1,5 @@
 module basinpar_module
-#include "core/kernel_macros.fi"
+#include "macros/kernel_macros.fi"
     ! Initializing basin grid parameters
 
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
