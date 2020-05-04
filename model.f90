@@ -47,6 +47,16 @@ program model
     call init_grid_data(domain_data, grid_global_data, grid_data)
     call init_ocean_data(domain_data, grid_data, ocean_data)
 
+    call time_manager_def()
+    if (mpp_rank .eq. 0) then
+        print *,  '=================================================================='
+        print *,  '------------ Eplicit shallow water scheme, version PSyKAl  -------'
+        print *,  '=================================================================='
+        print *,  '=================================================================='
+        print *,  '----------- Starting shallow water model time integration --------'
+        print *,  '=================================================================='
+    endif
+
     if (is_local_print_step() > 0) then
         if (mpp_rank == 0) print *, "Output initial local data..."
         call local_output(domain_data, &
