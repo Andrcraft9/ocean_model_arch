@@ -21,8 +21,8 @@ subroutine check_ssh_err_kernel(lu, ssh, name)
   character(*), intent(in) :: name
   integer :: m, n, ierr
 
-  do n = ny_start-1,ny_end+1
-      do m = nx_start-1,nx_end+1
+  do n = ny_start, ny_end
+      do m = nx_start, nx_end
           if (lu(m,n)>0.5) then
               if (ssh(m,n)<10000.0d0 .and. ssh(m,n)>-10000.0d0) then
                 continue
