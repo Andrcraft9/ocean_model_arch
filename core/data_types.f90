@@ -75,6 +75,7 @@ module data_types_module
         procedure, public :: copy_from => copy_data2D_real8_from_real8
         procedure, public :: copy_from_real4 => copy_data2D_real8_from_real4
         procedure, public :: fill => fill_data2D_real8
+        procedure, public :: init_nans => init_nans_data2D_real8
     end type data2D_real8_type
 
     ! 3D data
@@ -246,6 +247,52 @@ contains
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             this%block(k)%field = 0.0
+        enddo
+    end subroutine
+
+    subroutine init_nans_data2D_real8(this, domain)
+        use mpp_module, only: mpp_rank
+        use, intrinsic :: iso_fortran_env
+        use, intrinsic :: ieee_arithmetic
+
+        class(data2D_real8_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        integer :: k
+
+        integer :: m, n
+        real(wp8) :: val_nan
+
+        val_nan = ieee_value(val_nan, ieee_quiet_nan)
+
+        allocate(this%block(domain%bcount))
+        do k = 1, domain%bcount
+            allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
+            this%block(k)%field = 0.0
+
+           if (mpp_rank == 5) then
+                associate(bnd_x1 => domain%bbnd_x1(k), bnd_x2 => domain%bbnd_x2(k),  &
+                          bnd_y1 => domain%bbnd_y1(k), bnd_y2 => domain%bbnd_y2(k),  &
+                          nx_start => domain%bnx_start(k), nx_end => domain%bnx_end(k),  &
+                          ny_start => domain%bny_start(k), ny_end => domain%bny_end(k))
+        
+                    do n = ny_start-1, ny_end+1
+                        do m = nx_start-1, nx_end+1
+                            if (m == nx_start - 1) then
+                                this%block(k)%field(m, n) = val_nan
+                            endif
+                            if (m == nx_end + 1) then
+                                this%block(k)%field(m, n) = val_nan
+                            endif
+                            if (n == ny_start - 1) then
+                                this%block(k)%field(m, n) = val_nan
+                            endif
+                            if (n == ny_end + 1) then
+                                this%block(k)%field(m, n) = val_nan
+                            endif
+                        enddo
+                    enddo
+                end associate
+            endif
         enddo
     end subroutine
 
