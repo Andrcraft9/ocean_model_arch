@@ -4,7 +4,8 @@ module gridcon_module
     use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
     use decomposition_module, only: domain_type
     use grid_module, only: grid_type, grid_global_type
-    use mpp_sync_module, only: sync 
+    use mpp_sync_module, only: sync
+    use errors_module, only: abort_model
 
     implicit none
     save

@@ -33,23 +33,20 @@ contains
                                      nnn_out,   &   !first significant point in y-direction (output)
                                      nn_out)        !last significant point in y-direction (output)
 
- integer bnd_x1,bnd_x2,bnd_y1,bnd_y2
- integer mmm_out, mm_out, nnn_out, nn_out
- 
- real(8) x_mod(*),   &
-         y_mod(*),   &
-  geo_lon(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-  geo_lat(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
- 
- real(4)   metr_x(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-           metr_y(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-          cor_sin(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-          cor_cos(bnd_x1:bnd_x2,bnd_y1:bnd_y2)     
- 
- real(8) rot_coef(bnd_x1:bnd_x2,bnd_y1:bnd_y2,4)
- 
- integer key_rot, key_cor
- integer m,n
+ integer :: bnd_x1,bnd_x2,bnd_y1,bnd_y2
+ integer :: mmm_out, mm_out, nnn_out, nn_out
+ real(wp8) :: x_mod(bnd_x1:bnd_x2),   &
+              y_mod(bnd_y1:bnd_y2),   &
+            geo_lon(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+            geo_lat(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+ real(wp4) :: metr_x(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+              metr_y(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+             cor_sin(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+             cor_cos(bnd_x1:bnd_x2,bnd_y1:bnd_y2)     
+ real(wp8) :: rot_coef(bnd_x1:bnd_x2,bnd_y1:bnd_y2,4)
+ integer :: key_rot, key_cor
+
+ integer :: m,n
 
       do n=nnn_out,nn_out
        do m=mmm_out,mm_out    
@@ -102,31 +99,25 @@ contains
                                      nnn_out,   &   !first significant point in y-direction (output)
                                      nn_out)        !last significant point in y-direction (output)
 
- integer bnd_x1,bnd_x2,bnd_y1,bnd_y2
- integer mmm_out, mm_out, nnn_out, nn_out
- 
- real(8) x_mod(*),   &
-         y_mod(*),   &
+ integer :: bnd_x1,bnd_x2,bnd_y1,bnd_y2
+ integer :: mmm_out, mm_out, nnn_out, nn_out
+ real(wp8) :: x_mod(bnd_x1:bnd_x2),   &
+              y_mod(bnd_y1:bnd_y2),   &
   geo_lon(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
   geo_lat(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
- 
- real(4)   metr_x(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-           metr_y(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-          cor_sin(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-          cor_cos(bnd_x1:bnd_x2,bnd_y1:bnd_y2)     
- 
- real(8) rot_coef(bnd_x1:bnd_x2,bnd_y1:bnd_y2,4)
- 
- integer key_rot, key_cor
+ real(wp4) ::  metr_x(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+               metr_y(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+              cor_sin(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+              cor_cos(bnd_x1:bnd_x2,bnd_y1:bnd_y2)     
+ real(wp8) :: rot_coef(bnd_x1:bnd_x2,bnd_y1:bnd_y2,4)
+ integer :: key_rot, key_cor
+ real(wp8) :: rotation_on_lon, rotation_on_lat
 
- real(8) rotation_on_lon, rotation_on_lat
-
- real(8) sin_lon, sin_lat, cos_lon, cos_lat, lat_mod       !auxilary variables
- real(8) free_term_coslon, free_term_sinlon
- 
- real(8) sinlat_extr, coslat_extr, sum_rot_coef, sum_sincos
-
- integer m,n
+ ! auxilary variables
+ real(wp8) :: sin_lon, sin_lat, cos_lon, cos_lat, lat_mod
+ real(wp8) :: free_term_coslon, free_term_sinlon
+ real(wp8) :: sinlat_extr, coslat_extr, sum_rot_coef, sum_sincos
+ integer :: m,n
 
   coslat_extr= dcosd(lat_extr)
   sinlat_extr= dsind(lat_extr)
@@ -213,43 +204,35 @@ contains
                                         nnn_out,  &   !first significant point in y-direction (output)
                                         nn_out)       !last significant point in y-direction (output)
 
- integer bnd_x1,bnd_x2,bnd_y1,bnd_y2
- integer mmm_out, mm_out, nnn_out, nn_out
- 
- real(8) x_mod(*),   &
-         y_mod(*),   &
-  geo_lon(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-  geo_lat(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
- 
- real(4)   metr_x(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-           metr_y(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-          cor_sin(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-          cor_cos(bnd_x1:bnd_x2,bnd_y1:bnd_y2)     
- 
- real(8) rot_coef(bnd_x1:bnd_x2,bnd_y1:bnd_y2,4)
- 
+ integer :: bnd_x1,bnd_x2,bnd_y1,bnd_y2
+ integer :: mmm_out, mm_out, nnn_out, nn_out
+ real(wp8) :: x_mod(bnd_x1:bnd_x2),   &
+              y_mod(bnd_y1:bnd_y2),   &
+            geo_lon(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+            geo_lat(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+ real(wp4) :: metr_x(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+              metr_y(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+             cor_sin(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
+             cor_cos(bnd_x1:bnd_x2,bnd_y1:bnd_y2)     
+ real(wp8) :: rot_coef(bnd_x1:bnd_x2,bnd_y1:bnd_y2,4)
  integer key_rot, key_cor
+ real(wp8) :: x_pole, y_pole, p_pole, q_pole
+ real(wp8) :: y_pole1, q_pole1, r3d,r2d
 
- real(8) x_pole, y_pole, p_pole, q_pole
- real(8) y_pole1, q_pole1, r3d,r2d
-
- real(8) sin_lon, sin_lat, cos_lon, cos_lat, lat_mod    !auxilary variables
- real(8) a,b,s,t,a0,b0,s0,t0                    !auxilary variables
-
- real(8) num1,num2,numa,numb,denom1
- real(8) numd1,numd2,numd3,numd4,numas,numat,numbs,numbt
- real(8) alpha_scale
- real(8) xn,yn,zn,xs,ys,zs,xm,ym,zm,lm,phm, sinphm,coslm,sinlm, phm1
- 
- real(8) dx_da, dx_db, dy_da, dy_db, da_ds, da_dt,   &
-         db_ds, db_dt, ds_dp, ds_dq, dt_dp, dt_dq,   &
-         da_dp, da_dq, db_dp, db_dq, dx_dp, dx_dq,   &
-         dy_dp, dy_dq, det, hp_divide_r, hq_divide_r
- real(8) df(2,2), dfm1(2,2)
-
- real(8) sinlat_extr, coslat_extr, sum_rot_coef, sum_sincos
-
- integer m,n
+ ! auxilary variables
+ real(wp8) :: sin_lon, sin_lat, cos_lon, cos_lat, lat_mod
+ real(wp8) :: a,b,s,t,a0,b0,s0,t0
+ real(wp8) :: num1,num2,numa,numb,denom1
+ real(wp8) :: numd1,numd2,numd3,numd4,numas,numat,numbs,numbt
+ real(wp8) :: alpha_scale
+ real(wp8) :: xn,yn,zn,xs,ys,zs,xm,ym,zm,lm,phm, sinphm,coslm,sinlm, phm1
+ real(wp8) :: dx_da, dx_db, dy_da, dy_db, da_ds, da_dt,   &
+              db_ds, db_dt, ds_dp, ds_dq, dt_dp, dt_dq,   &
+              da_dp, da_dq, db_dp, db_dq, dx_dp, dx_dq,   &
+              dy_dp, dy_dq, det, hp_divide_r, hq_divide_r
+ real(wp8) :: df(2,2), dfm1(2,2)
+ real(wp8) :: sinlat_extr, coslat_extr, sum_rot_coef, sum_sincos
+ integer :: m,n
 
   y_pole1=min(max(y_pole, -lat_extr),lat_extr)
   q_pole1=min(max(q_pole, -lat_extr),lat_extr)
