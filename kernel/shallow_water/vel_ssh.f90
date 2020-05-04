@@ -63,11 +63,11 @@ subroutine sw_update_ssh_kernel(tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp,
   do n=ny_start,ny_end
     do m=nx_start,nx_end
 
-        if(lu(m,n)>0.5) then
+        !if(lu(m,n)>0.5) then
             sshn(m,n) = sshp(m,n) + 2.0d0*tau*(  &
             - ( ubrtr(m,n)*hhu(m,n)*dyh(m,n) - ubrtr(m-1,n)*hhu(m-1,n)*dyh(m-1,n)             &
               + vbrtr(m,n)*hhv(m,n)*dxh(m,n) - vbrtr(m,n-1)*hhv(m,n-1)*dxh(m,n-1) )/(dx(m,n)*dy(m,n))  )
-        endif
+        !endif
 
     enddo
   enddo
@@ -129,7 +129,7 @@ subroutine sw_update_uv(tau, lcu, lcv,  &
   do n=ny_start,ny_end
     do m=nx_start,nx_end
         !zonal flux
-        if(lcu(m,n)>0.5) then
+        !if(lcu(m,n)>0.5) then
             bp  = hhun(m,n)*dxt(m,n)*dyh(m,n)/2.0d0/tau
             bp0 = hhup(m,n)*dxt(m,n)*dyh(m,n)/2.0d0/tau
 
@@ -140,10 +140,10 @@ subroutine sw_update_uv(tau, lcu, lcv,  &
                 +   rlh_s(m,n-1)*hhh(m,n-1)*dxb(m,n-1)*dyb(m,n-1)*(vbrtr(m+1,n-1) + vbrtr(m,n-1)) )/4.0d0
 
             ubrtrn(m,n) = (ubrtrp(m,n)*bp0 + grx )/(bp)
-        endif
+        !endif
 
         !meridional flux
-        if(lcv(m,n)>0.5) then
+        !if(lcv(m,n)>0.5) then
             bp  = hhvn(m,n)*dyt(m,n)*dxh(m,n)/2.0d0/tau
             bp0 = hhvp(m,n)*dyt(m,n)*dxh(m,n)/2.0d0/tau
 
@@ -154,7 +154,7 @@ subroutine sw_update_uv(tau, lcu, lcv,  &
                 +   rlh_s(m-1,n)*hhh(m-1,n)*dxb(m-1,n)*dyb(m-1,n)*(ubrtr(m-1,n+1)+ubrtr(m-1,n)) )/4.0d0
 
             vbrtrn(m,n) = (vbrtrp(m,n)*bp0 + gry )/(bp)
-        endif
+        !endif
     enddo
   enddo
 
@@ -229,13 +229,13 @@ subroutine uv_trans_vort_kernel(luu,                 &
 
  do n=ny_start, ny_end
    do m=nx_start, nx_end
-    if(luu(m,n)>0.5) then
+    !if(luu(m,n)>0.5) then
      do k=1,nlev
       vort(m,n,k)= (v(m+1,n,k)*dyt(m+1,n)-v(m,n,k)*dyt(m,n))     &
                   -(u(m,n+1,k)*dxt(m,n+1)-u(m,n,k)*dxt(m,n))     &
                   -((v(m+1,n,k)-v(m,n,k))*dyb(m,n)-(u(m,n+1,k)-u(m,n,k))*dxb(m,n))
      enddo
-    endif
+    !endif
    enddo
  enddo
 
@@ -277,7 +277,7 @@ subroutine uv_trans_kernel(lcu, lcv, luu,   &
     do m=nx_start,nx_end
 
 !zonal velocity
-      if(lcu(m,n)>0.5) then
+      !if(lcu(m,n)>0.5) then
 
         do k=1,nlev
 
@@ -299,10 +299,10 @@ subroutine uv_trans_kernel(lcu, lcv, luu,   &
 
         end do
 
-      end if
+      !end if
 
 !meridional velocity
-      if(lcv(m,n)>0.5) then
+      !if(lcv(m,n)>0.5) then
 
         do k=1,nlev
 
@@ -323,7 +323,7 @@ subroutine uv_trans_kernel(lcu, lcv, luu,   &
              +   vort(m-1,n,k)*hh(m-1,n)*(u(m-1,n+1,k)+u(m-1,n,k))  )/4.0d0
         end do
 
-      end if
+      !end if
 
     end do
   end do
@@ -369,7 +369,7 @@ subroutine uv_diff2_kernel(lcu, lcv,                              &
     do m=nx_start,nx_end
 
 !zonal velocity
-      if(lcu(m,n)>0.5) then
+      !if(lcu(m,n)>0.5) then
 
         do k=1,nlev
 
@@ -382,10 +382,10 @@ subroutine uv_diff2_kernel(lcu, lcv,                              &
                      -dxb(m,n-1)**2*muh_m*hh(m,n-1)*str_s(m,n-1,k) )/dxt(m,n)
         end do
 
-      end if
+      !end if
 
 !meridional velocity
-      if(lcv(m,n)>0.5) then
+      !if(lcv(m,n)>0.5) then
 
         do k=1,nlev
 
@@ -398,7 +398,7 @@ subroutine uv_diff2_kernel(lcu, lcv,                              &
                       -dyb(m-1,n)**2*muh_m*hh(m-1,n)*str_s(m-1,n,k) ) /dyt(m,n)
         end do
 
-      end if
+      !end if
 
     end do
   end do

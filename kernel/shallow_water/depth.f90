@@ -52,7 +52,7 @@ subroutine hh_init_kernel(lu, llu, llv, luh,  &
       do n=ny_start-1,ny_end
        do m=nx_start-1,nx_end
 
-        if(llu(m,n)>0.5) then
+        !if(llu(m,n)>0.5) then
 ! interpolating hhq given on T-grid(lu) to hhu given on u-grid(lcu).
           slu=dble(lu(m,n)+lu(m+1,n))
           hu(m,n)=( hq(m  ,n)*dx(m  ,n)*dy(m  ,n)*dble(lu(m  ,n))   &
@@ -61,9 +61,9 @@ subroutine hh_init_kernel(lu, llu, llv, luh,  &
                   + hqp(m+1,n)*dx(m+1,n)*dy(m+1,n)*dble(lu(m+1,n)) )/slu/dxt(m,n)/dyh(m,n)
          hun(m,n)=( hqn(m  ,n)*dx(m  ,n)*dy(m  ,n)*dble(lu(m  ,n))   &
                   + hqn(m+1,n)*dx(m+1,n)*dy(m+1,n)*dble(lu(m+1,n)) )/slu/dxt(m,n)/dyh(m,n)
-        endif
+        !endif
 
-        if(llv(m,n)>0.5) then
+        !if(llv(m,n)>0.5) then
 ! interpolating hhq given on T-grid(lu) to hhv given on v-grid(lcv).
           slu=dble(lu(m,n)+lu(m,n+1))
           hv(m,n)=( hq(m,n  )*dx(m,n  )*dy(m,n  )*dble(lu(m,n  ))       &
@@ -72,9 +72,9 @@ subroutine hh_init_kernel(lu, llu, llv, luh,  &
                   + hqp(m,n+1)*dx(m,n+1)*dy(m,n+1)*dble(lu(m,n+1)) )/slu/dxh(m,n)/dyt(m,n)
          hvn(m,n)=( hqn(m,n  )*dx(m,n  )*dy(m,n  )*dble(lu(m,n  ))       &
                   + hqn(m,n+1)*dx(m,n+1)*dy(m,n+1)*dble(lu(m,n+1)) )/slu/dxh(m,n)/dyt(m,n)
-        endif
+        !endif
 
-        if(luh(m,n)>0.5) then
+        !if(luh(m,n)>0.5) then
 ! interpolating hhq given on T-grid(lu) to hhh given on h-grid(luu).
           slu=dble(lu(m,n)+lu(m+1,n)+lu(m,n+1)+lu(m+1,n+1))
           hh(m,n)=( hq(m  ,n  )*dx(m  ,n  )*dy(m  ,n  )*dble(lu(m  ,n  ))       &
@@ -89,7 +89,7 @@ subroutine hh_init_kernel(lu, llu, llv, luh,  &
                   + hqn(m+1,n  )*dx(m+1,n  )*dy(m+1,n  )*dble(lu(m+1,n  ))       &
                    +hqn(m  ,n+1)*dx(m  ,n+1)*dy(m  ,n+1)*dble(lu(m  ,n+1))       &
                   + hqn(m+1,n+1)*dx(m+1,n+1)*dy(m+1,n+1)*dble(lu(m+1,n+1)) )/slu/dxb(m,n)/dyb(m,n)
-        endif
+        !endif
 
        end do
     end do
@@ -128,28 +128,28 @@ subroutine hh_update_kernel(lu, llu, llv, luh,  &
       do n=ny_start-1,ny_end
        do m=nx_start-1,nx_end
 
-        if(llu(m,n)>0.5) then
+        !if(llu(m,n)>0.5) then
 ! interpolating hhq given on T-grid(lu) to hhu given on u-grid(lcu).
           slu=dble(lu(m,n)+lu(m+1,n))
           hun(m,n)=( hqn(m  ,n)*dx(m  ,n)*dy(m  ,n)*dble(lu(m  ,n))   &
                    + hqn(m+1,n)*dx(m+1,n)*dy(m+1,n)*dble(lu(m+1,n)) )/slu/dxt(m,n)/dyh(m,n)
-        endif
+        !endif
 
-        if(llv(m,n)>0.5) then
+        !if(llv(m,n)>0.5) then
 ! interpolating hhq given on T-grid(lu) to hhv given on v-grid(lcv).
           slu=dble(lu(m,n)+lu(m,n+1))
           hvn(m,n)=( hqn(m,n  )*dx(m,n  )*dy(m,n  )*dble(lu(m,n  ))       &
                    + hqn(m,n+1)*dx(m,n+1)*dy(m,n+1)*dble(lu(m,n+1)) )/slu/dxh(m,n)/dyt(m,n)
-        endif
+        !endif
 
-        if(luh(m,n)>0.5) then
+        !if(luh(m,n)>0.5) then
 ! interpolating hhq given on T-grid(lu) to hhh given on h-grid(luu).
           slu=dble(lu(m,n)+lu(m+1,n)+lu(m,n+1)+lu(m+1,n+1))
           hhn(m,n)=( hqn(m  ,n  )*dx(m  ,n  )*dy(m  ,n  )*dble(lu(m  ,n  ))       &
                    + hqn(m+1,n  )*dx(m+1,n  )*dy(m+1,n  )*dble(lu(m+1,n  ))       &
                     +hqn(m  ,n+1)*dx(m  ,n+1)*dy(m  ,n+1)*dble(lu(m  ,n+1))       &
                    + hqn(m+1,n+1)*dx(m+1,n+1)*dy(m+1,n+1)*dble(lu(m+1,n+1)) )/slu/dxb(m,n)/dyb(m,n)
-        endif
+        !endif
 
        end do
     end do
