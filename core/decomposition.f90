@@ -152,6 +152,7 @@ contains
         if (debug_level >= 1) then
             if (mpp_rank == 0 ) print *, 'Total blocks weigth:', tot_weight, "Mean blocks weigth:", mean_weight
         endif
+        call mpi_barrier(mpp_cart_comm, ierr)
 
         weight = 0.0d0
         last_weight = 0.0d0
@@ -271,6 +272,7 @@ contains
 
         integer :: itot, ishared
         real(wp8) :: icomm_metric, max_icomm_metric
+        integer :: max_points_per_block, min_points_per_block, reduced_max_points_per_block, reduced_min_points_per_block
 
         this%nz = nz
 
@@ -389,6 +391,25 @@ contains
             deallocate(glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2)
 
             ! DEBUG
+            if (debug_level >= 1) then
+                max_points_per_block = 0
+                min_points_per_block = nx*ny
+                do k = 1, bcount
+                    if ( (this%bnx_end(k) - this%bnx_start(k) + 1) * (this%bny_end(k) - this%bny_start(k) + 1) > max_points_per_block) then
+                        max_points_per_block = (this%bnx_end(k) - this%bnx_start(k) + 1) * (this%bny_end(k) - this%bny_start(k) + 1)
+                    endif
+                    if ( (this%bnx_end(k) - this%bnx_start(k) + 1) * (this%bny_end(k) - this%bny_start(k) + 1) < min_points_per_block) then
+                        min_points_per_block = (this%bnx_end(k) - this%bnx_start(k) + 1) * (this%bny_end(k) - this%bny_start(k) + 1)
+                    endif
+                enddo
+                print *, mpp_rank, 'Blocks', bcount, 'Max points per block:', max_points_per_block, 'Min points per blocks: ', min_points_per_block
+                call mpi_barrier(mpp_cart_comm, ierr)
+                call mpi_allreduce(min_points_per_block, reduced_min_points_per_block, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
+                call mpi_allreduce(max_points_per_block, reduced_max_points_per_block, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
+                if (mpp_rank == 0) print *, 'Reduced Max points per block:', reduced_max_points_per_block, 'Reduced Min points per blocks: ', reduced_min_points_per_block
+                call mpi_barrier(mpp_cart_comm, ierr)
+            endif
+
             if (debug_level >= 2) then
                 if (mpp_rank == 0) then
                     do k = 1, bcount
