@@ -1,7 +1,6 @@
 module velssh_sw_module
 
   use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-  use kernel_interface_module, only: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
   use constants_module, only: FreeFallAcc
 
   implicit none
@@ -12,10 +11,13 @@ module velssh_sw_module
 
 contains
 
-subroutine check_ssh_err_kernel(lu, ssh, name)
+subroutine check_ssh_err_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                lu, ssh, name)
   use mpp_module, only: rank => mpp_rank
   use errors_module, only: abort_model
   
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+
   real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
   real(wp8), intent(in) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
   character(*), intent(in) :: name
@@ -38,7 +40,10 @@ subroutine check_ssh_err_kernel(lu, ssh, name)
   enddo
 end subroutine
 
-subroutine sw_update_ssh_kernel(tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp, ubrtr, vbrtr)
+subroutine sw_update_ssh_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp, ubrtr, vbrtr)
+
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
   real(wp8), intent(in) :: tau
 
@@ -74,7 +79,8 @@ subroutine sw_update_ssh_kernel(tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp,
 
 end subroutine
 
-subroutine sw_update_uv(tau, lcu, lcv,  &
+subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                        tau, lcu, lcv,  &
                         dxt, dyt, dxh, dyh, dxb, dyb,  &
                         hhu, hhun, hhup,  &
                         hhv, hhvn, hhvp,  &
@@ -82,6 +88,8 @@ subroutine sw_update_uv(tau, lcu, lcv,  &
                         ubrtr, ubrtrn, ubrtrp, vbrtr, vbrtrn, vbrtrp,  &
                         rdis, rlh_s,  &
                         RHSx, RHSy, RHSx_adv, RHSy_adv, RHSx_dif, RHSy_dif)
+
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
   real(wp8), intent(in) :: tau
   
@@ -160,15 +168,17 @@ subroutine sw_update_uv(tau, lcu, lcv,  &
 
 end subroutine
 
-subroutine sw_next_step(time_smooth,  &
+subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                        time_smooth,  &
                         lu, lcu, lcv,  &
                         ssh, sshn, sshp,  &
                         ubrtr, ubrtrn, ubrtrp,  &
                         vbrtr, vbrtrn, vbrtrp)
 
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+
   real(wp8), intent(in) :: time_smooth
 
-    
   real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
                            lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                            lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
@@ -208,10 +218,13 @@ subroutine sw_next_step(time_smooth,  &
 
 end subroutine
 
-subroutine uv_trans_vort_kernel(luu,                 &
+subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                luu,                 &
                                 dxt, dyt, dxb, dyb,  &
                                 u, v, vort,          &
                                 nlev)
+
+ integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
  real(wp4), intent(in) :: luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
@@ -241,11 +254,14 @@ subroutine uv_trans_vort_kernel(luu,                 &
 
 end subroutine uv_trans_vort_kernel
 
-subroutine uv_trans_kernel(lcu, lcv, luu,   &
+subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                           lcu, lcv, luu,   &
                            dxh, dyh,        &
                            u, v, vort,      &
                            hq, hu, hv, hh,  &
                            RHSx, RHSy, nlev)
+
+ integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
  integer, intent(in) :: nlev
 
@@ -330,13 +346,17 @@ subroutine uv_trans_kernel(lcu, lcv, luu,   &
 
 endsubroutine uv_trans_kernel
 
-subroutine uv_diff2_kernel(lcu, lcv,                              &
+subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                           lcu, lcv,                              &
                            dx, dy, dxt, dyt, dxh, dyh, dxb, dyb,  &
                            mu, str_t, str_s,                      &
                            hq, hu, hv, hh,                        &
                            RHSx, RHSy, nlev)
 
+ integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+
  integer, intent(in) :: nlev
+ 
  real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                           lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 

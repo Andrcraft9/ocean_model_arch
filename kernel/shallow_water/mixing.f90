@@ -1,7 +1,6 @@
 module mixing_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use kernel_interface_module, only: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
   
     implicit none
     save
@@ -12,7 +11,10 @@ module mixing_module
 contains
 
 !====================================================================================
-subroutine stress_components_kernel(lu, luu, dx, dy, dxt, dyt, dxh, dyh, dxb, dyb, u, v, str_t, str_s, nlev)
+subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                    lu, luu, dx, dy, dxt, dyt, dxh, dyh, dxb, dyb, u, v, str_t, str_s, nlev)
+
+    integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
     real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                              luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)

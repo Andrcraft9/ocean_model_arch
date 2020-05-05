@@ -50,7 +50,12 @@ contains
 
     subroutine load_config_basinpar()
     ! Here must be reading from config file (parsing)
+        
+        call load_config_basinpar_as250m()
 
+    end subroutine
+
+    subroutine load_config_basinpar_bs4km()
         nx = 289
         ny = 163
         nz = 1
@@ -84,6 +89,42 @@ contains
 
         mask_file_name = '/home/andr/code/fortran/ocean_model_arch/data/BS4km/mask.txt'
         bottom_topography_file_name = '/home/andr/code/fortran/ocean_model_arch/data/BS4km/topo.dat'
+    end subroutine
+
+    subroutine load_config_basinpar_as250m()
+        nx = 1525
+        ny = 1115
+        nz = 1
+        mmm = 3
+        nnn = 3
+        mm = nx-2
+        nn = ny-2
+        periodicity_x = 0
+        periodicity_y = 0
+
+        rlon = 34.751560d0
+        rlat = 44.801125d0
+        dxst = 0.00312d0
+        dyst = 0.00225d0
+
+        xgr_type = 0
+        ygr_type = 0
+
+        if (xgr_type > 0) allocate(x_levels(nx))
+        if (ygr_type > 0) allocate(y_levels(ny))
+
+        curve_grid = 1
+
+        rotation_on_lon = 0.0d0
+        rotation_on_lat = 0.0d0
+
+        x_pole = 90.0d0
+        y_pole = 60.0d0
+        p_pole = 90.0d0
+        q_pole = -90.0d0
+
+        mask_file_name = '/home/andr/code/fortran/ocean_model_arch/data/AS/maskAzovCor.txt'
+        bottom_topography_file_name = '/home/andr/code/fortran/ocean_model_arch/data/AS/TopoAzovSea_250x250m_3.5m.dat'
     end subroutine
 
 end module config_basinpar_module

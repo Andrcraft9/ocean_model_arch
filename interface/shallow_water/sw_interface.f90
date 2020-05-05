@@ -1,9 +1,9 @@
 module shallow_water_interface_module
 #include "macros/kernel_macros.fi"
 
-    use kernel_interface_module, only: set_kernel_interface, start_kernel_timer, end_kernel_timer
+    use kernel_interface_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
+    use mpp_module
     use decomposition_module, only: domain_type
     use data_types_module, only: data2D_real8_type, data2D_real4_type
     use ocean_module, only: ocean_type
@@ -12,6 +12,7 @@ module shallow_water_interface_module
     use mixing_module, only: stress_components_kernel
     use depth_module, only: hh_init_kernel, hh_update_kernel, hh_shift_kernel
     use velssh_sw_module, only: check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
+    use errors_module, only: abort_model, check_error
 
     implicit none
     save
@@ -33,12 +34,15 @@ contains
     character(*), intent(in) :: name
 
     integer :: k
+    type(block_bounds_type) :: bb
 
     do k = 1, domain%bcount
             
-        call set_kernel_interface(domain, k)
+        call bb%set(domain, k)
 
-        call check_ssh_err_kernel(grid_data  %lu   %block(k)%field,  &
+        call check_ssh_err_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                  bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                  grid_data  %lu   %block(k)%field,  &
                                               ssh  %block(k)%field,  &
                                   name)
 
@@ -57,13 +61,16 @@ contains
         integer, parameter :: nlev = 1
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('stress_components_kernel')
         do k = 1, domain%bcount
             
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
 
-            call stress_components_kernel(grid_data  %lu     %block(k)%field,  & 
+            call stress_components_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                          bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                          grid_data  %lu     %block(k)%field,  & 
                                           grid_data  %luu    %block(k)%field,  & 
                                           grid_data  %dx     %block(k)%field,  & 
                                           grid_data  %dy     %block(k)%field,  & 
@@ -94,13 +101,16 @@ contains
         type(data2D_real8_type), intent(in) :: ssh, sshp
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('hh_init_kernel')
         do k = 1, domain%bcount
             
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
 
-            call hh_init_kernel(grid_data   %lu        %block(k)%field,  &
+            call hh_init_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                grid_data   %lu        %block(k)%field,  &
                                 grid_data   %llu       %block(k)%field,  &
                                 grid_data   %llv       %block(k)%field,  & 
                                 grid_data   %luh       %block(k)%field,  &
@@ -150,13 +160,16 @@ contains
         type(data2D_real8_type), intent(in) :: ssh
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('hh_update_kernel')
         do k = 1, domain%bcount
 
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
 
-            call hh_update_kernel(grid_data   %lu        %block(k)%field,  & 
+            call hh_update_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                  bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                  grid_data   %lu        %block(k)%field,  & 
                                   grid_data   %llu       %block(k)%field,  & 
                                   grid_data   %llv       %block(k)%field,  & 
                                   grid_data   %luh       %block(k)%field,  & 
@@ -190,13 +203,16 @@ contains
         type(grid_type), intent(inout) :: grid_data
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('hh_shift_kernel')
         do k = 1, domain%bcount
 
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
 
-            call hh_shift_kernel(grid_data  %lu     %block(k)%field,  &
+            call hh_shift_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                 bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                 grid_data  %lu     %block(k)%field,  &
                                  grid_data  %llu    %block(k)%field,  &
                                  grid_data  %llv    %block(k)%field,  &
                                  grid_data  %luh    %block(k)%field,  &
@@ -229,13 +245,16 @@ contains
         integer, parameter :: nlev = 1
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('uv_trans_vort_kernel')
         do k = 1, domain%bcount
             
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
 
-            call uv_trans_vort_kernel(grid_data  %luu   %block(k)%field,  &
+            call uv_trans_vort_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                      bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                      grid_data  %luu   %block(k)%field,  &
                                       grid_data  %dxt   %block(k)%field,  &
                                       grid_data  %dyt   %block(k)%field,  &
                                       grid_data  %dxb   %block(k)%field,  &
@@ -264,13 +283,16 @@ contains
         integer, parameter :: nlev = 1
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('uv_trans_kernel')
         do k = 1, domain%bcount
             
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
 
-            call uv_trans_kernel(grid_data  %lcu   %block(k)%field,  &
+            call uv_trans_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                 bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                 grid_data  %lcu   %block(k)%field,  &
                                  grid_data  %lcv   %block(k)%field,  &
                                  grid_data  %luu   %block(k)%field,  &
                                  grid_data  %dxh   %block(k)%field,  &
@@ -301,13 +323,16 @@ contains
         integer, parameter :: nlev = 1
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('uv_diff2_kernel')
         do k = 1, domain%bcount
             
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
             
-            call uv_diff2_kernel(grid_data  %lcu    %block(k)%field,  &
+            call uv_diff2_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                 bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                 grid_data  %lcu    %block(k)%field,  &
                                  grid_data  %lcv    %block(k)%field,  &
                                  grid_data  %dx     %block(k)%field,  &
                                  grid_data  %dy     %block(k)%field,  &
@@ -342,26 +367,33 @@ contains
         type(data2D_real8_type), intent(inout) :: sshn
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('sw_update_ssh_kernel')
+
+        !$omp parallel do default(shared)    &
+        !$omp private(k, bb)
         do k = 1, domain%bcount
             
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
             
-            call sw_update_ssh_kernel(tau,                                &
-                                     grid_data  %lu     %block(k)%field,  & 
-                                     grid_data  %dx     %block(k)%field,  & 
-                                     grid_data  %dy     %block(k)%field,  & 
-                                     grid_data  %dxh    %block(k)%field,  & 
-                                     grid_data  %dyh    %block(k)%field,  & 
-                                     grid_data  %hhu    %block(k)%field,  & 
-                                     grid_data  %hhv    %block(k)%field,  & 
-                                                 sshn   %block(k)%field,  & 
-                                                 sshp   %block(k)%field,  & 
-                                                 ubrtr  %block(k)%field,  & 
-                                                 vbrtr  %block(k)%field)
+            call sw_update_ssh_kernel(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                                      bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                                      tau,                                 &
+                                      grid_data  %lu     %block(k)%field,  & 
+                                      grid_data  %dx     %block(k)%field,  & 
+                                      grid_data  %dy     %block(k)%field,  & 
+                                      grid_data  %dxh    %block(k)%field,  & 
+                                      grid_data  %dyh    %block(k)%field,  & 
+                                      grid_data  %hhu    %block(k)%field,  & 
+                                      grid_data  %hhv    %block(k)%field,  & 
+                                                  sshn   %block(k)%field,  & 
+                                                  sshp   %block(k)%field,  & 
+                                                  ubrtr  %block(k)%field,  & 
+                                                  vbrtr  %block(k)%field)
 
         enddo
+        !$omp end parallel do
         call end_kernel_timer('sw_update_ssh_kernel')
 
         call sync(domain, sshn)
@@ -380,13 +412,16 @@ contains
         type(data2D_real8_type), intent(inout) :: ubrtrn, vbrtrn
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('sw_update_uv')
         do k = 1, domain%bcount
             
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
             
-            call sw_update_uv(tau,                                    &
+            call sw_update_uv(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                              bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                              tau,                                    &
                               grid_data  %lcu       %block(k)%field,  &
                               grid_data  %lcv       %block(k)%field,  &
                               grid_data  %dxt       %block(k)%field,  &
@@ -396,11 +431,11 @@ contains
                               grid_data  %dxb       %block(k)%field,  &
                               grid_data  %dyb       %block(k)%field,  &
                               grid_data  %hhu       %block(k)%field,  &
-                              grid_data  %hhu_n      %block(k)%field,  &
-                              grid_data  %hhu_p      %block(k)%field,  &
+                              grid_data  %hhu_n     %block(k)%field,  &
+                              grid_data  %hhu_p     %block(k)%field,  &
                               grid_data  %hhv       %block(k)%field,  &
-                              grid_data  %hhv_n      %block(k)%field,  &
-                              grid_data  %hhv_p      %block(k)%field,  &
+                              grid_data  %hhv_n     %block(k)%field,  &
+                              grid_data  %hhv_p     %block(k)%field,  &
                               grid_data  %hhh       %block(k)%field,  &
                                           ssh       %block(k)%field,  &
                                           ubrtr     %block(k)%field,  &
@@ -435,13 +470,16 @@ contains
         type(data2D_real8_type), intent(inout) :: ssh, sshp, ubrtr, ubrtrp, vbrtr, vbrtrp
 
         integer :: k
+        type(block_bounds_type) :: bb
 
         call start_kernel_timer('sw_next_step')
         do k = 1, domain%bcount
             
-            call set_kernel_interface(domain, k)
+            call bb%set(domain, k)
             
-            call sw_next_step(time_smooth,                         &
+            call sw_next_step(bb%nx_start, bb%nx_end, bb%ny_start, bb%ny_end,  &
+                              bb%bnd_x1,   bb%bnd_x2, bb%bnd_y1,   bb%bnd_y2,  &
+                              time_smooth,                          &
                               grid_data  %lu      %block(k)%field,  &
                               grid_data  %lcu     %block(k)%field,  &
                               grid_data  %lcv     %block(k)%field,  &
