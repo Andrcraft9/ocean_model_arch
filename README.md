@@ -1,7 +1,8 @@
-# Example of ocean model architecture. PSyKAl and Block Load-Balancing approach.
-# Using modern Fortran (2003 at least).
+### Example of ocean model architecture. 
+### PSyKAl and Block Load-Balancing approach.
+### Using modern Fortran (2003 at least).
 
-# Shallow Water only example.
+### Shallow Water only example.
 
 Structure:
 
