@@ -14,6 +14,9 @@ module shallow_water_interface_module
     use velssh_sw_module, only: check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
     use errors_module, only: abort_model, check_error
 
+#define _OMP_BEGIN_  !$omp parallel do default(shared) private(k)
+#define _OMP_END_  !$omp end parallel do
+
     implicit none
     save
     private
@@ -60,6 +63,8 @@ contains
         integer :: k
 
         call start_kernel_timer('stress_components_kernel')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
 
             call stress_components_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -81,6 +86,8 @@ contains
                                           nlev)
 
         enddo
+        _OMP_END_
+
         call end_kernel_timer('stress_components_kernel')
 
         call sync(domain, str_t)
@@ -97,6 +104,8 @@ contains
         integer :: k
 
         call start_kernel_timer('hh_init_kernel')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
 
             call hh_init_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -130,6 +139,8 @@ contains
                                 grid_data   %hhq_rest  %block(k)%field)
 
         enddo
+        _OMP_END_
+
         call end_kernel_timer('hh_init_kernel')
 
         call sync(domain, grid_data%hhu)
@@ -153,6 +164,8 @@ contains
         integer :: k
 
         call start_kernel_timer('hh_update_kernel')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
 
             call hh_update_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -177,6 +190,8 @@ contains
                                   grid_data   %hhq_rest  %block(k)%field)
 
         enddo
+        _OMP_END_
+
         call end_kernel_timer('hh_update_kernel')
 
         call sync(domain, grid_data%hhu_n)
@@ -193,6 +208,8 @@ contains
         integer :: k
 
         call start_kernel_timer('hh_shift_kernel')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
 
             call hh_shift_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -215,6 +232,8 @@ contains
                                  grid_data  %hhh_n  %block(k)%field)
 
         enddo
+        _OMP_END_
+
         call end_kernel_timer('hh_shift_kernel')
 
     end subroutine
@@ -232,6 +251,8 @@ contains
         integer :: k
 
         call start_kernel_timer('uv_trans_vort_kernel')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
 
             call uv_trans_vort_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -247,6 +268,8 @@ contains
                                       nlev)
 
         enddo
+        _OMP_END_
+
         call end_kernel_timer('uv_trans_vort_kernel')
 
         call sync(domain, vort)
@@ -267,6 +290,8 @@ contains
         integer :: k
 
         call start_kernel_timer('uv_trans_kernel')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
 
             call uv_trans_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -287,6 +312,8 @@ contains
                                              RHSy  %block(k)%field,  &
                                  nlev)
         enddo
+        _OMP_END_
+
         call end_kernel_timer('uv_trans_kernel')
     
     end subroutine
@@ -304,6 +331,8 @@ contains
         integer :: k
 
         call start_kernel_timer('uv_diff2_kernel')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
         
             call uv_diff2_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -330,6 +359,8 @@ contains
                                  nlev)
 
         enddo
+        _OMP_END_
+
         call end_kernel_timer('uv_diff2_kernel')
     
     end subroutine
@@ -346,8 +377,7 @@ contains
 
         call start_kernel_timer('sw_update_ssh_kernel')
 
-        !$omp parallel do default(shared)    &
-        !$omp private(k)
+        _OMP_BEGIN_
         do k = 1, domain%bcount
             
             call sw_update_ssh_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -366,7 +396,8 @@ contains
                                                   vbrtr  %block(k)%field)
 
         enddo
-        !$omp end parallel do
+        _OMP_END_
+
         call end_kernel_timer('sw_update_ssh_kernel')
 
         call sync(domain, sshn)
@@ -387,6 +418,8 @@ contains
         integer :: k
 
         call start_kernel_timer('sw_update_uv')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
             
             call sw_update_uv(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -424,6 +457,8 @@ contains
                                           RHSy_dif  %block(k)%field)
 
         enddo
+        _OMP_END_
+
         call end_kernel_timer('sw_update_uv')
 
         call sync(domain, ubrtrn)
@@ -442,6 +477,8 @@ contains
         integer :: k
 
         call start_kernel_timer('sw_next_step')
+
+        _OMP_BEGIN_
         do k = 1, domain%bcount
             
             call sw_next_step(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -460,6 +497,8 @@ contains
                                           vbrtrn  %block(k)%field,  &
                                           vbrtrp  %block(k)%field)
         enddo
+        _OMP_END_
+
         call end_kernel_timer('sw_next_step')
 
     end subroutine
