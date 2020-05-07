@@ -1,6 +1,6 @@
 program model
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module, only: mpp_init, mpp_finalize, mpp_rank, start_timer, end_timer, mpp_time_model_step
+    use mpp_module
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar
     use config_sw_module, only: load_config_sw
@@ -50,7 +50,7 @@ program model
     call init_ocean_data(domain_data, grid_data, ocean_data)
 
     call time_manager_def()
-    if (mpp_rank .eq. 0) then
+    if (mpp_is_master()) then
         print *,  '=================================================================='
         print *,  '------------ Eplicit shallow water scheme, version PSyKAl  -------'
         print *,  '=================================================================='
@@ -60,7 +60,7 @@ program model
     endif
 
     if (is_local_print_step() > 0) then
-        if (mpp_rank == 0) print *, "Output initial local data..."
+        if (mpp_is_master()) print *, "Output initial local data..."
         call local_output(domain_data, &
                           grid_data,   &
                           ocean_data,  &

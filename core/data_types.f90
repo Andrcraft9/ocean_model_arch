@@ -251,7 +251,7 @@ contains
     end subroutine
 
     subroutine init_nans_data2D_real8(this, domain)
-        use mpp_module, only: mpp_rank
+        use mpp_module
         use, intrinsic :: iso_fortran_env
         use, intrinsic :: ieee_arithmetic
 

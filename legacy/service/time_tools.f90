@@ -1,6 +1,6 @@
 module time_routes
 
-use mpp_module, only: rank => mpp_rank
+use mpp_module
 
 implicit none
 
@@ -158,7 +158,7 @@ integer(8) ihelp8, khelp8
          m_month=(m_year-init_year)*12+m_month_of_year
       
       if(key_time_print.ne.0) then
-        if (rank == 0) then
+        if (mpp_is_master()) then
           write(*,'(a,i8,4(a,i2.2), a,i4.4, a,i3.3, a,i4.4,a,i5)')  &
              '   time step: ', num_step ,                      &
              '   model time: ',                           &
@@ -200,7 +200,7 @@ character  month_name(12)*3
 data month_name/'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug',     &
                 'Sep','Oct','Nov','Dec'/  
       
-      if (rank == 0) then   
+      if (mpp_is_master()) then   
           write(*,'(a,i8,4(a,i2.2), a,i4.4, a,i3.3, a,i4.4,a,i5)')  &
              '   time step: ', num_step ,                      &
              '   model time: ',                           &

@@ -1,7 +1,7 @@
 module gridcon_module
     ! Grid consruction module
 
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
+    use mpp_module
     use decomposition_module, only: domain_type
     use grid_module, only: grid_type, grid_global_type
     use mpp_sync_module, only: sync
@@ -54,7 +54,7 @@ contains
         ! forming luh from lu, which have land neibours in luh.
         ! constructing array luh for relief hh.
                
-        if (mpp_rank == 0) then
+        if (mpp_is_master()) then
           write(*,*) 'Construction of H-grid masks: '
           write(*,*) 'LUH (includes boundary) and LUU (does not include boundary)'
         endif 
@@ -86,7 +86,7 @@ contains
         call sync(domain, grid_data%luh)
         call sync(domain, grid_data%luu)
         
-        if (mpp_rank == 0) then
+        if (mpp_is_master()) then
           write(*,*) 'Construction of U- and V-grid masks: '
           write(*,*) 'LCU and LCV (do not include boundary) and LLU and LLV (include boundary)'
         endif

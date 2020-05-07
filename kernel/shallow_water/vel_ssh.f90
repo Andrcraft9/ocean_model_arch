@@ -13,7 +13,7 @@ contains
 
 subroutine check_ssh_err_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
                                 lu, ssh, name)
-  use mpp_module, only: rank => mpp_rank
+  use mpp_module
   use errors_module, only: abort_model
   
   integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
@@ -29,7 +29,7 @@ subroutine check_ssh_err_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
               if (ssh(m,n)<10000.0d0 .and. ssh(m,n)>-10000.0d0) then
                 continue
               else
-                  write(*,*) rank, 'ERROR!!! In the point m=', m, 'n=', n, name, '=', ssh(m,n)
+                  write(*,*) mpp_rank, 'ERROR!!! In the point m=', m, 'n=', n, name, '=', ssh(m,n)
                   !write(*,*) rank, 'ERR: Block k=', k, 'In the point m=', m, 'n=', n, 'ssh=', ssh(k)%vals(m,n),   &
                   !    'step: ', num_step, 'lon: ', geo_lon_t(k)%vals(m, n), 'lat: ', geo_lat_t(k)%vals(m, n)
 
@@ -356,7 +356,7 @@ subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
  integer, intent(in) :: nlev
- 
+
  real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                           lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 

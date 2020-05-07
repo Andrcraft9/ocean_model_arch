@@ -2,7 +2,7 @@ module time_manager_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpi
-    use mpp_module, only: mpp_rank, mpp_cart_comm
+    use mpp_module
     use rwpar_routes
     use time_routes
 
@@ -131,7 +131,7 @@ subroutine load_config(name)
     filepar = name
 
     ! reading parameters from file
-    if (mpp_rank == 0) then
+    if (mpp_is_master()) then
         call readpar(filepar, comments, nofcom)
     endif
     call mpi_bcast(comments, 256*256, mpi_character, 0, mpp_cart_comm, ierr)

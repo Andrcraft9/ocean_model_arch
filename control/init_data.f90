@@ -2,7 +2,7 @@ module init_data_module
 #include "macros/kernel_macros.fi"
     ! Initialize data in model
 
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
+    use mpp_module
     use data_types_module, only: data2D_real4_type
     use decomposition_module, only: domain_type
     use ocean_module, only: ocean_type

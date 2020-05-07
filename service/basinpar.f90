@@ -2,7 +2,7 @@ module basinpar_module
 #include "macros/kernel_macros.fi"
     ! Initializing basin grid parameters
 
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
+    use mpp_module
     use constants_module, only: RadEarth, EarthAngVel, HeatCapWater, RefDen, FreeFallAcc, pip180
     use config_basinpar_module, only: nx, ny, nz, mm, mmm, nn, nnn, dxst, dyst, rlon, rlat,    &
                                       curve_grid, xgr_type, ygr_type, x_levels, y_levels,      &
@@ -66,7 +66,7 @@ contains
         enddo
 
         ! parameters:
-        if (mpp_rank == 0) then
+        if (mpp_is_master()) then
             write(*,'(2x,a)')' Basin parameters from 1basinpar.inc:'
 
             if (curve_grid==0) then        ! Carthesian coordinates

@@ -19,6 +19,8 @@ module mpp_module
 
     integer, public :: mpp_num_thread, mpp_count_threads
 
+    public :: mpp_is_master, mpp_is_master_thread, mpp_is_master_process
+    public :: start_timer, end_timer
     public :: mpp_init
     public :: mpp_finalize
 
@@ -108,5 +110,41 @@ contains
         time = mpi_wtime() - time
         return
     end subroutine
+
+    function mpp_is_master() result(is)
+        logical :: is
+
+        if (mpp_rank == 0 .and. mpp_num_thread == 0) then
+            is = .true.
+        else
+            is = .false.
+        endif
+
+        return
+    end function
+
+    function mpp_is_master_thread() result(is)
+        logical :: is
+
+        if (mpp_num_thread == 0) then
+            is = .true.
+        else
+            is = .false.
+        endif
+
+        return
+    end function
+
+    function mpp_is_master_process() result(is)
+        logical :: is
+
+        if (mpp_rank == 0) then
+            is = .true.
+        else
+            is = .false.
+        endif
+
+        return
+    end function
 
 end module mpp_module

@@ -2,7 +2,7 @@ module debug_module
     ! Configuration of debug in program, all utilits for debug
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
+    use mpp_module
     use errors_module, only: abort_model, check_error
 
     implicit none
@@ -20,11 +20,11 @@ contains
         character*(*) msg
         integer :: k, m, n, ierr
 
-        if (mpp_rank .eq. 0) print *, msg
+        if (mpp_rank == 0) print *, msg
         call mpi_barrier(mpp_cart_comm, ierr)
 
         do k = 0, mpp_count-1
-            if (mpp_rank .eq. k) then
+            if (mpp_rank == k) then
                 print *, "rank: ", mpp_rank
                 do m = x1, x2
                     do n = y1, y2

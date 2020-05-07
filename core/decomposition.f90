@@ -4,7 +4,7 @@ module decomposition_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpi
     use debug_module
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
+    use mpp_module
     use errors_module, only: abort_model, check_error
     
     implicit none
@@ -110,7 +110,7 @@ contains
                     endif
                 enddo
             enddo
-            if (mpp_rank == 0) print *, "Total land blocks:", land_blocks
+            if (mpp_is_master()) print *, "Total land blocks:", land_blocks
 
             ierr = 0
             if (bnx*bny - land_blocks < mpp_count) ierr = 1
@@ -134,23 +134,23 @@ contains
         hilbert_index = int(log(real(this%bnx))/ log(2.0))
         ierr = 0
         if (this%bnx /= this%bny) then
-            if (mpp_rank == 0) print *, 'bnx not equal to bny! Can`t build Hilbert curve for this geometry!'
+            if (mpp_is_master()) print *, 'bnx not equal to bny! Can`t build Hilbert curve for this geometry!'
             ierr = 1
         endif
         if (2**hilbert_index /= this%bnx) then
-            if (mpp_rank == 0) print *, '2**M not eqal to bnx! Can`t build Hilbert curve for this geometry!'
+            if (mpp_is_master()) print *, '2**M not eqal to bnx! Can`t build Hilbert curve for this geometry!'
             ierr = 1
         endif
         call check_error(ierr, 'Can`t build Hilbert curve for this geometry!')
 
-        if (mpp_rank == 0) print *, 'Hilbert curve index:', hilbert_index
+        if (mpp_is_master()) print *, 'Hilbert curve index:', hilbert_index
 
         tot_weight = sum(bglob_weight)
         mean_weight = tot_weight / mpp_count
         sea_blocks = this%bnx * this%bny - land_blocks
 
         if (debug_level >= 1) then
-            if (mpp_rank == 0 ) print *, 'Total blocks weigth:', tot_weight, "Mean blocks weigth:", mean_weight
+            if (mpp_is_master()) print *, 'Total blocks weigth:', tot_weight, "Mean blocks weigth:", mean_weight
         endif
         call mpi_barrier(mpp_cart_comm, ierr)
 
@@ -181,7 +181,7 @@ contains
                     if (i > mpp_count - 1) then
                         i = mpp_count - 1
                         !if (rank == 0 .and. parallel_dbg < 2) print *, 'Warning! Last procs ...'
-                        if (mpp_rank == 0) print *, k, 'Warning! Last procs ...'
+                        if (mpp_is_master()) print *, k, 'Warning! Last procs ...'
                     endif
                 endif
             !else
@@ -291,8 +291,8 @@ contains
             bnx = bppnx * mpp_size(1)
             bny = bppny * mpp_size(2)
 
-            if (mpp_rank == 0) print *, 'bnx, bny and Total blocks:', bnx, bny, bnx * bny
-            if (mpp_rank == 0) print *, 'pnx, pny and procs:', mpp_size(1), mpp_size(2), mpp_count
+            if (mpp_is_master()) print *, 'bnx, bny and Total blocks:', bnx, bny, bnx * bny
+            if (mpp_is_master()) print *, 'pnx, pny and procs:', mpp_size(1), mpp_size(2), mpp_count
             call mpi_barrier(mpp_cart_comm, ierr)
 
             ! Check bnx and bny
@@ -317,13 +317,13 @@ contains
             allocate(this%bglob_proc(bnx, bny))
             
             if (mod_create == 0) then
-                if (mpp_rank == 0) print *, "Uniform blocks decomposition!..."
+                if (mpp_is_master()) print *, "Uniform blocks decomposition!..."
                 call this%create_uniform_decomposition(bglob_weight)
             elseif (mod_create == 1) then
-                if (mpp_rank == 0) print *, "Hilber Curve blocks decomposition!..."
+                if (mpp_is_master()) print *, "Hilber Curve blocks decomposition!..."
                 call this%create_hilbert_curve_decomposition(bglob_weight, land_blocks)
             else
-                if (mpp_rank == 0) print *, "Unknown mode!"
+                if (mpp_is_master()) print *, "Unknown mode!"
                 call abort_model("Unknown decomposition mode!")
             endif
 
@@ -347,7 +347,7 @@ contains
             call check_error(ierr, 'Proc with only land-blocks... Error!')
 
             ! Print information about blocks
-            if (mpp_rank == 0) print *, 'Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count)),  &
+            if (mpp_is_master()) print *, 'Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count)),  &
                                         'max blocks per proc:', bcount_max, 'min blocks per proc:', bcount_min
             call mpi_barrier(mpp_cart_comm, ierr)
             
@@ -406,12 +406,12 @@ contains
                 call mpi_barrier(mpp_cart_comm, ierr)
                 call mpi_allreduce(min_points_per_block, reduced_min_points_per_block, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
                 call mpi_allreduce(max_points_per_block, reduced_max_points_per_block, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
-                if (mpp_rank == 0) print *, 'Reduced Max points per block:', reduced_max_points_per_block, 'Reduced Min points per blocks: ', reduced_min_points_per_block
+                if (mpp_is_master()) print *, 'Reduced Max points per block:', reduced_max_points_per_block, 'Reduced Min points per blocks: ', reduced_min_points_per_block
                 call mpi_barrier(mpp_cart_comm, ierr)
             endif
 
             if (debug_level >= 2) then
-                if (mpp_rank == 0) then
+                if (mpp_is_master()) then
                     do k = 1, bcount
                         write(*, '(i5, i5,i5,i5,i5)') k, this%bnx_start(k), this%bnx_end(k), this%bny_start(k), this%bny_end(k)
                         write(*, '(i5, i5,i5,i5,i5)') k, this%bbnd_x1(k), this%bbnd_x2(k), this%bbnd_y1(k), this%bbnd_y2(k)
@@ -453,7 +453,7 @@ contains
         integer :: parallel_mod
         character(128) :: file_output
 
-        if (mpp_rank .eq. 0) then
+        if (mpp_is_master()) then
             print *, 'Read decomposition config...'
             call readpar(name, comments, nofcom)
             read(comments(1),*) mod_decomposition

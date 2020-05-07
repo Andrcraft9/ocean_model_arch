@@ -5,7 +5,7 @@ module io_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpi
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
+    use mpp_module
     use errors_module, only: abort_model, check_error
     use data_types_module, only: data1D_real4_type, data1D_real8_type, data2D_real4_type, data2D_real8_type,      &
                                  data3D_real4_type, data3D_real8_type
@@ -45,7 +45,7 @@ contains
         1000  format('(',i9,'i1)')
         
         ! reading mask from:
-        if (mpp_rank == 0) then
+        if (mpp_is_master()) then
           print *, "Reading mask of computational area..."
           print *, mask_file_name, nx, ny, file_storage_size
           open (11, file=mask_file_name, status='old', recl=nx*file_storage_size, err=98)
@@ -276,7 +276,7 @@ contains
         !locsizes = (/nx_end - nx_start + 1, ny_end - ny_start + 1, nze - nzb + 1/)
         !totsize = locsizes(1)*locsizes(2)*locsizes(3)
 
-        if (mpp_rank == 0) then
+        if (mpp_is_master()) then
             open(40, file=namofile, status='unknown', access='direct', form='unformatted',recl=(nxe - nxb + 1)*(nye - nyb + 1)*lrecl, err=101)
             ! writing on the file
             write(40, rec=nfild, err=102) ((undef, i=nxb,nxe), j=nyb,nye)
@@ -384,7 +384,7 @@ contains
         !locsizes = (/nx_end - nx_start + 1, ny_end - ny_start + 1, nze - nzb + 1/)
         !totsize = locsizes(1)*locsizes(2)*locsizes(3)
 
-        if (mpp_rank == 0) then
+        if (mpp_is_master()) then
             open(40, file=namofile, status='unknown', access='direct', form='unformatted',recl=(nxe - nxb + 1)*(nye - nyb + 1)*2*lrecl, err=101)
             ! writing on the file
             write(40, rec=nfild, err=102) ((undef, i=nxb,nxe), j=nyb,nye)

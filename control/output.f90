@@ -1,7 +1,7 @@
 module output_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord
+    use mpp_module
     use decomposition_module, only: domain_type
     use ocean_module, only: ocean_type
     use data_types_module, only: data2D_real4_type
@@ -62,7 +62,7 @@ contains
         z0 = 0.0d0
         z1 = 1.0d0
 
-        if (mpp_rank == 0) then
+        if (mpp_is_master()) then
             write(*,*) 'Writing local output, record number ', nrec
           endif
           
@@ -72,10 +72,10 @@ contains
             call bufwp4%copy_from_real8(domain, grid_data%hhq_rest)
             ierr = 0
             call write_data(domain, 'RESULTS/', 'hhq.dat', nrec, bufwp4, grid_data%lu, ierr)
-            if(mpp_rank == 0) print *, 'hhq is written'
+            if (mpp_is_master()) print *, 'hhq is written'
             
             call fulfname(fname, 'RESULTS/', 'hhq.dat', ierr)
-            if (mpp_rank == 0) then
+            if (mpp_is_master()) then
                 call ctl_file_write(fname,     &     !file name
                                     undef,     &     !value for undefined points
                                     nx - 4,    &     !x-dimension
@@ -108,10 +108,10 @@ contains
         call bufwp4%copy_from_real8(domain, ocean_data%ssh)
         ierr = 0
         call write_data(domain, 'RESULTS/', 'ssh.dat', nrec, bufwp4, grid_data%lu, ierr)
-        if(mpp_rank == 0) print *, 'ssh is written'
+        if(mpp_is_master()) print *, 'ssh is written'
 
         call fulfname(fname, 'RESULTS/', 'ssh.dat', ierr)
-        if (mpp_rank == 0) then
+        if (mpp_is_master()) then
             call ctl_file_write(fname,    &     !file name
                                 undef,    &     !value for undefined points
                                 nx - 4,   &     !x-dimension

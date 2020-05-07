@@ -2,7 +2,7 @@ module errors_module
     ! Error processing module
 
     use mpi
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_period
+    use mpp_module
 
     implicit none
     save

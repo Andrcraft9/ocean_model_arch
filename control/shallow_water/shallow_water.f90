@@ -5,7 +5,7 @@ module shallow_water_module
     use ocean_module, only: ocean_type
     use grid_module, only: grid_type
     use config_sw_module, only: full_free_surface, time_smooth, trans_terms, ksw_lat, lvisc_2
-    use mpp_module, only: mpp_rank
+    use mpp_module
     use shallow_water_interface_module
 
     implicit none
