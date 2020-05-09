@@ -127,52 +127,58 @@ subroutine load_config(name)
 
     integer :: ierr
 
-    blank = ' '
-    filepar = name
+    if (mpp_is_master_thread()) then
 
-    ! reading parameters from file
-    if (mpp_is_master()) then
-        call readpar(filepar, comments, nofcom)
+        blank = ' '
+        filepar = name
+
+        ! reading parameters from file
+        if (mpp_is_master()) then
+            call readpar(filepar, comments, nofcom)
+        endif
+        call mpi_bcast(comments, 256*256, mpi_character, 0, mpp_cart_comm, ierr)
+
+        read(comments( 1),*) start_type          !Type of starting run (0 - from TS only, 1 - frim the full checkpoint)
+        read(comments( 2),*) time_step           !Model time step (in seconds)
+        read(comments( 3),*) run_duration        !Duration of the run in days
+        read(comments( 4),*) num_step            !Number of time step during the run
+        read(comments( 5),*) init_year           !Initial year number for the run
+        read(comments( 6),*) loc_data_wr_period  !Period for writing local instantaneous data (minutes)
+        read(comments( 7),*) glob_data_wr_period !Period for writing global time average data (minutes)
+        read(comments( 8),*) nstep_icedyn        !Number of internal time steps for ice dynamics
+        read(comments( 9),*) nstep_barotrop      !Number of internal time steps for barotropic task
+        call get_first_lexeme(comments(10), path2ocp    )  !path to checkpoints(results)
+        ! Files with data on oceanic grid:
+        call get_first_lexeme(comments(11), path2ocssdata)   !path to ocean SS data
+        call get_first_lexeme(comments(12), ss_ocfiles(1)  )  !file with SST 
+        call get_first_lexeme(comments(13), ss_ocfiles(2)  )  !file with SSS 
+        call get_first_lexeme(comments(14), ss_ocfiles(3)  )  !file with river runoff 
+        call get_first_lexeme(comments(15), ss_ocfiles(4)  )  !file with TLBC
+        call get_first_lexeme(comments(16), ss_ocfiles(5)  )  !file with SLBC
+        call get_first_lexeme(comments(17), ss_ocfiles(6)  )  !file with ULBC
+        call get_first_lexeme(comments(18), ss_ocfiles(7)  )  !file with VLBC
+        call get_first_lexeme(comments(19), ss_ocfiles(8)  )  !file with SSHLBC
+        ! Files with data on atmospheric grid:
+        call get_first_lexeme(comments(20), path2atmssdata )  !path to atmospheric data
+        call get_first_lexeme(comments(21), ss_atmfiles(1) )  !file with      zonal wind stress (1 and 2 condition)
+        call get_first_lexeme(comments(22), ss_atmfiles(2) )  !file with meridional wind stress (1 and 2 condition)
+        call get_first_lexeme(comments(23), ss_atmfiles(3) )  !file with          heat balance (2 condition) 
+        call get_first_lexeme(comments(24), ss_atmfiles(4) )  !file with shortwave rad balance (2 condition)
+        call get_first_lexeme(comments(25), ss_atmfiles(5) )  !file with    freshwater balance (2 condition)
+        call get_first_lexeme(comments(26), ss_atmfiles(6) )  !file with       air temperature (3 condition)
+        call get_first_lexeme(comments(27), ss_atmfiles(7) )  !file with          air humidity (3 condition)
+        call get_first_lexeme(comments(28), ss_atmfiles(8) )  !file with wind      zonal speed (3 condition)
+        call get_first_lexeme(comments(29), ss_atmfiles(9) )  !file with wind meridional speed (3 condition)
+        call get_first_lexeme(comments(30), ss_atmfiles(10) )  !file with SLP (3 condition)
+        call get_first_lexeme(comments(31), ss_atmfiles(11) )  !file with downwelling longwave radiation (3 condition)
+        call get_first_lexeme(comments(32), ss_atmfiles(12) )  !file with downwelling shortwave radiation (3 condition)
+        call get_first_lexeme(comments(33), ss_atmfiles(13) )  !file with wind liquid precipitation (rain)
+        call get_first_lexeme(comments(34), ss_atmfiles(14) )  !file with wind solid precipitation (snow)
+        call get_first_lexeme(comments(35), atmask)
+
     endif
-    call mpi_bcast(comments, 256*256, mpi_character, 0, mpp_cart_comm, ierr)
-
-    read(comments( 1),*) start_type          !Type of starting run (0 - from TS only, 1 - frim the full checkpoint)
-    read(comments( 2),*) time_step           !Model time step (in seconds)
-    read(comments( 3),*) run_duration        !Duration of the run in days
-    read(comments( 4),*) num_step            !Number of time step during the run
-    read(comments( 5),*) init_year           !Initial year number for the run
-    read(comments( 6),*) loc_data_wr_period  !Period for writing local instantaneous data (minutes)
-    read(comments( 7),*) glob_data_wr_period !Period for writing global time average data (minutes)
-    read(comments( 8),*) nstep_icedyn        !Number of internal time steps for ice dynamics
-    read(comments( 9),*) nstep_barotrop      !Number of internal time steps for barotropic task
-    call get_first_lexeme(comments(10), path2ocp    )  !path to checkpoints(results)
-    ! Files with data on oceanic grid:
-    call get_first_lexeme(comments(11), path2ocssdata)   !path to ocean SS data
-    call get_first_lexeme(comments(12), ss_ocfiles(1)  )  !file with SST 
-    call get_first_lexeme(comments(13), ss_ocfiles(2)  )  !file with SSS 
-    call get_first_lexeme(comments(14), ss_ocfiles(3)  )  !file with river runoff 
-    call get_first_lexeme(comments(15), ss_ocfiles(4)  )  !file with TLBC
-    call get_first_lexeme(comments(16), ss_ocfiles(5)  )  !file with SLBC
-    call get_first_lexeme(comments(17), ss_ocfiles(6)  )  !file with ULBC
-    call get_first_lexeme(comments(18), ss_ocfiles(7)  )  !file with VLBC
-    call get_first_lexeme(comments(19), ss_ocfiles(8)  )  !file with SSHLBC
-    ! Files with data on atmospheric grid:
-    call get_first_lexeme(comments(20), path2atmssdata )  !path to atmospheric data
-    call get_first_lexeme(comments(21), ss_atmfiles(1) )  !file with      zonal wind stress (1 and 2 condition)
-    call get_first_lexeme(comments(22), ss_atmfiles(2) )  !file with meridional wind stress (1 and 2 condition)
-    call get_first_lexeme(comments(23), ss_atmfiles(3) )  !file with          heat balance (2 condition) 
-    call get_first_lexeme(comments(24), ss_atmfiles(4) )  !file with shortwave rad balance (2 condition)
-    call get_first_lexeme(comments(25), ss_atmfiles(5) )  !file with    freshwater balance (2 condition)
-    call get_first_lexeme(comments(26), ss_atmfiles(6) )  !file with       air temperature (3 condition)
-    call get_first_lexeme(comments(27), ss_atmfiles(7) )  !file with          air humidity (3 condition)
-    call get_first_lexeme(comments(28), ss_atmfiles(8) )  !file with wind      zonal speed (3 condition)
-    call get_first_lexeme(comments(29), ss_atmfiles(9) )  !file with wind meridional speed (3 condition)
-    call get_first_lexeme(comments(30), ss_atmfiles(10) )  !file with SLP (3 condition)
-    call get_first_lexeme(comments(31), ss_atmfiles(11) )  !file with downwelling longwave radiation (3 condition)
-    call get_first_lexeme(comments(32), ss_atmfiles(12) )  !file with downwelling shortwave radiation (3 condition)
-    call get_first_lexeme(comments(33), ss_atmfiles(13) )  !file with wind liquid precipitation (rain)
-    call get_first_lexeme(comments(34), ss_atmfiles(14) )  !file with wind solid precipitation (snow)
-    call get_first_lexeme(comments(35), atmask) 
+    call mpp_barrier_threads()
+    
 end subroutine 
 
 

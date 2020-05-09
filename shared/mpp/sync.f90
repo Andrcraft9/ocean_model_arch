@@ -11,6 +11,8 @@ module mpp_sync_module
                                  data3D_real4_type, data3D_real8_type
     use decomposition_module, only: domain_type
 
+#include "macros/mpp_macros.fi"
+
     implicit none
     save
     private

@@ -15,6 +15,7 @@ call start_timer(t_local)
 icount = 1
 
 ! Non-blocking Recv calls
+_OMP_BLOCKS_SYNC_BEGIN_
 do k = 1, domain%bcount
     bm = domain%bindx(k, 1)
     bn = domain%bindx(k, 2)
@@ -131,9 +132,12 @@ do k = 1, domain%bcount
     endif
 
 enddo
+_OMP_BLOCKS_SYNC_END_
+
 if (parallel_dbg >= 4) print *, mpp_rank, 'icount recv:', icount-1
 
 ! Non-blocking Send calls
+_OMP_BLOCKS_SYNC_BEGIN_
 do k = 1, domain%bcount
     bm = domain%bindx(k, 1)
     bn = domain%bindx(k, 2)
@@ -272,13 +276,15 @@ do k = 1, domain%bcount
             data2d%block(lock)%field(domain%bbnd_x2(lock) - 1, domain%bbnd_y2(lock) - 1) = data2d%block(k)%field(domain%bnx_start(k), domain%bny_start(k))
         endif
     endif
-
 enddo
+_OMP_BLOCKS_SYNC_END_
+
 if (parallel_dbg >= 4) print *, mpp_rank, 'icount totl:', icount-1
 
 ! Wait all, sync point
 call mpi_waitall(icount-1, reqsts, statuses, ierr)
 
+_OMP_BLOCKS_SYNC_BEGIN_
 do k = 1, domain%bcount
     bm = domain%bindx(k, 1)
     bn = domain%bindx(k, 2)
@@ -350,6 +356,7 @@ do k = 1, domain%bcount
         endif
     endif
 enddo
+_OMP_BLOCKS_SYNC_END_
 
 ! TIMER
 call end_timer(t_local)

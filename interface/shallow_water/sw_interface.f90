@@ -1,5 +1,4 @@
 module shallow_water_interface_module
-#include "macros/kernel_macros.fi"
 
     use kernel_interface_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
@@ -14,8 +13,8 @@ module shallow_water_interface_module
     use velssh_sw_module, only: check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
     use errors_module, only: abort_model, check_error
 
-#define _OMP_BEGIN_  !$omp parallel do default(shared) private(k)
-#define _OMP_END_  !$omp end parallel do
+#include "macros/kernel_macros.fi"
+#include "macros/mpp_macros.fi"
 
     implicit none
     save
@@ -38,6 +37,7 @@ contains
 
     integer :: k
 
+    _OMP_BLOCKS_BEGIN_
     do k = 1, domain%bcount
 
         call check_ssh_err_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -47,6 +47,7 @@ contains
                                   name)
 
     enddo
+    _OMP_BLOCKS_END_
     
     end subroutine
 
@@ -64,7 +65,7 @@ contains
 
         call start_kernel_timer('stress_components_kernel')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
             call stress_components_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -86,7 +87,7 @@ contains
                                           nlev)
 
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('stress_components_kernel')
 
@@ -105,7 +106,7 @@ contains
 
         call start_kernel_timer('hh_init_kernel')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
             call hh_init_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -139,7 +140,7 @@ contains
                                 grid_data   %hhq_rest  %block(k)%field)
 
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('hh_init_kernel')
 
@@ -165,7 +166,7 @@ contains
 
         call start_kernel_timer('hh_update_kernel')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
             call hh_update_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -190,7 +191,7 @@ contains
                                   grid_data   %hhq_rest  %block(k)%field)
 
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('hh_update_kernel')
 
@@ -209,7 +210,7 @@ contains
 
         call start_kernel_timer('hh_shift_kernel')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
             call hh_shift_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -232,7 +233,7 @@ contains
                                  grid_data  %hhh_n  %block(k)%field)
 
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('hh_shift_kernel')
 
@@ -252,7 +253,7 @@ contains
 
         call start_kernel_timer('uv_trans_vort_kernel')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
             call uv_trans_vort_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -268,7 +269,7 @@ contains
                                       nlev)
 
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('uv_trans_vort_kernel')
 
@@ -291,7 +292,7 @@ contains
 
         call start_kernel_timer('uv_trans_kernel')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
             call uv_trans_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -312,7 +313,7 @@ contains
                                              RHSy  %block(k)%field,  &
                                  nlev)
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('uv_trans_kernel')
     
@@ -332,7 +333,7 @@ contains
 
         call start_kernel_timer('uv_diff2_kernel')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
         
             call uv_diff2_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -359,7 +360,7 @@ contains
                                  nlev)
 
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('uv_diff2_kernel')
     
@@ -377,7 +378,7 @@ contains
 
         call start_kernel_timer('sw_update_ssh_kernel')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
             
             call sw_update_ssh_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -396,7 +397,7 @@ contains
                                                   vbrtr  %block(k)%field)
 
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('sw_update_ssh_kernel')
 
@@ -419,7 +420,7 @@ contains
 
         call start_kernel_timer('sw_update_uv')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
             
             call sw_update_uv(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -457,7 +458,7 @@ contains
                                           RHSy_dif  %block(k)%field)
 
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('sw_update_uv')
 
@@ -478,7 +479,7 @@ contains
 
         call start_kernel_timer('sw_next_step')
 
-        _OMP_BEGIN_
+        _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
             
             call sw_next_step(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -497,7 +498,7 @@ contains
                                           vbrtrn  %block(k)%field,  &
                                           vbrtrp  %block(k)%field)
         enddo
-        _OMP_END_
+        _OMP_BLOCKS_END_
 
         call end_kernel_timer('sw_next_step')
 

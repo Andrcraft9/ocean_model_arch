@@ -4,6 +4,8 @@ module data_types_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use decomposition_module, only: domain_type
 
+#include "macros/mpp_macros.fi"
+
     implicit none
     save
     private
@@ -112,11 +114,15 @@ contains
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: n_start, n_end
         integer :: k
+
         allocate(this%block(domain%bcount))
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(n_start : n_end))
             this%block(k)%field = 0.0
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
     
     subroutine init_from_domain_data1D_real4(this, domain, is_x_direction)
@@ -124,7 +130,10 @@ contains
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_x_direction
         integer :: k
+
         allocate(this%block(domain%bcount))
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             if (is_x_direction) then
                 allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k)))
@@ -133,6 +142,7 @@ contains
             endif
             this%block(k)%field = 0.0
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine clear_data1D_real4(this, domain)
@@ -151,11 +161,15 @@ contains
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: n_start, n_end
         integer :: k
+
         allocate(this%block(domain%bcount))
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(n_start : n_end))
             this%block(k)%field = 0.0
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
     
     subroutine init_from_domain_data1D_real8(this, domain, is_x_direction)
@@ -163,7 +177,10 @@ contains
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_x_direction
         integer :: k
+
         allocate(this%block(domain%bcount))
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             if (is_x_direction) then
                 allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k)))
@@ -172,6 +189,7 @@ contains
             endif
             this%block(k)%field = 0.0
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine clear_data1D_real8(this, domain)
@@ -191,11 +209,15 @@ contains
         class(data2D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         integer :: k
+
         allocate(this%block(domain%bcount))
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             this%block(k)%field = 0.0
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine clear_data2D_real4(this, domain)
@@ -213,9 +235,12 @@ contains
         type(data2D_real4_type), intent(in) :: copy_data
         type(domain_type), intent(in) :: domain
         integer :: k
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             this%block(k)%field = copy_data%block(k)%field
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine copy_data2D_real4_from_real8(this, domain, copy_data)
@@ -223,9 +248,12 @@ contains
         type(data2D_real8_type), intent(in) :: copy_data
         type(domain_type), intent(in) :: domain
         integer :: k
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             this%block(k)%field = copy_data%block(k)%field
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine fill_data2D_real4(this, domain, val)
@@ -233,9 +261,12 @@ contains
         type(domain_type), intent(in) :: domain
         real(wp4), intent(in) :: val
         integer :: k
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             this%block(k)%field = val
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     ! real8 base type
@@ -243,11 +274,15 @@ contains
         class(data2D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         integer :: k
+
         allocate(this%block(domain%bcount))
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             this%block(k)%field = 0.0
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine init_nans_data2D_real8(this, domain)
@@ -311,9 +346,12 @@ contains
         type(data2D_real4_type), intent(in) :: copy_data
         type(domain_type), intent(in) :: domain
         integer :: k
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             this%block(k)%field = dble(copy_data%block(k)%field)
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine copy_data2D_real8_from_real8(this, domain, copy_data)
@@ -321,9 +359,12 @@ contains
         type(data2D_real8_type), intent(in) :: copy_data
         type(domain_type), intent(in) :: domain
         integer :: k
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             this%block(k)%field = copy_data%block(k)%field
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine fill_data2D_real8(this, domain, val)
@@ -331,9 +372,12 @@ contains
         type(domain_type), intent(in) :: domain
         real(wp8), intent(in) :: val
         integer :: k
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             this%block(k)%field = val
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
 !------------------------------------------------------------------------------
@@ -344,11 +388,15 @@ contains
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: nz_start, nz_end
         integer :: k
+
         allocate(this%block(domain%bcount))
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
             this%block(k)%field = 0.0
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine clear_data3D_real4(this, domain)
@@ -367,11 +415,15 @@ contains
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: nz_start, nz_end
         integer :: k
+
         allocate(this%block(domain%bcount))
+        
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
             this%block(k)%field = 0.0
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
     subroutine clear_data3D_real8(this, domain)

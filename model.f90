@@ -18,6 +18,8 @@ program model
     use shallow_water_module, only: expl_shallow_water
 
     implicit none
+    
+#include "macros/mpp_macros.fi"
 
     real(wp8) :: t_local
 
@@ -77,36 +79,48 @@ program model
     endif
 
     ! Solver
+    _OMP_MODEL_BEGIN_
+
     do while(num_step<num_step_max)
-        call start_timer(t_local)
+        if (mpp_is_master_thread())  call start_timer(t_local)
+        
         ! Computing one step of ocean dynamics
         call expl_shallow_water(tau, domain_data, grid_data, ocean_data)
-        call end_timer(t_local)
-        mpp_time_model_step = mpp_time_model_step + t_local
+        
+        if (mpp_is_master_thread()) then
+            call end_timer(t_local)
+            mpp_time_model_step = mpp_time_model_step + t_local
+        endif
         
         ! Next time step
-        num_step = num_step + 1
-        call time_manager_def()
+        if (mpp_is_master_thread()) then
+            num_step = num_step + 1
 
-        ! Output
-        if (is_local_print_step() > 0) then
-            call time_manager_update_nrec ()
-            
-            call local_output(domain_data, &
-                              grid_data,   &
-                              ocean_data,  &
-                             nrec_loc + 1,  &
-                             year_loc,  &
-                              mon_loc,  & 
-                              day_loc,  &
-                             hour_loc,  &
-                              min_loc,  &
-                       loc_data_tstep,  &
-                              yr_type  )
+            call time_manager_def()
 
-            call time_manager_print ()
+            ! Output
+            if (is_local_print_step() > 0) then
+                call time_manager_update_nrec ()
+                
+                call local_output(domain_data, &
+                                grid_data,   &
+                                ocean_data,  &
+                                nrec_loc + 1,  &
+                                year_loc,  &
+                                mon_loc,  & 
+                                day_loc,  &
+                                hour_loc,  &
+                                min_loc,  &
+                        loc_data_tstep,  &
+                                yr_type  )
+
+                call time_manager_print ()
+            endif
         endif
+        call mpp_barrier_threads()
+
     enddo
+    _OMP_MODEL_END_
 
     ! Clear data
     call ocean_data%clear(domain_data)

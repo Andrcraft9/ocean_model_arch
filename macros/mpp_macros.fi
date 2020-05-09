@@ -1,0 +1,19 @@
+#define _OMP_MAX_THREADS_ 24
+
+!#define _OMP_MODEL_BEGIN_ !$omp parallel default(shared)
+!#define _OMP_MODEL_END_ !$omp end parallel
+!#define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do default(shared) private(k)
+!#define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do
+!#define _OMP_BLOCKS_BEGIN_ !$omp do private(k)
+!#define _OMP_BLOCKS_END_ !$omp end do
+!#define _OMP_BLOCKS_SYNC_BEGIN_ !$omp do private(k)
+!#define _OMP_BLOCKS_SYNC_END_ !$omp end do
+
+#define _OMP_MODEL_BEGIN_ 
+#define _OMP_MODEL_END_ 
+#define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do default(shared) private(k)
+#define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do
+#define _OMP_BLOCKS_BEGIN_ !$omp parallel do private(k)
+#define _OMP_BLOCKS_END_ !$omp end parallel do
+#define _OMP_BLOCKS_SYNC_BEGIN_ 
+#define _OMP_BLOCKS_SYNC_END_ 
