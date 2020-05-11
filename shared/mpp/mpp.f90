@@ -22,7 +22,6 @@ module mpp_module
     integer, public :: mpp_count_threads
 
     public :: mpp_is_master, mpp_is_master_thread, mpp_is_master_process
-    public :: mpp_barrier_threads
     public :: start_timer, end_timer
     public :: mpp_init
     public :: mpp_finalize
@@ -212,11 +211,5 @@ contains
 
         return
     end function
-
-    subroutine mpp_barrier_threads()
-
-        !$omp barrier
-        
-    end subroutine
 
 end module mpp_module

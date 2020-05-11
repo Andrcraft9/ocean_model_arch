@@ -62,7 +62,6 @@ contains
             call mpi_bcast(grid_global_data%mask, nx*ny, mpi_integer, 0, mpp_cart_comm, ierr)
         
         endif
-        call mpp_barrier_threads()
 
         return
         98    call abort_model('Error in opening mask file')
@@ -161,7 +160,6 @@ contains
             enddo
 
         endif
-        call mpp_barrier_threads()
 
         return
     end subroutine
@@ -258,7 +256,6 @@ contains
             enddo
 
         endif
-        call mpp_barrier_threads()
 
         return
     end subroutine
@@ -369,7 +366,6 @@ contains
             enddo
 
         endif
-        call mpp_barrier_threads()
 
         return
         101    call abort_model("Error in pre-opening file for writing undefs: "//namofile(1 : len_trim(namofile)))
@@ -482,7 +478,6 @@ contains
             enddo
 
         endif
-        call mpp_barrier_threads()
         
         return
         101    call abort_model("Error in pre-opening file for writing undefs: "//namofile(1 : len_trim(namofile)))
