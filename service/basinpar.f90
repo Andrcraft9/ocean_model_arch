@@ -12,6 +12,8 @@ module basinpar_module
     use mpp_sync_module, only: sync
     use grid_parameters_module, only: grid_parameters_carthesian, grid_parameters_spherical, grid_parameters_curvilinear
 
+#include "macros/mpp_macros.fi"
+
     implicit none
     save
     private
@@ -32,6 +34,7 @@ contains
 
         ! x-coordinate (in degrees)
         ! in case of regular grid
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             associate(_associate_domain_value_(bnd_x1, domain, bbnd_x1, k),  &
                       _associate_domain_value_(bnd_x2, domain, bbnd_x2, k),  &
@@ -64,6 +67,7 @@ contains
 
             end associate
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
 
         ! parameters:
         if (mpp_is_master()) then
@@ -114,6 +118,7 @@ contains
 
         ! velocity grid initialization
 
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             associate(bnd_x1 => domain%bbnd_x1(k), bnd_x2 => domain%bbnd_x2(k),  &
                       bnd_y1 => domain%bbnd_y1(k), bnd_y2 => domain%bbnd_y2(k),  &
@@ -203,6 +208,7 @@ contains
 
             end associate
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
 
         call sync(domain, grid_data%dxt)
         call sync(domain, grid_data%dxb)
@@ -217,6 +223,7 @@ contains
 
 !-----metric initialization-------------------------------------------------------------- 
 
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             associate(bnd_x1 => domain%bbnd_x1(k), bnd_x2 => domain%bbnd_x2(k),  &
                       bnd_y1 => domain%bbnd_y1(k), bnd_y2 => domain%bbnd_y2(k),  &
@@ -536,7 +543,9 @@ contains
             end if
             end associate
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
 
+        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             associate(_associate_domain_value_(nx_start, domain, bnx_start, k),  &
                       _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
@@ -574,6 +583,8 @@ contains
                 
             end associate
         enddo
+        _OMP_BLOCKS_PARALLEL_END_
+
 endsubroutine basinpar
 
 end module basinpar_module
