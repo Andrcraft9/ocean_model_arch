@@ -177,7 +177,6 @@ subroutine load_config(name)
         call get_first_lexeme(comments(35), atmask)
 
     endif
-    call mpp_barrier_threads()
     
 end subroutine 
 
@@ -273,9 +272,10 @@ subroutine init_time_manager(name)
     tau = time_step
 end subroutine
 
-subroutine time_manager_def()
+subroutine time_manager_def(numstep)
+    integer(wp8), intent(in) :: numstep
 
-    call model_time_def(num_step,            &    !step counter,            input
+    call model_time_def(numstep,            &    !step counter,            input
                         time_step,           &    !time step in seconds,    input
                         ndays_in_4yr,        &    !integer day distribution in 4-years (49 months)
                         seconds_of_day,      &    !current seconds in day  ,output
@@ -298,9 +298,10 @@ subroutine time_manager_def()
     
 end subroutine
 
-subroutine time_manager_print()
-    
-    call model_time_print(num_step,         &
+subroutine time_manager_print(numstep)
+    integer(wp8), intent(in) :: numstep
+
+    call model_time_print(numstep,         &
                           m_sec_of_min,     &    !second counter in minute,output
                           m_min_of_hour,    &    !minute counter in hour  ,output
                           m_hour_of_day,    &    !hour counter in day     ,output
@@ -313,17 +314,18 @@ subroutine time_manager_print()
     
 end subroutine
 
-subroutine time_manager_update_nrec ()
-    
-    nrec_loc = num_step/loc_data_wr_period_step
+subroutine time_manager_update_nrec(numstep)
+    integer(wp8), intent(in) :: numstep
+    nrec_loc = numstep/loc_data_wr_period_step
 end subroutine
 
-function is_local_print_step() result(flag)
+function is_local_print_step(numstep) result(flag)
+    integer(wp8), intent(in) :: numstep
     integer :: flag
 
     flag = 0
     if( key_write_local>0) then
-        if(mod(num_step, loc_data_wr_period_step)==0) then
+        if(mod(numstep, loc_data_wr_period_step)==0) then
             flag = 1
         endif
     endif

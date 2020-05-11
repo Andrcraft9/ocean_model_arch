@@ -18,10 +18,11 @@ program model
     use shallow_water_module, only: expl_shallow_water
 
     implicit none
-    
+
 #include "macros/mpp_macros.fi"
 
     real(wp8) :: t_local
+    integer(wp8) :: local_num_step
 
     call mpp_init()
 
@@ -31,6 +32,7 @@ program model
 
     ! Init Time Manager
     call init_time_manager('ocean_run.par')
+    local_num_step = num_step
 
     ! Read mask
     call grid_global_data%init()
@@ -51,7 +53,7 @@ program model
     call init_grid_data(domain_data, grid_global_data, grid_data)
     call init_ocean_data(domain_data, grid_data, ocean_data)
 
-    call time_manager_def()
+    call time_manager_def(local_num_step)
     if (mpp_is_master()) then
         print *,  '=================================================================='
         print *,  '------------ Eplicit shallow water scheme, version PSyKAl  -------'
@@ -61,7 +63,7 @@ program model
         print *,  '=================================================================='
     endif
 
-    if (is_local_print_step() > 0) then
+    if (is_local_print_step(local_num_step) > 0) then
         if (mpp_is_master()) print *, "Output initial local data..."
         call local_output(domain_data, &
                           grid_data,   &
@@ -75,15 +77,14 @@ program model
                           loc_data_tstep,  &
                           yr_type  )
 
-        call time_manager_print ()
+        call time_manager_print(local_num_step)
     endif
 
     ! Solver
     _OMP_MODEL_BEGIN_
-
-    do while(num_step<num_step_max)
+    do while(local_num_step < num_step_max)
         if (mpp_is_master_thread())  call start_timer(t_local)
-        
+
         ! Computing one step of ocean dynamics
         call expl_shallow_water(tau, domain_data, grid_data, ocean_data)
         
@@ -91,16 +92,16 @@ program model
             call end_timer(t_local)
             mpp_time_model_step = mpp_time_model_step + t_local
         endif
-        
-        ! Next time step
-        if (mpp_is_master_thread()) then
-            num_step = num_step + 1
 
-            call time_manager_def()
+        ! Next time step
+        local_num_step = local_num_step + 1
+        if (mpp_is_master_thread()) then
+            
+            call time_manager_def(local_num_step)
 
             ! Output
-            if (is_local_print_step() > 0) then
-                call time_manager_update_nrec ()
+            if (is_local_print_step(local_num_step) > 0) then
+                call time_manager_update_nrec(local_num_step)
                 
                 call local_output(domain_data, &
                                 grid_data,   &
@@ -114,10 +115,10 @@ program model
                         loc_data_tstep,  &
                                 yr_type  )
 
-                call time_manager_print ()
+                call time_manager_print(local_num_step)
             endif
         endif
-        call mpp_barrier_threads()
+        _OMP_BARRIER_
 
     enddo
     _OMP_MODEL_END_
