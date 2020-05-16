@@ -274,6 +274,13 @@ contains
         real(wp8) :: icomm_metric, max_icomm_metric
         integer :: max_points_per_block, min_points_per_block, reduced_max_points_per_block, reduced_min_points_per_block
 
+        logical, parameter :: sorted_blocks = .true.
+        logical, allocatable :: mask_blocks(:, :)
+        integer, dimension(2) :: max_mn
+        integer :: max_m, max_n
+
+        real(wp8) :: max_w
+
         this%nz = nz
 
         associate(bcount => this%bcount,  &
@@ -363,32 +370,80 @@ contains
             this%bbnd_x1 = 0; this%bbnd_x2 = 0 
             this%bbnd_y1 = 0; this%bbnd_y2 = 0
 
-            k = 1
-            do m = 1, bnx
-                do n = 1, bny
-                    if (this%bglob_proc(m, n) == mpp_rank) then
-                        ! Map local block numeration to block coords
-                        this%bindx(k, 1) = m
-                        this%bindx(k, 2) = n
+            if (sorted_blocks) then
+                allocate(mask_blocks(bnx, bny))
+                mask_blocks = .false.
 
-                        this%bnx_start(k) = glob_bnx_start(m, n)
-                        this%bnx_end(k) = glob_bnx_end(m, n)
-                        this%bny_start(k) = glob_bny_start(m, n)
-                        this%bny_end(k) = glob_bny_end(m, n)
-
-                        this%bbnd_x1(k) = glob_bbnd_x1(m, n)
-                        this%bbnd_x2(k) = glob_bbnd_x2(m, n)
-                        this%bbnd_y1(k) = glob_bbnd_y1(m, n)
-                        this%bbnd_y2(k) = glob_bbnd_y2(m, n)
-
-                        k = k + 1
-                    endif
+                ! Sort only blocks on current proc
+                do m = 1, bnx
+                    do n = 1, bny
+                        if (this%bglob_proc(m, n) == mpp_rank) then
+                            mask_blocks(m ,n) = .true.
+                        endif
+                    enddo
                 enddo
-            enddo
+
+                ! Set sorted by weight blocks
+                k = 1
+                do m = 1, bnx
+                    do n = 1, bny
+                        if (this%bglob_proc(m, n) == mpp_rank) then
+                            max_mn = MAXLOC(bglob_weight, mask_blocks)
+                            max_m = max_mn(1)
+                            max_n = max_mn(2)
+                            mask_blocks(max_m, max_n) = .false.
+                            
+                            ! Map local block numeration to block coords
+                            this%bindx(k, 1) = max_m
+                            this%bindx(k, 2) = max_n
+
+                            this%bnx_start(k) = glob_bnx_start(max_m, max_n)
+                            this%bnx_end(k) = glob_bnx_end(max_m, max_n)
+                            this%bny_start(k) = glob_bny_start(max_m, max_n)
+                            this%bny_end(k) = glob_bny_end(max_m, max_n)
+
+                            this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
+                            this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
+                            this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
+                            this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
+
+                            print *, k, max_m, max_n, bglob_weight(max_m, max_n)
+
+                            k = k + 1
+                        endif
+                    enddo
+                enddo
+            else
+                k = 1
+                do m = 1, bnx
+                    do n = 1, bny
+                        if (this%bglob_proc(m, n) == mpp_rank) then
+                            ! Map local block numeration to block coords
+                            this%bindx(k, 1) = m
+                            this%bindx(k, 2) = n
+
+                            this%bnx_start(k) = glob_bnx_start(m, n)
+                            this%bnx_end(k) = glob_bnx_end(m, n)
+                            this%bny_start(k) = glob_bny_start(m, n)
+                            this%bny_end(k) = glob_bny_end(m, n)
+
+                            this%bbnd_x1(k) = glob_bbnd_x1(m, n)
+                            this%bbnd_x2(k) = glob_bbnd_x2(m, n)
+                            this%bbnd_y1(k) = glob_bbnd_y1(m, n)
+                            this%bbnd_y2(k) = glob_bbnd_y2(m, n)
+
+                            k = k + 1
+                        endif
+                    enddo
+                enddo
+            endif
 
             deallocate(bglob_weight)
             deallocate(glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end)
             deallocate(glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2)
+            if (sorted_blocks) then
+                deallocate(mask_blocks)
+            endif
 
             ! DEBUG
             if (debug_level >= 1) then
