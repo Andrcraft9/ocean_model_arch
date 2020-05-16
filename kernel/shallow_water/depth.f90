@@ -7,6 +7,8 @@ module depth_module
   save
   private
 
+#include "macros/mpp_macros.fi"
+
   public :: hh_init_kernel, hh_update_kernel, hh_shift_kernel
 
 contains
@@ -51,6 +53,7 @@ subroutine hh_init_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bn
 
       !do n=ny_start-2, ny_end+1
       !do m=nx_start-2, nx_end+1
+      _OMP_KERNEL_PARALLEL_BEGIN_
       do n=ny_start-1,ny_end
        do m=nx_start-1,nx_end
 
@@ -95,6 +98,7 @@ subroutine hh_init_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bn
 
        end do
     end do
+    _OMP_KERNEL_PARALLEL_END_
 
 endsubroutine hh_init_kernel
 
@@ -130,6 +134,7 @@ subroutine hh_update_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, 
 
       !do n=ny_start-2, ny_end+1
       !do m=nx_start-2, nx_end+1
+      _OMP_KERNEL_PARALLEL_BEGIN_
       do n=ny_start-1,ny_end
        do m=nx_start-1,nx_end
 
@@ -158,6 +163,7 @@ subroutine hh_update_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, 
 
        end do
     end do
+    _OMP_KERNEL_PARALLEL_END_
 
 endsubroutine hh_update_kernel
 
@@ -182,6 +188,7 @@ subroutine hh_shift_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
 
  integer :: m, n
 
+      _OMP_KERNEL_PARALLEL_BEGIN_
       do n=ny_start-1,ny_end+1
        do m=nx_start-1,nx_end+1
 
@@ -207,6 +214,7 @@ subroutine hh_shift_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
 
        end do
     end do
+    _OMP_KERNEL_PARALLEL_END_
 
 endsubroutine hh_shift_kernel
 

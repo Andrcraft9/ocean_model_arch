@@ -5,7 +5,9 @@ module mixing_module
     implicit none
     save
     private
-  
+
+#include "macros/mpp_macros.fi"
+
     public :: stress_components_kernel
 
 contains
@@ -35,6 +37,7 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, 
      
      integer :: m, n, k
     
+     _OMP_KERNEL_PARALLEL_BEGIN_
      do n=ny_start, ny_end
        do m=nx_start, nx_end
     
@@ -54,6 +57,7 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, 
     
        enddo
      enddo
+     _OMP_KERNEL_PARALLEL_END_
     
     endsubroutine
 
