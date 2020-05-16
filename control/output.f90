@@ -7,6 +7,7 @@ module output_module
     use data_types_module, only: data2D_real4_type
     use grid_module, only: grid_type
     use io_module, only: write_data
+    use config_basinpar_module, only: nx, ny, xgr_type, ygr_type, rlon, rlat, dxst, dyst
 
     implicit none
     save
@@ -40,7 +41,7 @@ contains
                             minute,  &
                             tstep,   &
                             calendar)
-        use config_basinpar_module, only: nx, ny, xgr_type, ygr_type, rlon, rlat, dxst, dyst
+        
         use iodata_routes, only: fulfname, lrecl, lmpirecl, undef
         use rw_ctl_routes, only: ctl_file_write
 

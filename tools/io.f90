@@ -4,7 +4,7 @@ module io_module
 #include "macros/kernel_macros.fi"
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpi
+    !use mpi
     use mpp_module
     use errors_module, only: abort_model, check_error
     use data_types_module, only: data1D_real4_type, data1D_real8_type, data2D_real4_type, data2D_real8_type,      &

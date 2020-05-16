@@ -1,7 +1,7 @@
 module mpp_module
     ! MPI massively parallel processing library
 
-    use mpi
+    !use mpi
     use kernel_runtime_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
 
@@ -11,7 +11,7 @@ module mpp_module
 
 #include "macros/mpp_macros.fi"
 
-    !include 'mpif.h'
+    include 'mpif.h'
     include "omp_lib.h"
 
     integer, public :: mpp_rank, mpp_count
@@ -85,6 +85,7 @@ contains
         mpp_time_model_step = 0.0d0
         mpp_time_sync = 0.0d0
 
+#ifdef _MPP_KERNEL_TIMER_ON_
         allocate(mpp_time_kernels(max_kernels))
         allocate(mpp_calls_kernels(max_kernels))
         mpp_time_kernels = 0.0d0
@@ -92,6 +93,7 @@ contains
 
         allocate(mpp_time_kernels_threads(0 : _OMP_MAX_THREADS_ - 1, max_kernels))
         mpp_time_kernels_threads = 0
+#endif
     end subroutine
 
     subroutine mpp_finalize()
@@ -114,6 +116,7 @@ contains
         call mpi_allreduce(mpp_time_sync, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
         if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time sync (max and min): ", maxtime_sync, mintime_sync
 
+#ifdef _MPP_KERNEL_TIMER_ON_
         do k = 1, max_kernels
             call mpi_allreduce(mpp_time_kernels(k), maxtime_kernel, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
             call mpi_allreduce(mpp_time_kernels(k), mintime_kernel, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
@@ -154,6 +157,8 @@ contains
             endif
         enddo
         call mpi_barrier(mpp_cart_comm, ierr)
+        call deallocate(mpp_time_kernels_threads)
+#endif
 
         call mpi_finalize(ierr)
     end subroutine

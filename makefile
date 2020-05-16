@@ -2,13 +2,40 @@
 .SUFFIXES: 
 
 ## definitions
-FC = mpif90
+
+# default compiler:
+FCD = mpif90
+
+# profiler compiler:
+FC = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh
+######## TAU GUIDE ########
+# Need to:
+# Configure Tau with:
+#./configure -c++=mpicxx -cc=mpicc -fortran=mpif90 -mpi -openmp -opari -iowrapper -bfd=download -dwarf=download -otf=download -unwind=download -pdt=/home/andr/lib/pdtoolkit-3.25.1
+# Set in .bashrc:
+#export TAU_MAKEFILE=/home/andr/lib/tau-2.29/x86_64/lib/Makefile.tau-mpi-pdt-openmp-opari
+#export PATH=$PATH:/home/andr/lib/tau-2.29/x86_64/bin
+# Set in env:
+#export TAU_OPTIONS='-optTauSelectFile=select.tau -optVerbose -optCompInst'
+#export TAU_OMPT_SUPPORT_LEVEL=full
+#export TAU_OMPT_RESOLVE_ADDRESS_EAGERLY=1
+#export TAU_PROFILE=1
+#export TAU_TRACE=1 
+# Compile:
+# make profiler
+# Run:
+# mpirun -n 1 model
+# Pack profiler:
+#paraprof --pack tau.ppk
+# Pack trace
+#tau_treemerge.pl
+#tau2slog2 tau.trctau.edf -o tau.slog2
 
 # For gfortran, degug only:
-#FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -finit-real=nan -ffree-line-length-0 -O3 -Wtabs -fopenmp -I ./
+#FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -finit-real=nan -ffree-line-length-0 -O3 -Wtabs -fopenmp -I./ -Imacros/
 
 # For gfortran, default options:
-FCFLAGS = -cpp -dM -ffree-line-length-0 -O3 -fopenmp -I ./
+FCFLAGS = -cpp -dM -ffree-line-length-0 -O3 -fopenmp -I./ -Imacros/
 
 #OMP parrallel options
 #FCFLAGS = -O3 -openmp -auto -stack_temps -I ./
@@ -47,19 +74,17 @@ TOOLS = \
 SERVICE = \
 	service/gridcon.f90 \
 	service/grid_parameters.f90 \
-	service/basinpar.f90
+	service/basinpar_construction.f90
 
 # Kernel Layer
 PHYSICS = \
 	kernel/shallow_water/depth.f90 \
 	kernel/shallow_water/vel_ssh.f90 \
 	kernel/shallow_water/mixing.f90
-#physics/velocity.f90
 
 # Parallel System Layer
 INTERFACE = \
 	interface/shallow_water/sw_interface.f90
-#interface/ocean_interface.f90
 
 # Algorithm Layer
 CONTROL = \
@@ -69,16 +94,33 @@ CONTROL = \
 
 ## main and clean targets
 model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL) model.f90)
-	$(FC) $(FCFLAGS) -o $@ $+
+	$(FCD) $(FCFLAGS) -o $@ $+
 
 .PHONY: clean
 clean:
 	find . -name "*.o" -delete
 	find . -name "*.mod" -delete
+	find . -name "*.inst.f90" -delete
+	find . -name "*.pomp.f90" -delete
 
 ## compilation rules
 %.o %.mod: %.f90
-	$(FC) $(FCFLAGS) -c -o $*.o $<
+	$(FCD) $(FCFLAGS) -c -o $*.o $<
+
+# Profiler TAU
+profiler:
+	 $(FC) -o model $(FCFLAGS) $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL)  model.f90 
+
+pack_profiler:
+	paraprof --pack LOG_TAU.ppk
+	rm profile.*
+
+pack_trace:
+	tau_treemerge.pl
+	tau2slog2 tau.trc tau.edf -o LOG_TAU.slog2
+	rm *.trc
+	rm *.edf
+
 
 ## .o -> .mod of the modules it uses
 #main.o: one.mod

@@ -2,7 +2,7 @@ module decomposition_module
     ! Decomposition of computational area
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpi
+    !use mpi
     use debug_module
     use mpp_module
     use errors_module, only: abort_model, check_error

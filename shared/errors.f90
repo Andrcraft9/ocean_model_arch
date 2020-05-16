@@ -1,7 +1,7 @@
 module errors_module
     ! Error processing module
 
-    use mpi
+    !use mpi
     use mpp_module
 
     implicit none

@@ -1,7 +1,7 @@
 module time_manager_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-    use mpi
+    !use mpi
     use mpp_module
     use rwpar_routes
     use time_routes
