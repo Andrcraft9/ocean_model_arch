@@ -10,7 +10,7 @@
 
 ! Configure OMP
 
-#define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static) default(shared) private(k)
+#define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
 #define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do
 
 #define _OMP_KERNEL_PARALLEL_BEGIN_ 
@@ -19,10 +19,10 @@
 #define _OMP_MODEL_BEGIN_ 
 #define _OMP_MODEL_END_ 
 
-#define _OMP_BLOCKS_BEGIN_ !$omp parallel do schedule(static) private(k)
+#define _OMP_BLOCKS_BEGIN_ !$omp parallel do schedule(static, 1) private(k)
 #define _OMP_BLOCKS_END_ !$omp end parallel do
 
-#define _OMP_BLOCKS_SYNC_BEGIN_ !$omp parallel do schedule(static) default(shared) private(k, lock, bm, bn, reqst, src_block, dist_block, src_p, dist_p, send_size, recv_size, ierr, tag)
+#define _OMP_BLOCKS_SYNC_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k, lock, bm, bn, reqst, src_block, dist_block, src_p, dist_p, send_size, recv_size, ierr, tag)
 #define _OMP_BLOCKS_SYNC_END_ !$omp end parallel do
 
 !#define _OMP_MODEL_BEGIN_ !$omp parallel default(shared) firstprivate(local_num_step)
