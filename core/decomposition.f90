@@ -59,7 +59,7 @@ contains
         use config_basinpar_module, only: nx, ny
         
         class(domain_type), intent(in) :: this
-        integer, pointer, intent(in) :: lbasins(:,:) 
+        integer, allocatable, intent(in) :: lbasins(:,:) 
         integer, allocatable, intent(inout) :: glob_bnx_start(:, :), glob_bnx_end(:, :),  &
                                              glob_bny_start(:, :), glob_bny_end(:, :)
         integer, allocatable, intent(inout) :: glob_bbnd_x1(:, :), glob_bbnd_x2(:, :),  &
@@ -253,7 +253,7 @@ contains
         class(domain_type), intent(inout) :: this
         integer, intent(in) :: bppnx, bppny
         integer, intent(in) :: mod_create
-        integer, pointer, intent(in) :: lbasins(:,:) 
+        integer, allocatable, intent(in) :: lbasins(:,:) 
 
         real(wp8), allocatable :: bglob_weight(:, :)
         real(wp8) :: bweight, max_bweight
@@ -494,7 +494,7 @@ contains
         use rwpar_routes
 
         class(domain_type), intent(inout) :: this
-        integer, pointer, intent(in) :: lbasins(:,:) 
+        integer, allocatable, intent(in) :: lbasins(:,:) 
         character(*) :: name
 
         integer :: nofcom
