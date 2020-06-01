@@ -1,5 +1,7 @@
 module iodata_routes
     
+    use, intrinsic :: iso_fortran_env, only: file_storage_size
+
     implicit none
     save
     public

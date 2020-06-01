@@ -4,6 +4,7 @@ module mpp_module
     !use mpi
     use kernel_runtime_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
+    use, intrinsic :: iso_fortran_env, only: file_storage_size
 
     implicit none
     save
@@ -69,6 +70,9 @@ contains
             print *, "MPP INFO: Total Threads   = ", mpp_count_threads
             print *, "MPP INFO: Max possible threads per process = ", _OMP_MAX_THREADS_
             print *, "MPP INFO: required and provided thread level for mpi : ", req, provided
+            print *, "MPP INFO: MPI byte, MPI real, MPI real8 : ", MPI_BYTE, MPI_REAL, MPI_REAL8
+            print *, "MPP INFO: kind 4 and kind 8 : ", wp4, wp8
+            print *, "MPP INFO: file_storage_size (in bytes) : ", file_storage_size / 8
             print *, "MPP INFO: MPI version: ", trim(version)
             print *, "------------------------------------------------------------"
         endif
