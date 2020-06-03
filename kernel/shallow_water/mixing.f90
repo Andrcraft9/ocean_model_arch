@@ -14,7 +14,7 @@ contains
 
 !====================================================================================
 subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end,  &
-                                    lu, luu, dx, dy, dxt, dyt, dxh, dyh, dxb, dyb, u, v, str_t, str_s, nlev)
+                                    lu, luu, dx, dy, dxt, dyt, dxh, dyh, dxb, dyb, u, v, str_t, str_s)
 
     integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
@@ -29,11 +29,10 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end,  &
                              dyh(:, :),  & 
                              dxb(:, :),  & 
                              dyb(:, :)
-     real(wp8), intent(in) :: u(:, :, :),    &
-                              v(:, :, :)
-     real(wp8), intent(inout) :: str_t(:, :, :),    &
-                                 str_s(:, :, :)
-     integer, intent(in) :: nlev
+     real(wp8), intent(in) :: u(:, :),    &
+                              v(:, :)
+     real(wp8), intent(inout) :: str_t(:, :),    &
+                                 str_s(:, :)
      
      integer :: m, n, k
     
@@ -42,17 +41,13 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end,  &
        do m=nx_start, nx_end
     
         if(lu(m,n)>0.5) then
-         do k=1,nlev 
-          str_t(m,n,k)=dy(m,n)/dx(m,n)*(u(m,n,k)/dyh(m,n)-u(m-1,n,k)/dyh(m-1,n))     &
-                      -dx(m,n)/dy(m,n)*(v(m,n,k)/dxh(m,n)-v(m,n-1,k)/dxh(m,n-1)) 
-         enddo
+          str_t(m,n)  =dy(m,n)/dx(m,n)*(u(m,n)/dyh(m,n)-u(m-1,n)/dyh(m-1,n))     &
+                      -dx(m,n)/dy(m,n)*(v(m,n)/dxh(m,n)-v(m,n-1)/dxh(m,n-1)) 
         endif
     
         if(luu(m,n)>0.5) then
-         do k=1,nlev
-          str_s(m,n,k)=dxb(m,n)/dyb(m,n)*(u(m,n+1,k)/dxt(m,n+1)-u(m,n,k)/dxt(m,n))    &
-                      +dyb(m,n)/dxb(m,n)*(v(m+1,n,k)/dyt(m+1,n)-v(m,n,k)/dyt(m,n))    
-         enddo
+          str_s(m,n)  =dxb(m,n)/dyb(m,n)*(u(m,n+1)/dxt(m,n+1)-u(m,n)/dxt(m,n))    &
+                      +dyb(m,n)/dxb(m,n)*(v(m+1,n)/dyt(m+1,n)-v(m,n)/dyt(m,n))    
         endif
     
        enddo
