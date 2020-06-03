@@ -3,10 +3,11 @@
 
 ## definitions
 
-# default compiler:
+# Default compiler:
 FCD = mpif90
+FCOPTS = -cpp -dM -ffree-line-length-0 -fopenmp -I./ -Imacros/
 
-# profiler compiler:
+# Profiler compiler:
 FC = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh
 ######## TAU GUIDE ########
 # Need to:
@@ -31,14 +32,20 @@ FC = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh
 #tau_treemerge.pl
 #tau2slog2 tau.trctau.edf -o tau.slog2
 
-# For gfortran, degug only:
-#FCFLAGS = -cpp -dM -Wall -fPIC -fcheck=all -finit-real=nan -ffree-line-length-0 -O3 -Wtabs -fopenmp -I./ -Imacros/
+# Options:
+# Debug: (from book Introduction to Programming with Fortran)
+# ?: -fPIC
+FCDEBUG = -g -O -Wall -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace -g -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
+# Fast:
+# ?: --ffast-math -auto -stack_temp
+FCFAST = -O3
 
-# For gfortran, default options:
-FCFLAGS = -cpp -dM -ffree-line-length-0 -O3 -fopenmp -I./ -Imacros/
-
-#OMP parrallel options
-#FCFLAGS = -O3 -openmp -auto -stack_temps -I ./
+##### TAKE ONE: #####
+# Debug:
+FCFLAGS = $(FCOPTS) $(FCDEBUG)
+# Production:
+#FCFLAGS = $(FCOPTS) $(FCFAST)
+#####################
 
 ## sources for the program
 SHARED = \
@@ -120,7 +127,6 @@ pack_trace:
 	tau2slog2 tau.trc tau.edf -o LOG_TAU.slog2
 	rm *.trc
 	rm *.edf
-
 
 ## .o -> .mod of the modules it uses
 #main.o: one.mod
