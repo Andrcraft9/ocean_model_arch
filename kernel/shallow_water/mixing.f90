@@ -13,26 +13,26 @@ module mixing_module
 contains
 
 !====================================================================================
-subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end,  &
                                     lu, luu, dx, dy, dxt, dyt, dxh, dyh, dxb, dyb, u, v, str_t, str_s, nlev)
 
-    integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+    integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
-    real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+    real(wp4), intent(in) :: lu (:, :),  &
+                             luu(:, :)
 
-    real(wp4), intent(in) :: dx(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                             dy(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                             dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                             dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                             dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                             dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                             dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                             dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
-     real(wp8), intent(in) :: u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),    &
-                              v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
-     real(wp8), intent(inout) :: str_t(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),    &
-                                 str_s(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
+    real(wp4), intent(in) :: dx (:, :),  & 
+                             dy (:, :),  & 
+                             dxt(:, :),  & 
+                             dyt(:, :),  & 
+                             dxh(:, :),  & 
+                             dyh(:, :),  & 
+                             dxb(:, :),  & 
+                             dyb(:, :)
+     real(wp8), intent(in) :: u(:, :, :),    &
+                              v(:, :, :)
+     real(wp8), intent(inout) :: str_t(:, :, :),    &
+                                 str_s(:, :, :)
      integer, intent(in) :: nlev
      
      integer :: m, n, k

@@ -13,7 +13,7 @@ module depth_module
 
 contains
 
-subroutine hh_init_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine hh_init_kernel(nx_start, nx_end, ny_start, ny_end,  &
                           lu, llu, llv, luh,  &
                           dx, dy, dxt, dyt, dxh, dyh, dxb, dyb,  &
                           hq, hqp, hqn,    &
@@ -22,27 +22,27 @@ subroutine hh_init_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bn
                           hh, hhp, hhn,    &
                           sh, shp, h_r)
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+ integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
- real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          llu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          llv(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          luh(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: lu (:, :),  &
+                          llu(:, :),  & 
+                          llv(:, :),  & 
+                          luh(:, :)
 
- real(wp4), intent(in) :: dx(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          dy(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: dx (:, :),  &
+                          dy (:, :),  &
+                          dxt(:, :),  & 
+                          dyt(:, :),  & 
+                          dxh(:, :),  & 
+                          dyh(:, :),  & 
+                          dxb(:, :),  & 
+                          dyb(:, :)
 
- real(wp8), intent(inout) :: hq(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hqp(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hqn(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             hu(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hup(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hun(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             hv(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hvp(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hvn(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             hh(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hhp(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hhn(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             sh(bnd_x1:bnd_x2, bnd_y1:bnd_y2), shp(bnd_x1:bnd_x2, bnd_y1:bnd_y2), h_r(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp8), intent(inout) :: hq(:, :), hqp(:, :), hqn(:, :),  &
+                             hu(:, :), hup(:, :), hun(:, :),  &
+                             hv(:, :), hvp(:, :), hvn(:, :),  &
+                             hh(:, :), hhp(:, :), hhn(:, :),  &
+                             sh(:, :), shp(:, :), h_r(:, :)
 
  real(wp8) :: slu
  integer :: m, n
@@ -102,30 +102,30 @@ subroutine hh_init_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bn
 
 endsubroutine hh_init_kernel
 
-subroutine hh_update_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine hh_update_kernel(nx_start, nx_end, ny_start, ny_end,  &
                             lu, llu, llv, luh,  &
                             dx, dy, dxt, dyt, dxh, dyh, dxb, dyb,  &
                             hqn, hun, hvn, hhn, sh, h_r)
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+ integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
- real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          llu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          llv(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          luh(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: lu (:, :),  &
+                          llu(:, :),  & 
+                          llv(:, :),  & 
+                          luh(:, :)
 
- real(wp4), intent(in) :: dx(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          dy(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: dx (:, :),  &
+                          dy (:, :),  &
+                          dxt(:, :),  & 
+                          dyt(:, :),  & 
+                          dxh(:, :),  & 
+                          dyh(:, :),  & 
+                          dxb(:, :),  & 
+                          dyb(:, :)
 
- real(wp8), intent(inout) :: hqn(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hun(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             hvn(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hhn(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             sh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  h_r(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp8), intent(inout) :: hqn(:, :), hun(:, :),  &
+                             hvn(:, :), hhn(:, :),  &
+                             sh (:, :), h_r(:, :)
 
  integer :: m,n
  real(wp8) :: slu
@@ -167,24 +167,24 @@ subroutine hh_update_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, 
 
 endsubroutine hh_update_kernel
 
-subroutine hh_shift_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine hh_shift_kernel(nx_start, nx_end, ny_start, ny_end,  &
                            lu, llu, llv, luh,  &
                            hq, hqp, hqn,   &
                            hu, hup, hun,   &
                            hv, hvp, hvn,   &
                            hh, hhp, hhn)
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+ integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
- real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          llu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          llv(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          luh(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: lu (:, :),  &
+                          llu(:, :),  & 
+                          llv(:, :),  & 
+                          luh(:, :)
 
- real(wp8), intent(inout) :: hq(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hqp(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hqn(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             hu(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hup(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hun(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             hv(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hvp(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hvn(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                             hh(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hhp(bnd_x1:bnd_x2, bnd_y1:bnd_y2), hhn(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp8), intent(inout) :: hq(:, :), hqp(:, :), hqn(:, :),  &
+                             hu(:, :), hup(:, :), hun(:, :),  &
+                             hv(:, :), hvp(:, :), hvn(:, :),  &
+                             hh(:, :), hhp(:, :), hhn(:, :)
 
  integer :: m, n
 

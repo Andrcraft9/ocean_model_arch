@@ -13,15 +13,15 @@ module velssh_sw_module
 
 contains
 
-subroutine check_ssh_err_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine check_ssh_err_kernel(nx_start, nx_end, ny_start, ny_end,  &
                                 lu, ssh, name)
   use mpp_module
   use errors_module, only: abort_model
   
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
-  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
-  real(wp8), intent(in) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp4), intent(in) :: lu (:, :)
+  real(wp8), intent(in) :: ssh(:, :)
   character(*), intent(in) :: name
   integer :: m, n, ierr
 
@@ -42,28 +42,28 @@ subroutine check_ssh_err_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
   enddo
 end subroutine
 
-subroutine sw_update_ssh_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine sw_update_ssh_kernel(nx_start, nx_end, ny_start, ny_end,  &
                                 tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp, ubrtr, vbrtr)
 
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
   real(wp8), intent(in) :: tau
 
-  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+  real(wp4), intent(in) :: lu(:, :)
 
-  real(wp4), intent(in) :: dx(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                           dy(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                           dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                           dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+  real(wp4), intent(in) :: dx (:, :),  &
+                           dy (:, :),  &
+                           dxh(:, :),  &
+                           dyh(:, :)
 
- real(wp8), intent(in) :: hhu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                          hhv(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+ real(wp8), intent(in) :: hhu(:, :),  &
+                          hhv(:, :)
 
-  real(wp8), intent(inout) :: sshn(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(inout) :: sshn(:, :)
 
-  real(wp8), intent(in) :: sshp(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-                           ubrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                           vbrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(in) :: sshp (:, :),  &
+                           ubrtr(:, :),  &
+                           vbrtr(:, :)
   
   integer :: m, n
 
@@ -83,7 +83,7 @@ subroutine sw_update_ssh_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
 
 end subroutine
 
-subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end,  &
                         tau, lcu, lcv,  &
                         dxt, dyt, dxh, dyh, dxb, dyb,  &
                         hhu, hhun, hhup,  &
@@ -93,47 +93,47 @@ subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
                         rdis, rlh_s,  &
                         RHSx, RHSy, RHSx_adv, RHSy_adv, RHSx_dif, RHSy_dif)
 
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
   real(wp8), intent(in) :: tau
   
-  real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                           lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+  real(wp4), intent(in) :: lcu(:, :),  &
+                           lcv(:, :)
 
-  real(wp4), intent(in) :: dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                           dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                           dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                           dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                           dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                           dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+  real(wp4), intent(in) :: dxt(:, :),  & 
+                           dyt(:, :),  & 
+                           dxh(:, :),  & 
+                           dyh(:, :),  & 
+                           dxb(:, :),  & 
+                           dyb(:, :)
 
-  real(wp8), intent(in) :: hhu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-                           hhun(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                           hhup(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                           hhv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-                           hhvn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                           hhvp(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                           hhh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(in) :: hhu (:, :),  &
+                           hhun(:, :),  &
+                           hhup(:, :),  &
+                           hhv (:, :),  &
+                           hhvn(:, :),  &
+                           hhvp(:, :),  &
+                           hhh (:, :)
 
-  real(wp8), intent(in) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(in) :: ssh(:, :)
 
-  real(wp8), intent(inout) :: ubrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  & 
-                              vbrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(inout) :: ubrtrn(:, :),  & 
+                              vbrtrn(:, :)
 
-  real(wp8), intent(in) :: ubrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-                           vbrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-                           ubrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                           vbrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(in) :: ubrtr (:, :),   &
+                           vbrtr (:, :),   &
+                           ubrtrp(:, :),  &
+                           vbrtrp(:, :)
 
-  real(wp4), intent(in) :: rdis(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                           rlh_s(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+  real(wp4), intent(in) :: rdis (:, :),  & 
+                           rlh_s(:, :)
 
- real(wp8), intent(in) :: RHSx(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-                          RHSy(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-                          RHSx_adv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                          RHSy_adv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                          RHSx_dif(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                          RHSy_dif(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+ real(wp8), intent(in) :: RHSx(:, :),      &
+                          RHSy(:, :),      &
+                          RHSx_adv(:, :),  &
+                          RHSy_adv(:, :),  &
+                          RHSx_dif(:, :),  &
+                          RHSy_dif(:, :)
 
   integer :: m, n
   real(wp8) :: bp, bp0, slx, sly, grx, gry
@@ -174,32 +174,32 @@ subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
 
 end subroutine
 
-subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end,  &
                         time_smooth,  &
                         lu, lcu, lcv,  &
                         ssh, sshn, sshp,  &
                         ubrtr, ubrtrn, ubrtrp,  &
                         vbrtr, vbrtrn, vbrtrp)
 
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
   real(wp8), intent(in) :: time_smooth
 
-  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                           lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                           lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+  real(wp4), intent(in) :: lu (:, :),  &
+                           lcu(:, :),  &
+                           lcv(:, :)
 
-  real(wp8), intent(inout) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-                              sshn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                              sshp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(inout) :: ssh (:, :),  &
+                              sshn(:, :),  &
+                              sshp(:, :)
 
-  real(wp8), intent(inout) :: ubrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-                              ubrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                              ubrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(inout) :: ubrtr (:, :),  &
+                              ubrtrn(:, :),  &
+                              ubrtrp(:, :)
 
-  real(wp8), intent(inout) :: vbrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),   &
-                              vbrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
-                              vbrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+  real(wp8), intent(inout) :: vbrtr (:, :),  &
+                              vbrtrn(:, :),  &
+                              vbrtrp(:, :)
 
   integer :: m, n
 
@@ -226,25 +226,25 @@ subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
 
 end subroutine
 
-subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end,  &
                                 luu,                 &
                                 dxt, dyt, dxb, dyb,  &
                                 u, v, vort,          &
                                 nlev)
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+ integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
- real(wp4), intent(in) :: luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: luu(:, :)
 
- real(wp4), intent(in) :: dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: dxt(:, :),  & 
+                          dyt(:, :),  & 
+                          dxb(:, :),  & 
+                          dyb(:, :)
 
  integer, intent(in) :: nlev
- real(wp8), intent(inout) :: vort(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
- real(wp8), intent(in) :: u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),        & !Transporting zonal velocity
-                          v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)           !Transporting meridional velocity
+ real(wp8), intent(inout) :: vort(:, :, :)
+ real(wp8), intent(in) :: u(:, :, :),        & !Transporting zonal velocity
+                          v(:, :, :)           !Transporting meridional velocity
 
  integer :: m, n, k
 
@@ -264,36 +264,36 @@ subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
 
 end subroutine uv_trans_vort_kernel
 
-subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine uv_trans_kernel(nx_start, nx_end, ny_start,  &
                            lcu, lcv, luu,   &
                            dxh, dyh,        &
                            u, v, vort,      &
                            hq, hu, hv, hh,  &
                            RHSx, RHSy, nlev)
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+ integer, intent(in) :: nx_start, nx_end, ny_start
 
  integer, intent(in) :: nlev
 
- real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: lcu(:, :),  &
+                          lcv(:, :),  & 
+                          luu(:, :)
 
- real(wp4), intent(in) :: dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: dxh(:, :),  & 
+                          dyh(:, :)
 
- real(wp8), intent(in) :: u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),        & !Transporting zonal velocity
-                          v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)           !Transporting meridional velocity
+ real(wp8), intent(in) :: u(:, :, :),        & !Transporting zonal velocity
+                          v(:, :, :)           !Transporting meridional velocity
 
- real(wp8), intent(inout) :: RHSx(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !Zonal source function
-                             RHSy(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev )         !meridional source function
+ real(wp8), intent(inout) :: RHSx(:, :, :),      & !Zonal source function
+                             RHSy(:, :, :)         !meridional source function
 
- real(wp8), intent(in) :: hq(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-                          hu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-                          hv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-                          hh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+ real(wp8), intent(in) :: hq(:, :),      &
+                          hu(:, :),      &
+                          hv(:, :),      &
+                          hh(:, :)
 
- real(wp8), intent(in) :: vort(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
+ real(wp8), intent(in) :: vort(:, :, :)
 
  real(wp8) :: fx_p, fx_m, fy_p, fy_m   !fluxes through cell edges
 
@@ -358,41 +358,41 @@ subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
 
 endsubroutine uv_trans_kernel
 
-subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end,  &
                            lcu, lcv,                              &
                            dx, dy, dxt, dyt, dxh, dyh, dxb, dyb,  &
                            mu, str_t, str_s,                      &
                            hq, hu, hv, hh,                        &
                            RHSx, RHSy, nlev)
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+ integer, intent(in) :: nx_start, nx_end, ny_start, ny_end
 
  integer, intent(in) :: nlev
 
- real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
-                          lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: lcu(:, :),  &
+                          lcv(:, :)
 
- real(wp4), intent(in) :: dx(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          dy(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
-                          dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dxh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
-                          dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+ real(wp4), intent(in) :: dx (:, :),  &
+                          dy (:, :),  &
+                          dxt(:, :),  & 
+                          dyt(:, :),  & 
+                          dxh(:, :),  & 
+                          dyh(:, :),  & 
+                          dxb(:, :),  & 
+                          dyb(:, :)
 
 
- real(wp8), intent(in) :: mu(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !lateral viscosity coefficient
-                       str_t(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev ),      & !Tension stress
-                       str_s(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev )         !Shearing stress
+ real(wp8), intent(in) :: mu(:, :, :),      & !lateral viscosity coefficient
+                       str_t(:, :, :),      & !Tension stress
+                       str_s(:, :, :)         !Shearing stress
 
- real(wp8), intent(inout) :: RHSx(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),  & !Zonal source function
-                             RHSy(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)     !meridional source function
+ real(wp8), intent(inout) :: RHSx(:, :, :),  & !Zonal source function
+                             RHSy(:, :, :)     !meridional source function
 
- real(wp8), intent(in) :: hq(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-                          hu(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-                          hv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
-                          hh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+ real(wp8), intent(in) :: hq(:, :),      &
+                          hu(:, :),      &
+                          hv(:, :),      &
+                          hh(:, :)
 
  real(wp8) :: muh_p, muh_m
  integer :: m, n, k
