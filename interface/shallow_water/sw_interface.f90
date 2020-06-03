@@ -40,8 +40,8 @@ contains
     _OMP_BLOCKS_BEGIN_
     do k = 1, domain%bcount
 
-        call check_ssh_err_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                  domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+        call check_ssh_err_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                  domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                   grid_data  %lu   %block(k)%field,  &
                                               ssh  %block(k)%field,  &
                                   name)
@@ -58,9 +58,6 @@ contains
         type(data2D_real8_type), intent(in) :: u, v
         type(data2D_real8_type), intent(inout) :: str_t, str_s
 
-        ! Interface only for 2D call
-        integer, parameter :: nlev = 1
-
         integer :: k
 
         call start_kernel_timer('stress_components_kernel')
@@ -68,8 +65,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
-            call stress_components_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                          domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call stress_components_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                          domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                           grid_data  %lu     %block(k)%field,  & 
                                           grid_data  %luu    %block(k)%field,  & 
                                           grid_data  %dx     %block(k)%field,  & 
@@ -83,8 +80,7 @@ contains
                                                       u      %block(k)%field,  & 
                                                       v      %block(k)%field,  & 
                                                       str_t  %block(k)%field,  &
-                                                      str_s  %block(k)%field,  &
-                                          nlev)
+                                                      str_s  %block(k)%field)
 
         enddo
         _OMP_BLOCKS_END_
@@ -109,8 +105,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
-            call hh_init_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call hh_init_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                 grid_data   %lu        %block(k)%field,  &
                                 grid_data   %llu       %block(k)%field,  &
                                 grid_data   %llv       %block(k)%field,  & 
@@ -169,8 +165,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
-            call hh_update_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                  domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call hh_update_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                  domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                   grid_data   %lu        %block(k)%field,  & 
                                   grid_data   %llu       %block(k)%field,  & 
                                   grid_data   %llv       %block(k)%field,  & 
@@ -213,8 +209,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
-            call hh_shift_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                 domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call hh_shift_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                 domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                  grid_data  %lu     %block(k)%field,  &
                                  grid_data  %llu    %block(k)%field,  &
                                  grid_data  %llv    %block(k)%field,  &
@@ -246,9 +242,6 @@ contains
         type(data2D_real8_type), intent(in) :: u, v
         type(data2D_real8_type), intent(inout) :: vort
 
-        ! Interface only for 2D call
-        integer, parameter :: nlev = 1
-
         integer :: k
 
         call start_kernel_timer('uv_trans_vort_kernel')
@@ -256,8 +249,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
-            call uv_trans_vort_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                      domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call uv_trans_vort_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                      domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                       grid_data  %luu   %block(k)%field,  &
                                       grid_data  %dxt   %block(k)%field,  &
                                       grid_data  %dyt   %block(k)%field,  &
@@ -265,8 +258,7 @@ contains
                                       grid_data  %dyb   %block(k)%field,  &
                                                   u     %block(k)%field,  &
                                                   v     %block(k)%field,  &
-                                                  vort  %block(k)%field,  &
-                                      nlev)
+                                                  vort  %block(k)%field)
 
         enddo
         _OMP_BLOCKS_END_
@@ -284,9 +276,6 @@ contains
         type(data2D_real8_type), intent(in) :: u, v
         type(data2D_real8_type), intent(in) :: vort
         type(data2D_real8_type), intent(inout) :: RHSx, RHSy
-        
-        ! Interface only for 2D call
-        integer, parameter :: nlev = 1
 
         integer :: k
 
@@ -295,8 +284,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
 
-            call uv_trans_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                 domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call uv_trans_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                 domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                  grid_data  %lcu   %block(k)%field,  &
                                  grid_data  %lcv   %block(k)%field,  &
                                  grid_data  %luu   %block(k)%field,  &
@@ -310,8 +299,7 @@ contains
                                  grid_data  %hhv   %block(k)%field,  &
                                  grid_data  %hhh   %block(k)%field,  &
                                              RHSx  %block(k)%field,  &
-                                             RHSy  %block(k)%field,  &
-                                 nlev)
+                                             RHSy  %block(k)%field)
         enddo
         _OMP_BLOCKS_END_
 
@@ -325,9 +313,6 @@ contains
         type(grid_type), intent(in) :: grid_data
         type(data2D_real8_type), intent(in) :: mu, str_t, str_s
         type(data2D_real8_type), intent(inout) :: RHSx, RHSy
-        
-        ! Interface only for 2D call
-        integer, parameter :: nlev = 1
 
         integer :: k
 
@@ -336,8 +321,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
         
-            call uv_diff2_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                 domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call uv_diff2_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                 domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                  grid_data  %lcu    %block(k)%field,  &
                                  grid_data  %lcv    %block(k)%field,  &
                                  grid_data  %dx     %block(k)%field,  &
@@ -356,8 +341,7 @@ contains
                                  grid_data  %hhv    %block(k)%field,  &
                                  grid_data  %hhh    %block(k)%field,  &
                                              RHSx   %block(k)%field,  &
-                                             RHSy   %block(k)%field,  &
-                                 nlev)
+                                             RHSy   %block(k)%field)
 
         enddo
         _OMP_BLOCKS_END_
@@ -381,8 +365,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
             
-            call sw_update_ssh_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                                      domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call sw_update_ssh_kernel(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                                      domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                                       tau,                                 &
                                       grid_data  %lu     %block(k)%field,  & 
                                       grid_data  %dx     %block(k)%field,  & 
@@ -423,8 +407,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
             
-            call sw_update_uv(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                              domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call sw_update_uv(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                              domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                               tau,                                    &
                               grid_data  %lcu       %block(k)%field,  &
                               grid_data  %lcv       %block(k)%field,  &
@@ -482,8 +466,8 @@ contains
         _OMP_BLOCKS_BEGIN_
         do k = 1, domain%bcount
             
-            call sw_next_step(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
-                              domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+            call sw_next_step(domain%bnx_start(k) - domain%bbnd_x1(k) + 1, domain%bnx_end(k) - domain%bbnd_x1(k) + 1,  &
+                              domain%bny_start(k) - domain%bbnd_y1(k) + 1, domain%bny_end(k) - domain%bbnd_y1(k) + 1,  &
                               time_smooth,                          &
                               grid_data  %lu      %block(k)%field,  &
                               grid_data  %lcu     %block(k)%field,  &
