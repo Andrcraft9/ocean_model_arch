@@ -3,11 +3,29 @@
 
 ## definitions
 
-# Default compiler:
-FCD = mpif90
 FCOPTS = -cpp -dM -ffree-line-length-0 -fopenmp -I./ -Imacros/
 
-# Profiler compiler:
+FCGCC = 
+FCFINTEL = -assume byterecl
+
+# Options:
+# Debug: (from book Introduction to Programming with Fortran)
+# ?: -fPIC
+FCDEBUG = -g -O -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace -g -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
+# Fast:
+# ?: --ffast-math -auto -stack_temp
+FCFAST = -O3
+
+################# USER SECTION BEGIN #################
+### Compiler options (Debug or Production)
+FCFLAGS = $(FCOPTS) $(FCDEBUG)
+#FCFLAGS = $(FCOPTS) $(FCFAST)
+
+### Default compiler (GCC or Intel):
+FCD = mpif90 $(FCGCC)
+#FCD = mpiifort $(FCINTEL)
+
+### Profiler compiler:
 FC = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh
 ######## TAU GUIDE ########
 # Need to:
@@ -31,25 +49,12 @@ FC = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh
 # Pack trace
 #tau_treemerge.pl
 #tau2slog2 tau.trctau.edf -o tau.slog2
-
-# Options:
-# Debug: (from book Introduction to Programming with Fortran)
-# ?: -fPIC
-FCDEBUG = -g -O -Wall -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace -g -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
-# Fast:
-# ?: --ffast-math -auto -stack_temp
-FCFAST = -O3
-
-##### TAKE ONE: #####
-# Debug:
-FCFLAGS = $(FCOPTS) $(FCDEBUG)
-# Production:
-#FCFLAGS = $(FCOPTS) $(FCFAST)
-#####################
+################# USER SECTION END ###################
 
 ## sources for the program
 SHARED = \
 	shared/kind.f90 \
+	shared/system.f90 \
 	shared/kernel_runtime.f90 \
 	shared/constants.f90 \
 	shared/mpp/mpp.f90 \

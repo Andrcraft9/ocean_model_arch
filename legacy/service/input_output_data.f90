@@ -1,17 +1,10 @@
 module iodata_routes
     
-    use, intrinsic :: iso_fortran_env, only: file_storage_size
+    use system_module, only: lrecl, lmpirecl, undef
 
     implicit none
     save
     public
-
-
-    !integer, parameter:: lrecl=1         !long of unique recl for Compaq, Intel fortran
-    integer, parameter:: lrecl=4         !long of unique recl for PGI, gfortran, efc
-
-    integer, parameter :: lmpirecl=4  !for mpi read/write
-    real, parameter:: undef=-1.0e+32  !missing data value
 
 contains
 

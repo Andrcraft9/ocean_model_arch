@@ -11,7 +11,7 @@ module io_module
                                  data3D_real4_type, data3D_real8_type
     use decomposition_module, only: domain_type
     use grid_module, only: grid_global_type
-    use, intrinsic :: iso_fortran_env, only: file_storage_size
+    use system_module, only: lrecl
 
     implicit none
     save
@@ -40,6 +40,7 @@ contains
 
         character :: frmt*16, comment*80
         integer :: m, n, ierr
+        integer :: reclen
         
         if (mpp_is_master_thread()) then
 
@@ -49,8 +50,9 @@ contains
             ! reading mask from:
             if (mpp_is_master()) then
             print *, "Reading mask of computational area..."
-            print *, mask_file_name, nx, ny, "recl, in bytes = ", file_storage_size / 8
-            open (11, file=mask_file_name, status='old', recl=nx * (file_storage_size/8), err=98)
+            print *, mask_file_name, nx, ny
+
+            open (11, file=mask_file_name, status='old', recl=nx*lrecl, err=98)
                 read (11,  '(a)') comment(1:min(80,nx))
                 write(*,'(1x,a)') comment
                 do n = ny, 1, -1
