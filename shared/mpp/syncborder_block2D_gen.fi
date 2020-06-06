@@ -10,8 +10,6 @@ integer :: tag, icount
 
 real(wp8) :: t_local
 
-return;
-
 ! TIMER
 _OMP_MASTER_BEGIN_
 call start_timer(t_local)
