@@ -84,6 +84,10 @@ contains
             print *, "MPP INFO: MPP_SORTED_BLOCKS: yes"
 #endif
 
+#ifdef _MPP_NO_PARALLEL_MODE_
+            print *, "MPP INFO: MPP_NO_PARALLEL_MODE: yes"
+#endif
+
 #ifdef _MPP_BLOCK_MODE_
             print *, "MPP INFO: MPP_BLOCK_MODE: yes"
 #endif

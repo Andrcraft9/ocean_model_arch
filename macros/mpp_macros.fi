@@ -5,6 +5,7 @@
 ! Possible user defines, you can configure it from makefile
 !#define _MPP_KERNEL_TIMER_ON_
 !#define _MPP_SORTED_BLOCKS_
+!#define _MPP_NO_PARALLEL_MODE_
 !#define _MPP_BLOCK_MODE_
 !#define _MPP_LOOP_KERNEL_MODE_
 !#define _MPP_MODEL_PARALLEL_MODE_
@@ -21,6 +22,25 @@
 #define _OMP_BARRIER_ !$omp barrier
 #define _OMP_MASTER_BEGIN_ !$omp master
 #define _OMP_MASTER_END_ !$omp end master
+
+#ifdef _MPP_NO_PARALLEL_MODE_
+
+#define _OMP_BLOCKS_PARALLEL_BEGIN_ 
+#define _OMP_BLOCKS_PARALLEL_END_ 
+
+#define _OMP_KERNEL_PARALLEL_BEGIN_ 
+#define _OMP_KERNEL_PARALLEL_END_ 
+
+#define _OMP_MODEL_BEGIN_ 
+#define _OMP_MODEL_END_ 
+
+#define _OMP_BLOCKS_BEGIN_ 
+#define _OMP_BLOCKS_END_ 
+
+#define _OMP_BLOCKS_SYNC_BEGIN_ 
+#define _OMP_BLOCKS_SYNC_END_ 
+
+#endif
 
 #ifdef _MPP_BLOCK_MODE_
 ! MPP_BLOCK MODE
