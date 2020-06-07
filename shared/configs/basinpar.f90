@@ -87,8 +87,8 @@ contains
         p_pole = 90.0d0
         q_pole = -90.0d0
 
-        mask_file_name = '/home/andr/code/fortran/ocean_model_arch/data/BS4km/mask.txt'
-        bottom_topography_file_name = '/home/andr/code/fortran/ocean_model_arch/data/BS4km/topo.dat'
+        mask_file_name = 'data/BS4km/mask.txt'
+        bottom_topography_file_name = 'data/BS4km/topo.dat'
     end subroutine
 
     subroutine load_config_basinpar_as250m()
@@ -123,8 +123,8 @@ contains
         p_pole = 90.0d0
         q_pole = -90.0d0
 
-        mask_file_name = '/home/andr/code/fortran/ocean_model_arch/data/AS/maskAzovCor.txt'
-        bottom_topography_file_name = '/home/andr/code/fortran/ocean_model_arch/data/AS/TopoAzovSea_250x250m_3.5m.dat'
+        mask_file_name = 'data/AS/maskAzovCor.txt'
+        bottom_topography_file_name = 'data/AS/TopoAzovSea_250x250m_3.5m.dat'
     end subroutine
 
 end module config_basinpar_module
