@@ -1,32 +1,27 @@
 ## no implicit rules
 .SUFFIXES: 
 
-## definitions
-
-FCOPTS = -cpp -dM -ffree-line-length-0 -I./ -Imacros/
-
-FCGCC =  -fopenmp
-FCFINTEL = -assume byterecl -openmp
-
-# Options:
+# Definitions and Options:
+FCGCC = -fopenmp -cpp -dM -ffree-line-length-0 -I./ -Imacros/
+FCINTEL = -assume byterecl -openmp -cpp -I./ -Imacros/
 # Debug: (from book Introduction to Programming with Fortran)
 # ?: -fPIC
-FCDEBUG = -g -O -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace -g -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
+FCGCC_DEBUG = -g -O -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
+FCINTEL_DEBUG = -g -O -finit-real=nan
 # Fast:
 # ?: --ffast-math -auto -stack_temp
-FCFAST = -O3
+FCGCC_FAST = -O3
+FCINTEL_FAST = -O3
 
 ################# USER SECTION BEGIN ##########################################
-### Compiler options (Debug or Production)
-FCFLAGS = $(FCOPTS) $(FCDEBUG)
-#FCFLAGS = $(FCOPTS) $(FCFAST)
-
-### Default compiler (GCC or Intel):
-FCD = mpif90 $(FCGCC)
-#FCD = mpiifort $(FCINTEL)
+### Default compiler (GCC or Intel / Debug or Production):
+FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
+#FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
+#FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
+#FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 
 ### Profiler compiler:
-FC = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh
+FCPROF = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh -O3
 ######## TAU GUIDE ########
 # Need to:
 # Configure Tau with:
@@ -106,7 +101,7 @@ CONTROL = \
 
 ## main and clean targets
 model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL) model.f90)
-	$(FCD) $(FCFLAGS) -o $@ $+
+	$(FCD) -o $@ $+
 
 .PHONY: clean
 clean:
@@ -117,11 +112,11 @@ clean:
 
 ## compilation rules
 %.o %.mod: %.f90
-	$(FCD) $(FCFLAGS) -c -o $*.o $<
+	$(FCD) -c -o $*.o $<
 
 # Profiler TAU
 profiler:
-	 $(FC) -o model $(FCFLAGS) $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL)  model.f90 
+	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL) model.f90 
 
 pack_profiler:
 	paraprof --pack LOG_TAU.ppk
