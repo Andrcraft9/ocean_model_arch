@@ -25,25 +25,25 @@ FCPROF = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh -O3
 ######## TAU GUIDE ########
 # Need to:
 # Configure Tau with:
-#./configure -c++=mpicxx -cc=mpicc -fortran=mpif90 -mpi -openmp -opari -iowrapper -bfd=download -dwarf=download -otf=download -unwind=download -pdt=/home/andr/lib/pdtoolkit-3.25.1
+# ./configure -c++=mpicxx -cc=mpicc -fortran=mpif90 -mpi -openmp -opari -iowrapper -bfd=download -dwarf=download -otf=download -unwind=download -pdt=/home/andr/lib/pdtoolkit-3.25.1
 # Set in .bashrc:
-#export TAU_MAKEFILE=/home/andr/lib/tau-2.29/x86_64/lib/Makefile.tau-mpi-pdt-openmp-opari
-#export PATH=$PATH:/home/andr/lib/tau-2.29/x86_64/bin
+# export TAU_MAKEFILE=/home/andr/lib/tau-2.29/x86_64/lib/Makefile.tau-mpi-pdt-openmp-opari
+# export PATH=$PATH:/home/andr/lib/tau-2.29/x86_64/bin
 # Set in env:
-#export TAU_OPTIONS='-optTauSelectFile=select.tau -optVerbose -optCompInst'
-#export TAU_OMPT_SUPPORT_LEVEL=full
-#export TAU_OMPT_RESOLVE_ADDRESS_EAGERLY=1
-#export TAU_PROFILE=1
-#export TAU_TRACE=1 
+# export TAU_OPTIONS='-optTauSelectFile=select.tau -optVerbose -optCompInst'
+# export TAU_OMPT_SUPPORT_LEVEL=full
+# export TAU_OMPT_RESOLVE_ADDRESS_EAGERLY=1
+# export TAU_PROFILE=1
+# export TAU_TRACE=1 
 # Compile:
 # make profiler
 # Run:
 # mpirun -n 1 model
 # Pack profiler:
-#paraprof --pack tau.ppk
+# paraprof --pack tau.ppk
 # Pack trace
-#tau_treemerge.pl
-#tau2slog2 tau.trctau.edf -o tau.slog2
+# tau_treemerge.pl
+# tau2slog2 tau.trctau.edf -o tau.slog2
 ################# USER SECTION END ############################################
 
 ## sources for the program
