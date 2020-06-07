@@ -21,7 +21,9 @@ FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 
 ### Profiler compiler:
-FCPROF = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh -O3
+FCPROF = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh $(FCGCC) $(FCGCC_FAST)
+#FCPROF = /data4t/chaplygin/lib/tau-2.28/x86_64/bin/tau_f90.sh $(FCINTEL) $(FCINTEL_FAST)
+
 ######## TAU GUIDE ########
 # Need to:
 # Configure Tau with:
