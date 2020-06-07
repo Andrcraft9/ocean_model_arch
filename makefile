@@ -3,10 +3,10 @@
 
 ## definitions
 
-FCOPTS = -cpp -dM -ffree-line-length-0 -fopenmp -I./ -Imacros/
+FCOPTS = -cpp -dM -ffree-line-length-0 -I./ -Imacros/
 
-FCGCC = 
-FCFINTEL = -assume byterecl
+FCGCC =  -fopenmp
+FCFINTEL = -assume byterecl -openmp
 
 # Options:
 # Debug: (from book Introduction to Programming with Fortran)
