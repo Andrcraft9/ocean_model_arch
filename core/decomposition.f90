@@ -10,6 +10,8 @@ module decomposition_module
     implicit none
     save
     private
+    
+#include "macros/mpp_macros.fi"
 
     ! Domain decomposition only in 2D area, s-levels are the same for each process, decomposition into rectangular blocks
     ! There are two types of block numeration:
@@ -274,7 +276,12 @@ contains
         real(wp8) :: icomm_metric, max_icomm_metric
         integer :: max_points_per_block, min_points_per_block, reduced_max_points_per_block, reduced_min_points_per_block
 
+#ifdef _MPP_SORTED_BLOCKS_
         logical, parameter :: sorted_blocks = .true.
+#else
+        logical, parameter :: sorted_blocks = .false.
+#endif
+        
         logical, allocatable :: mask_blocks(:, :)
         integer, dimension(2) :: max_mn
         integer :: max_m, max_n
@@ -406,8 +413,10 @@ contains
                             this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
                             this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
                             this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
-
-                            print *, k, max_m, max_n, bglob_weight(max_m, max_n)
+                            
+                            if (debug_level >= 1) then
+                                print *, k, max_m, max_n, bglob_weight(max_m, max_n)
+                            endif
 
                             k = k + 1
                         endif

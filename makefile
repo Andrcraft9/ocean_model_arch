@@ -16,7 +16,7 @@ FCDEBUG = -g -O -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace -g -
 # ?: --ffast-math -auto -stack_temp
 FCFAST = -O3
 
-################# USER SECTION BEGIN #################
+################# USER SECTION BEGIN ##########################################
 ### Compiler options (Debug or Production)
 FCFLAGS = $(FCOPTS) $(FCDEBUG)
 #FCFLAGS = $(FCOPTS) $(FCFAST)
@@ -49,7 +49,7 @@ FC = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh
 # Pack trace
 #tau_treemerge.pl
 #tau2slog2 tau.trctau.edf -o tau.slog2
-################# USER SECTION END ###################
+################# USER SECTION END ############################################
 
 ## sources for the program
 SHARED = \
