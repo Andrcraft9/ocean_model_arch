@@ -1,7 +1,7 @@
 module velssh_sw_module
 
   use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-  use constants_module, only: FreeFallAcc
+  use constants_module, only: FreeFallAcc, dPi
 
   implicit none
   save
@@ -9,9 +9,38 @@ module velssh_sw_module
 
 #include "macros/mpp_macros.fi"
 
+  public :: gaussian_elimination_kernel
   public :: check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
 
 contains
+
+
+subroutine gaussian_elimination_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2, lu, ssh, sigma, nx0, ny0)
+
+  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+
+  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
+  real(wp8), intent(inout) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
+
+  real(wp8), intent(in) ::sigma
+  integer, intent(in) :: nx0, ny0
+
+  integer :: m, n, ierr
+  real(wp8) :: dx, dy
+
+  _OMP_KERNEL_PARALLEL_BEGIN_
+  do n = ny_start, ny_end
+    do m = nx_start, nx_end
+        if (lu(m,n)>0.5) then
+          dx = real((m - nx0), kind=wp8) / (nx0*0.25d0)
+          dy = real((n - ny0), kind=wp8) / (ny0*0.25d0)
+          ssh(m, n) = (1.0 / (dsqrt(2*dPi) * sigma)) * dexp( -( (dx*dx + dy*dy) / (2*sigma*sigma )) )
+        endif
+    enddo
+  enddo
+  _OMP_KERNEL_PARALLEL_END_
+
+end subroutine
 
 subroutine check_ssh_err_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
                                 lu, ssh, name)

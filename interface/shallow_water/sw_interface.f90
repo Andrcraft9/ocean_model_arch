@@ -10,7 +10,7 @@ module shallow_water_interface_module
     use mpp_sync_module, only: sync 
     use mixing_module, only: stress_components_kernel
     use depth_module, only: hh_init_kernel, hh_update_kernel, hh_shift_kernel
-    use velssh_sw_module, only: check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
+    use velssh_sw_module, only: gaussian_elimination_kernel, check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
     use errors_module, only: abort_model, check_error
 
 #include "macros/kernel_macros.fi"
@@ -20,6 +20,7 @@ module shallow_water_interface_module
     save
     private
 
+    public :: envoke_gaussian_elimination
     public :: envoke_check_ssh_err_kernel
     public :: envoke_stress_components_kernel
     public :: envoke_hh_init_kernel, envoke_hh_update_kernel, envoke_hh_shift_kernel
@@ -27,6 +28,32 @@ module shallow_water_interface_module
     public :: envoke_sw_update_ssh_kernel, envoke_sw_update_uv, envoke_sw_next_step
 
 contains
+
+    subroutine envoke_gaussian_elimination(domain, grid_data, ssh, sigma, nx0, ny0)
+        
+        type(domain_type), intent(in) :: domain
+        type(grid_type), intent(in) :: grid_data
+        type(data2D_real8_type), intent(inout) :: ssh
+        real(wp8), intent(in) ::sigma
+        integer, intent(in) :: nx0, ny0
+
+        integer :: k
+
+        _OMP_BLOCKS_BEGIN_
+        do k = 1, domain%bcount
+    
+            call gaussian_elimination_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
+                                             domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+                                             grid_data  %lu   %block(k)%field,  &
+                                                         ssh  %block(k)%field,  &
+                                            sigma, nx0, ny0)
+    
+        enddo
+        _OMP_BLOCKS_END_
+
+        call sync(domain, ssh)
+        
+    end subroutine
 
     subroutine envoke_check_ssh_err_kernel(domain, grid_data, ssh, name)
     

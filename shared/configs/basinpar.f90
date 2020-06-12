@@ -51,7 +51,8 @@ contains
     subroutine load_config_basinpar()
     ! Here must be reading from config file (parsing)
         
-        call load_config_basinpar_as250m()
+        !call load_config_basinpar_as250m()
+        call load_config_basinpar_as250m_test()
 
     end subroutine
 
@@ -125,6 +126,42 @@ contains
 
         mask_file_name = 'data/AS/maskAzovCor.txt'
         bottom_topography_file_name = 'data/AS/TopoAzovSea_250x250m_3.5m.dat'
+    end subroutine
+
+    subroutine load_config_basinpar_as250m_test()
+        nx = 1525
+        ny = 1115
+        nz = 1
+        mmm = 3
+        nnn = 3
+        mm = nx-2
+        nn = ny-2
+        periodicity_x = 0
+        periodicity_y = 0
+
+        rlon = 34.751560d0
+        rlat = 44.801125d0
+        dxst = 0.00312d0
+        dyst = 0.00225d0
+
+        xgr_type = 0
+        ygr_type = 0
+
+        if (xgr_type > 0) allocate(x_levels(nx))
+        if (ygr_type > 0) allocate(y_levels(ny))
+
+        curve_grid = 1
+
+        rotation_on_lon = 0.0d0
+        rotation_on_lat = 0.0d0
+
+        x_pole = 90.0d0
+        y_pole = 60.0d0
+        p_pole = 90.0d0
+        q_pole = -90.0d0
+
+        mask_file_name = 'data/AS/maskAzovCor_empty.txt'
+        bottom_topography_file_name = 'none'
     end subroutine
 
 end module config_basinpar_module
