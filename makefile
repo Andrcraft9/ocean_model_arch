@@ -15,8 +15,8 @@ FCINTEL_FAST = -O3
 
 ################# USER SECTION BEGIN ##########################################
 ### Default compiler (GCC or Intel / Debug or Production):
-#FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
-FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
+FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
+#FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 

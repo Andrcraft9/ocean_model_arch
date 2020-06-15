@@ -343,8 +343,8 @@ contains
         integer :: reqst
         integer :: ierr
 
-        !if (parallel_dbg >= 4) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
-        if (parallel_dbg >= 4) print *, mpp_rank, 'IRECV. block: ', k, 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
+        !if (parallel_dbg >= 11) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
+        if (parallel_dbg >= 11) print *, mpp_rank, 'IRECV. block: ', k, 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
 
         call mpi_irecv(buff, buff_size, mpi_real8, src_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
@@ -358,8 +358,8 @@ contains
         integer :: reqst
         integer :: ierr
 
-        !if (parallel_dbg >= 4) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
-        if (parallel_dbg >= 4) print *, mpp_rank, 'ISEND. block: ', k, 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
+        !if (parallel_dbg >= 11) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
+        if (parallel_dbg >= 11) print *, mpp_rank, 'ISEND. block: ', k, 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
 
         call mpi_isend(buff, buff_size, mpi_real8, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
@@ -416,8 +416,8 @@ contains
         integer :: reqst
         integer :: ierr
 
-        !if (parallel_dbg >= 4) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
-        if (parallel_dbg >= 4) print *, mpp_rank, 'IRECV. block: ', k, 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
+        !if (parallel_dbg >= 11) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
+        if (parallel_dbg >= 11) print *, mpp_rank, 'IRECV. block: ', k, 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
 
         call mpi_irecv(buff, buff_size, mpi_real4, src_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
@@ -431,8 +431,8 @@ contains
         integer :: reqst
         integer :: ierr
 
-        !if (parallel_dbg >= 4) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
-        if (parallel_dbg >= 4) print *, mpp_rank, 'ISEND. block: ', k, 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
+        !if (parallel_dbg >= 11) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
+        if (parallel_dbg >= 11) print *, mpp_rank, 'ISEND. block: ', k, 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
 
         call mpi_isend(buff, buff_size, mpi_real4, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
@@ -494,8 +494,8 @@ contains
         integer :: reqst
         integer :: ierr
 
-        !if (parallel_dbg >= 4) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
-        if (parallel_dbg >= 4) print *, mpp_rank, 'IRECV. block: ', k, 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
+        !if (parallel_dbg >= 11) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
+        if (parallel_dbg >= 11) print *, mpp_rank, 'IRECV. block: ', k, 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
 
         call mpi_irecv(buff, buff_size, mpi_real8, src_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
@@ -509,8 +509,8 @@ contains
         integer :: reqst
         integer :: ierr
 
-        !if (parallel_dbg >= 4) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
-        if (parallel_dbg >= 4) print *, mpp_rank, 'ISEND. block: ', k, 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
+        !if (parallel_dbg >= 11) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
+        if (parallel_dbg >= 11) print *, mpp_rank, 'ISEND. block: ', k, 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
 
         call mpi_isend(buff, buff_size, mpi_real8, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
@@ -568,8 +568,8 @@ contains
         integer :: reqst
         integer :: ierr
 
-        !if (parallel_dbg >= 4) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
-        if (parallel_dbg >= 4) print *, mpp_rank, 'IRECV. block: ', k, 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
+        !if (parallel_dbg >= 11) print *, rank, 'IRECV. block: ', bindx(k, 1), bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
+        if (parallel_dbg >= 11) print *, mpp_rank, 'IRECV. block: ', k, 'src_block:', src_block(1), src_block(2), 'src_p:', src_proc, 'tag', tag
 
         call mpi_irecv(buff, buff_size, mpi_real4, src_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine
@@ -583,8 +583,8 @@ contains
         integer :: reqst
         integer :: ierr
 
-        !if (parallel_dbg >= 4) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
-        if (parallel_dbg >= 4) print *, mpp_rank, 'ISEND. block: ', k, 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
+        !if (parallel_dbg >= 11) print *, rank, 'ISEND. block: ', bindx(k, 1), bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
+        if (parallel_dbg >= 11) print *, mpp_rank, 'ISEND. block: ', k, 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_proc, 'tag', tag
 
         call mpi_isend(buff, buff_size, mpi_real4, dist_proc, tag, mpp_cart_comm, reqst, ierr)
     end subroutine

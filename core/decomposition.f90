@@ -13,6 +13,34 @@ module decomposition_module
     
 #include "macros/mpp_macros.fi"
 
+! borders
+#define _NXP_ 1
+#define _NXM_ 2
+#define _NYP_ 3
+#define _NYM_ 4
+! edges
+#define _NXP_NYP_ 5
+#define _NXP_NYM_ 6
+#define _NXM_NYP_ 7
+#define _NXM_NYM_ 8
+
+    type, public :: block_info_type
+        logical :: is_inner
+
+        ! Local index of current block
+        integer :: k
+        ! Position in block grid
+        integer :: bm, bn
+
+        ! Info about boundary and edges
+        !
+        integer :: rank_nxp,     rank_nxm,     rank_nyp,     rank_nym
+        integer :: rank_nxp_nyp, rank_nxp_nym, rank_nxm_nyp, rank_nxm_nym
+        ! Local index of blocks near
+        integer :: k_nxp,     k_nxm,     k_nyp,     k_nym
+        integer :: k_nxp_nyp, k_nxp_nym, k_nxm_nyp, k_nxm_nym
+    end type block_info_type
+
     ! Domain decomposition only in 2D area, s-levels are the same for each process, decomposition into rectangular blocks
     ! There are two types of block numeration:
     !   Local:
@@ -22,6 +50,7 @@ module decomposition_module
     type, public :: domain_type
         ! Local area
         integer :: bcount ! Number of data blocks at each process
+        integer :: bcount_inner, bcount_boundary ! Inner blocks go first in local block numeration! bcount_inner + bcount_boundary = bcount.
         integer, pointer :: bnx_start(:), bnx_end(:) ! Significant point area in blocks (x direction)
         integer, pointer :: bny_start(:), bny_end(:) ! Significant point area in blocks (y direction)
         integer, pointer :: bbnd_x1(:), bbnd_x2(:) ! Array boundary in blocks (x direction)
@@ -34,9 +63,17 @@ module decomposition_module
         ! Map: block coords to proc
         ! If bglob_proc(m, n) == -1 => (m, n) block is land-block!
         integer, pointer :: bglob_proc(:, :)
-        ! Map: local block number to block coords
+        ! Map: local block number to block coords: m=bindx(k,1), n=bindx(k,2)
         integer, pointer :: bindx(:, :)
+        ! Map: block coords to local block number
+        integer, pointer :: bglob_local_num(:, :)
 
+        ! Info
+        type(block_info_type), pointer :: blocks_info(:)
+        integer, pointer :: ranks_near(:)
+        integer :: amount_of_ranks_near
+
+        ! Z dir
         integer :: nz
     contains
         procedure, public :: init_from_config
@@ -51,8 +88,96 @@ module decomposition_module
 !------------------------------------------------------------------------------
 
     type(domain_type), public, target :: domain_data
-    
+
 contains
+
+    function get_rank_of_block(bm, bn, bglob_proc, bnx, bny) result(r)
+        integer, intent(in) :: bm, bn
+        integer, pointer, intent(in) :: bglob_proc(:, :)
+        integer, intent(in) :: bnx, bny
+        integer :: r
+
+        if (bm > bnx .or. bm < 1 .or. bn > bny .or. bn < 1) then 
+            r = -2
+        else
+            r = bglob_proc(bm, bn)
+        endif
+        return
+    end function
+
+    function get_loc_num_of_block(bm, bn, bglob_loc_num, bnx, bny) result(num)
+        integer, intent(in) :: bm, bn
+        integer, pointer, intent(in) :: bglob_loc_num(:, :)
+        integer, intent(in) :: bnx, bny
+        integer :: num
+
+        if (bm > bnx .or. bm < 1 .or. bn > bny .or. bn < 1) then 
+            num = -2
+        else
+            num = bglob_loc_num(bm, bn)
+        endif
+        return
+    end function
+
+    subroutine fill_direction_array(m, n, mdirs, ndirs)
+        integer, intent(in) :: m, n
+        integer, intent(inout) :: mdirs(8), ndirs(8)
+
+        mdirs(1) = m + 1; ndirs(1) = n     ! nx+
+        mdirs(2) = m - 1; ndirs(2) = n     ! nx-
+        mdirs(3) = m;     ndirs(3) = n + 1 ! ny+
+        mdirs(4) = m;     ndirs(4) = n - 1 ! ny-
+        
+        mdirs(5) = m + 1; ndirs(5) = n + 1 ! nx+ny+
+        mdirs(6) = m + 1; ndirs(6) = n - 1 ! nx+ny-
+        mdirs(7) = m - 1; ndirs(7) = n + 1 ! nx-ny+
+        mdirs(8) = m - 1; ndirs(8) = n - 1 ! nx-ny-
+
+        return
+    end subroutine
+
+    function is_block_on_current_proc(bm, bn, bglob_proc, bnx, bny) result(is)
+        integer, intent(in) :: bm, bn
+        integer, pointer, intent(in) :: bglob_proc(:, :)
+        integer, intent(in) :: bnx, bny
+        logical :: is
+
+        is = .true.
+
+        if (bm > bnx .or. bm < 1 .or. bn > bny .or. bn < 1) then 
+            is = .false.
+            return
+        endif
+        if (bglob_proc(bm, bn) /= mpp_rank) then
+            is = .false.
+            return
+        endif
+
+        return
+    end function
+
+    function is_inner_block(bm, bn, bglob_proc, bnx, bny) result(is)
+        integer, intent(in) :: bm, bn
+        integer, pointer, intent(in) :: bglob_proc(:, :)
+        integer, intent(in) :: bnx, bny
+        logical :: is
+
+        integer :: bmdirs(8), bndirs(8)
+        integer :: k
+
+        is = .true.
+
+        call fill_direction_array(bm, bn, bmdirs, bndirs)
+
+        do k = 1, 8
+            if (.not. is_block_on_current_proc(bmdirs(k), bndirs(k), bglob_proc, bnx, bny)) then
+                is = .false.
+                return
+            endif
+        enddo
+        
+        return
+    end function
 
     subroutine block_uniform_decomposition(this, lbasins,  &
                                            glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end,  & 
@@ -195,7 +320,7 @@ contains
             last_weight = last_weight + bglob_weight(hilbert_coord_x, hilbert_coord_y)
         enddo
 
-        if (debug_level >= 3) then
+        if (debug_level >= 7) then
             call parallel_int_output(this%bglob_proc, 1, this%bnx, 1, this%bny, 'bglob_proc from load-balanced hilbert curve decomposition')
         endif
     end subroutine
@@ -220,7 +345,7 @@ contains
     
             xblock_start = 1 + mpp_coord(1)*loc_bnx
             yblock_start = 1 + mpp_coord(2)*loc_bny
-            if (debug_level >= 2) then 
+            if (debug_level >= 1) then 
                 print *, mpp_rank, 'xb_start, yb_start', xblock_start, yblock_start
                 call mpi_barrier(mpp_cart_comm, ierr)
             endif
@@ -239,7 +364,7 @@ contains
             call mpi_allreduce(buf_int, bgproc, bnx*bny, mpi_integer, mpi_sum, mpp_cart_comm, ierr)
             bgproc = bgproc - 1
     
-            if (debug_level >= 3) then
+            if (debug_level >= 7) then
                 call parallel_int_output(bgproc, 1, bnx, 1, bny, 'bglob_proc from uniform decomposition')
             endif
     
@@ -265,7 +390,7 @@ contains
         integer, allocatable :: glob_bbnd_x1(:, :), glob_bbnd_x2(:, :),  &
                                 glob_bbnd_y1(:, :), glob_bbnd_y2(:, :)
 
-        integer :: m, n, i, j, k, locn
+        integer :: m, n, k, k_inner, k_boundary, kk, kkk, res
         integer :: land_blocks
         integer :: bshared
         real(wp8) :: bcomm_metric, max_bcomm_metric
@@ -275,6 +400,8 @@ contains
         integer :: itot, ishared
         real(wp8) :: icomm_metric, max_icomm_metric
         integer :: max_points_per_block, min_points_per_block, reduced_max_points_per_block, reduced_min_points_per_block
+        integer, allocatable :: buf_int(:, :)
+        integer :: buf_dirs(8)
 
 #ifdef _MPP_SORTED_BLOCKS_
         logical, parameter :: sorted_blocks = .true.
@@ -341,6 +468,23 @@ contains
                 call abort_model("Unknown decomposition mode!")
             endif
 
+            ! Print decomposition in file for visualization
+            if (debug_level >= 3) then
+                if (mpp_rank == 0) then
+                    print *, "Print decomposition in file decomposition.txt ..."
+                    open(90, file = "decomposition.txt")
+                    write(90, *)  bnx, bny, mpp_size(1), mpp_size(2)
+                    do m = 1, bnx
+                        do n = 1, bny
+                            write(90, *) m, n, this%bglob_proc(m, n), bglob_weight(m, n)
+                        enddo
+                    enddo
+                    close(90)
+                    print *, "... Ok"
+                endif
+                call mpi_barrier(mpp_cart_comm, ierr)
+            endif
+
             ! Compute blocks per proc
             bcount = 0; bweight = 0.0d0
             do m = 1, bnx
@@ -377,6 +521,10 @@ contains
             this%bbnd_x1 = 0; this%bbnd_x2 = 0 
             this%bbnd_y1 = 0; this%bbnd_y2 = 0
 
+
+            ! Create local block numeration
+            allocate(this%bglob_local_num(bnx, bny))
+            this%bglob_local_num = -1
             if (sorted_blocks) then
                 allocate(mask_blocks(bnx, bny))
                 mask_blocks = .false.
@@ -391,61 +539,90 @@ contains
                 enddo
 
                 ! Set sorted by weight blocks
-                k = 1
-                do m = 1, bnx
-                    do n = 1, bny
-                        if (this%bglob_proc(m, n) == mpp_rank) then
-                            max_mn = MAXLOC(bglob_weight, mask_blocks)
-                            max_m = max_mn(1)
-                            max_n = max_mn(2)
-                            mask_blocks(max_m, max_n) = .false.
-                            
-                            ! Map local block numeration to block coords
-                            this%bindx(k, 1) = max_m
-                            this%bindx(k, 2) = max_n
+                k = 1; k_inner = 1; k_boundary = 1
+                do kk = 1, 2
+                    do m = 1, bnx
+                        do n = 1, bny
+                            ! Numerate inner blocks first, kk = 1: only inner blocks, kk = 2: boundary blocks
+                            if ((kk == 1 .and. is_inner_block(m, n, this%bglob_proc, bnx, bny)) .or.  &
+                                (kk == 2 .and. .not. is_inner_block(m, n, this%bglob_proc, bnx, bny))) then
+                                if (this%bglob_proc(m, n) == mpp_rank) then
+                                    max_mn = MAXLOC(bglob_weight, mask_blocks)
+                                    max_m = max_mn(1)
+                                    max_n = max_mn(2)
+                                    mask_blocks(max_m, max_n) = .false.
+                                    
+                                    ! Map local block numeration to block coords
+                                    this%bindx(k, 1) = max_m
+                                    this%bindx(k, 2) = max_n
 
-                            this%bnx_start(k) = glob_bnx_start(max_m, max_n)
-                            this%bnx_end(k) = glob_bnx_end(max_m, max_n)
-                            this%bny_start(k) = glob_bny_start(max_m, max_n)
-                            this%bny_end(k) = glob_bny_end(max_m, max_n)
+                                    this%bnx_start(k) = glob_bnx_start(max_m, max_n)
+                                    this%bnx_end(k) = glob_bnx_end(max_m, max_n)
+                                    this%bny_start(k) = glob_bny_start(max_m, max_n)
+                                    this%bny_end(k) = glob_bny_end(max_m, max_n)
 
-                            this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
-                            this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
-                            this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
-                            this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
-                            
-                            if (debug_level >= 1) then
-                                print *, k, max_m, max_n, bglob_weight(max_m, max_n)
+                                    this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
+                                    this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
+                                    this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
+                                    this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
+                                    
+                                    if (debug_level >= 9) then
+                                        print *, mpp_rank, k, max_m, max_n, bglob_weight(max_m, max_n)
+                                    endif
+
+                                    this%bglob_local_num(m, n) = k
+
+                                    k = k + 1
+                                    if (kk == 1) k_inner = k_inner + 1
+                                    if (kk == 2) k_boundary = k_boundary + 1
+                                endif
                             endif
-
-                            k = k + 1
-                        endif
+                        enddo
                     enddo
                 enddo
             else
-                k = 1
-                do m = 1, bnx
-                    do n = 1, bny
-                        if (this%bglob_proc(m, n) == mpp_rank) then
-                            ! Map local block numeration to block coords
-                            this%bindx(k, 1) = m
-                            this%bindx(k, 2) = n
+                k = 1; k_inner = 1; k_boundary = 1
+                do kk = 1, 2
+                    do m = 1, bnx
+                        do n = 1, bny
+                            ! Numerate inner blocks first, kk = 1: only inner blocks, kk = 2: boundary blocks
+                            if ((kk == 1 .and. is_inner_block(m, n, this%bglob_proc, bnx, bny)) .or.  &
+                                (kk == 2 .and. .not. is_inner_block(m, n, this%bglob_proc, bnx, bny))) then
+                                if (this%bglob_proc(m, n) == mpp_rank) then
+                                    ! Map local block numeration to block coords
+                                    this%bindx(k, 1) = m
+                                    this%bindx(k, 2) = n
 
-                            this%bnx_start(k) = glob_bnx_start(m, n)
-                            this%bnx_end(k) = glob_bnx_end(m, n)
-                            this%bny_start(k) = glob_bny_start(m, n)
-                            this%bny_end(k) = glob_bny_end(m, n)
+                                    this%bnx_start(k) = glob_bnx_start(m, n)
+                                    this%bnx_end(k) = glob_bnx_end(m, n)
+                                    this%bny_start(k) = glob_bny_start(m, n)
+                                    this%bny_end(k) = glob_bny_end(m, n)
 
-                            this%bbnd_x1(k) = glob_bbnd_x1(m, n)
-                            this%bbnd_x2(k) = glob_bbnd_x2(m, n)
-                            this%bbnd_y1(k) = glob_bbnd_y1(m, n)
-                            this%bbnd_y2(k) = glob_bbnd_y2(m, n)
+                                    this%bbnd_x1(k) = glob_bbnd_x1(m, n)
+                                    this%bbnd_x2(k) = glob_bbnd_x2(m, n)
+                                    this%bbnd_y1(k) = glob_bbnd_y1(m, n)
+                                    this%bbnd_y2(k) = glob_bbnd_y2(m, n)
 
-                            k = k + 1
-                        endif
+                                    this%bglob_local_num(m, n) = k
+
+                                    k = k + 1
+                                    if (kk == 1) k_inner = k_inner + 1
+                                    if (kk == 2) k_boundary = k_boundary + 1
+                                endif
+                            endif
+                        enddo
                     enddo
                 enddo
             endif
+            k = k - 1; k_inner = k_inner - 1; k_boundary = k_boundary - 1
+            ! Sync bglob_local_num
+            allocate(buf_int(bnx, bny))
+            buf_int = this%bglob_local_num
+            call mpi_allreduce(buf_int, this%bglob_local_num, bnx*bny, mpi_integer, mpi_max, mpp_cart_comm, ierr)
+            if (debug_level >= 7) then
+                call parallel_int_output(this%bglob_local_num, 1, bnx, 1, bny, 'bglob_local_num from uniform decomposition')
+            endif
+            deallocate(buf_int)
 
             deallocate(bglob_weight)
             deallocate(glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end)
@@ -454,6 +631,10 @@ contains
                 deallocate(mask_blocks)
             endif
 
+            if (k /= bcount .or. k_inner + k_boundary /= bcount) then
+                print *, mpp_rank, " k=", k, " bcount=", bcount, " k_inner=", k_inner, " k_boundary=", k_boundary
+                call abort_model("Error in block numeration")
+            endif
             ! DEBUG
             if (debug_level >= 1) then
                 max_points_per_block = 0
@@ -466,15 +647,91 @@ contains
                         min_points_per_block = (this%bnx_end(k) - this%bnx_start(k) + 1) * (this%bny_end(k) - this%bny_start(k) + 1)
                     endif
                 enddo
-                print *, mpp_rank, 'Blocks', bcount, 'Max points per block:', max_points_per_block, 'Min points per blocks: ', min_points_per_block
-                call mpi_barrier(mpp_cart_comm, ierr)
                 call mpi_allreduce(min_points_per_block, reduced_min_points_per_block, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
                 call mpi_allreduce(max_points_per_block, reduced_max_points_per_block, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
-                if (mpp_is_master()) print *, 'Reduced Max points per block:', reduced_max_points_per_block, 'Reduced Min points per blocks: ', reduced_min_points_per_block
+                if (mpp_is_master()) print *, 'Max points per block:', reduced_max_points_per_block, 'Min points per blocks: ', reduced_min_points_per_block
                 call mpi_barrier(mpp_cart_comm, ierr)
             endif
 
-            if (debug_level >= 2) then
+            ! Init blocks_info: additional information about each block, especially for sync
+            allocate(this%blocks_info(bcount))
+            allocate(this%ranks_near(mpp_count))
+            this%ranks_near = -1
+            this%amount_of_ranks_near = 0
+            do k = 1, bcount
+                m = this%bindx(k, 1)
+                n = this%bindx(k, 2)
+
+                this%blocks_info(k)%is_inner = is_inner_block(m, n, this%bglob_proc, bnx, bny)
+                this%blocks_info(k)%k = k
+                this%blocks_info(k)%bm = m
+                this%blocks_info(k)%bn = n
+                
+                ! Rank pf procs near
+                this%blocks_info(k)%rank_nxp = get_rank_of_block(m + 1, n,     this%bglob_proc, bnx, bny)
+                this%blocks_info(k)%rank_nxm = get_rank_of_block(m - 1, n,     this%bglob_proc, bnx, bny)
+                this%blocks_info(k)%rank_nyp = get_rank_of_block(m,     n + 1, this%bglob_proc, bnx, bny)
+                this%blocks_info(k)%rank_nym = get_rank_of_block(m,     n - 1, this%bglob_proc, bnx, bny)
+                
+                this%blocks_info(k)%rank_nxp_nyp = get_rank_of_block(m + 1, n + 1, this%bglob_proc, bnx, bny)
+                this%blocks_info(k)%rank_nxp_nym = get_rank_of_block(m + 1, n - 1, this%bglob_proc, bnx, bny)
+                this%blocks_info(k)%rank_nxm_nyp = get_rank_of_block(m - 1, n + 1, this%bglob_proc, bnx, bny)
+                this%blocks_info(k)%rank_nxm_nym = get_rank_of_block(m - 1, n - 1, this%bglob_proc, bnx, bny)
+
+                ! Local index of blocks near
+                this%blocks_info(k)%k_nxp = get_loc_num_of_block(m + 1, n,     this%bglob_local_num, bnx, bny) 
+                this%blocks_info(k)%k_nxm = get_loc_num_of_block(m - 1, n,     this%bglob_local_num, bnx, bny)
+                this%blocks_info(k)%k_nyp = get_loc_num_of_block(m,     n + 1, this%bglob_local_num, bnx, bny)
+                this%blocks_info(k)%k_nym = get_loc_num_of_block(m,     n - 1, this%bglob_local_num, bnx, bny)
+
+                this%blocks_info(k)%k_nxp_nyp = get_loc_num_of_block(m + 1, n + 1, this%bglob_local_num, bnx, bny)
+                this%blocks_info(k)%k_nxp_nym = get_loc_num_of_block(m + 1, n - 1, this%bglob_local_num, bnx, bny)
+                this%blocks_info(k)%k_nxm_nyp = get_loc_num_of_block(m - 1, n + 1, this%bglob_local_num, bnx, bny)
+                this%blocks_info(k)%k_nxm_nym = get_loc_num_of_block(m - 1, n - 1, this%bglob_local_num, bnx, bny)
+
+                ! Gets ranks near
+                buf_dirs(1) = this%blocks_info(k)%rank_nxp
+                buf_dirs(2) = this%blocks_info(k)%rank_nxm
+                buf_dirs(3) = this%blocks_info(k)%rank_nyp
+                buf_dirs(4) = this%blocks_info(k)%rank_nym
+                buf_dirs(5) = this%blocks_info(k)%rank_nxp_nyp
+                buf_dirs(6) = this%blocks_info(k)%rank_nxp_nym
+                buf_dirs(7) = this%blocks_info(k)%rank_nxm_nyp
+                buf_dirs(8) = this%blocks_info(k)%rank_nxm_nym
+
+                do kk = 1, 8
+                    if (buf_dirs(kk) >= 0 .and. buf_dirs(kk) /= mpp_rank) then
+                        ! Find this rank in ranks_near
+                        res = 0
+                        do kkk = 1, this%amount_of_ranks_near
+                            if (this%ranks_near(kkk) == buf_dirs(kk)) then
+                                res = 1
+                            endif
+                        enddo
+                        ! If rank doesnt exist - count it
+                        if (res == 0) then
+                            this%amount_of_ranks_near = this%amount_of_ranks_near + 1
+                            this%ranks_near(this%amount_of_ranks_near) = buf_dirs(kk)
+                        endif
+                    endif
+                enddo
+            enddo
+
+            ! Info per rank
+            if (debug_level >= 5) then
+                if (mpp_is_master()) print *, "------- Info per rank begin: --------"
+                call mpi_barrier(mpp_cart_comm, ierr)
+
+                print *, mpp_rank, 'Blocks', bcount, 'Max points per block:', max_points_per_block, 'Min points per blocks: ', min_points_per_block,  &
+                         "Inner blocks: ", k_inner, " Boundary blocks: ", k_boundary,  &
+                         " Amount of ranks near: ", this%amount_of_ranks_near
+                
+                if (mpp_is_master()) print *, "------- Info per rank end: --------"
+                call mpi_barrier(mpp_cart_comm, ierr)
+            endif
+
+            ! Info per block
+            if (debug_level >= 9) then
                 if (mpp_is_master()) then
                     do k = 1, bcount
                         write(*, '(i5, i5,i5,i5,i5)') k, this%bnx_start(k), this%bnx_end(k), this%bny_start(k), this%bny_end(k)
@@ -482,6 +739,9 @@ contains
                     enddo
                 endif
             endif
+
+            call mpp_sync_output()
+
         end associate
     end subroutine
 
@@ -497,6 +757,11 @@ contains
 
         deallocate(this%bglob_proc)
         deallocate(this%bindx)
+
+        deallocate(this%bglob_local_num)
+        deallocate(this%blocks_info)
+
+        deallocate(this%ranks_near)
     end subroutine
 
     subroutine init_from_config(this, lbasins, name)
@@ -544,6 +809,8 @@ contains
         call mpi_bcast(parallel_dbg, 1, mpi_integer, 0, mpp_cart_comm, ierr)
         call mpi_bcast(parallel_mod, 1, mpi_integer, 0, mpp_cart_comm, ierr)
         call mpi_bcast(file_output, 128, mpi_character, 0, mpp_cart_comm, ierr)
+
+        call mpp_sync_output()
 
         call this%init(bppnx, bppny, mod_decomposition, lbasins)
 

@@ -10,8 +10,9 @@
 !#define _MPP_LOOP_KERNEL_MODE_
 !#define _MPP_MODEL_PARALLEL_MODE_
 
-#define _MPP_SORTED_BLOCKS_
-#define _MPP_BLOCK_MODE_
+!#define _MPP_SORTED_BLOCKS_
+!#define _MPP_BLOCK_MODE_
+#define _MPP_NO_PARALLEL_MODE_
 #define _OMP_MAX_THREADS_ 128
 !-----------------------------------------------------------------------------!
 
@@ -37,6 +38,8 @@
 #define _OMP_BLOCKS_BEGIN_ 
 #define _OMP_BLOCKS_END_ 
 
+!#define _OMP_BLOCKS_SYNC_BEGIN_ 
+!#define _OMP_BLOCKS_SYNC_END_ 
 #define _OMP_BLOCKS_SYNC_BEGIN_ 
 #define _OMP_BLOCKS_SYNC_END_ 
 
@@ -57,8 +60,10 @@
 #define _OMP_BLOCKS_BEGIN_ !$omp parallel do schedule(static, 1) private(k)
 #define _OMP_BLOCKS_END_ !$omp end parallel do
 
-#define _OMP_BLOCKS_SYNC_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k, lock, bm, bn, reqst, src_block, dist_block, src_p, dist_p, send_size, recv_size, ierr, tag)
-#define _OMP_BLOCKS_SYNC_END_ !$omp end parallel do
+!#define _OMP_BLOCKS_SYNC_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k, lock, bm, bn, reqst, src_block, dist_block, src_p, dist_p, send_size, recv_size, ierr, tag)
+!#define _OMP_BLOCKS_SYNC_END_ !$omp end parallel do
+#define _OMP_BLOCKS_SYNC_BEGIN_ 
+#define _OMP_BLOCKS_SYNC_END_ 
 
 #endif
 

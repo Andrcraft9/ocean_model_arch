@@ -9,7 +9,21 @@ module debug_module
     save
     public
 
-    integer, parameter :: debug_level = 1
+    integer, parameter :: debug_level = 5
+    ! 0: no debug info
+    ! 1: mean debug info per ranks, print only master rank
+    ! 2: 
+    ! 3: create debug files
+    ! 4:
+    ! 5: debug info for each rank
+    ! 6:
+    ! 7: extension debug
+    ! 8:
+    ! 9: debug info for each block
+    !
+    ! 10: sync, 1 level
+    ! 11: sync, 2 level
+    ! 12: sync, 3 level
 
 contains
 

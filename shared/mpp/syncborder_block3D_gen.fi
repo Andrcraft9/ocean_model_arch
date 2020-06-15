@@ -89,7 +89,7 @@ do k = 1, domain%bcount
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
             call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXP_NYP_(k)%field(1:nz), nz, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
-            if (parallel_dbg >= 5) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
+            if (parallel_dbg >= 12) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
         endif
@@ -102,7 +102,7 @@ do k = 1, domain%bcount
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
             call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXP_NYM_(k)%field(1:nz), nz, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
-            if (parallel_dbg >= 5) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
+            if (parallel_dbg >= 12) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
         endif
@@ -115,7 +115,7 @@ do k = 1, domain%bcount
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
             call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXM_NYP_(k)%field(1:nz), nz, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
-            if (parallel_dbg >= 5) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
+            if (parallel_dbg >= 12) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
         endif
@@ -128,7 +128,7 @@ do k = 1, domain%bcount
     if (src_p >= 0) then
         if (src_p /= mpp_rank) then
             call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXM_NYM_(k)%field(1:nz), nz, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
-            if (parallel_dbg >= 5) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
+            if (parallel_dbg >= 12) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
         endif
@@ -136,7 +136,7 @@ do k = 1, domain%bcount
 enddo
 _OMP_BLOCKS_SYNC_END_
 
-if (parallel_dbg >= 4) print *, mpp_rank, 'icount recv:', icount-1
+if (parallel_dbg >= 10) print *, mpp_rank, 'icount recv:', icount-1
 
 ! Non-blocking Send calls
 _OMP_BLOCKS_SYNC_BEGIN_
@@ -221,7 +221,7 @@ do k = 1, domain%bcount
     if (dist_p >= 0) then
         if (dist_p /= mpp_rank) then
             call mpi_isend(data3d%block(k)%field(domain%bnx_end(k), domain%bny_end(k), 1:nz), nz, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
-            if (parallel_dbg >= 5) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
+            if (parallel_dbg >= 12) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
         else
@@ -236,7 +236,7 @@ do k = 1, domain%bcount
     if (dist_p >= 0) then
         if (dist_p /= mpp_rank) then
             call mpi_isend(data3d%block(k)%field(domain%bnx_end(k), domain%bny_start(k), 1:nz), nz, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
-            if (parallel_dbg >= 5) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
+            if (parallel_dbg >= 12) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
         else
@@ -251,7 +251,7 @@ do k = 1, domain%bcount
     if (dist_p >= 0) then
         if (dist_p /= mpp_rank) then
             call mpi_isend(data3d%block(k)%field(domain%bnx_start(k), domain%bny_end(k), 1:nz), nz, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
-            if (parallel_dbg >= 5) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
+            if (parallel_dbg >= 12) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
         else
@@ -266,7 +266,7 @@ do k = 1, domain%bcount
     if (dist_p >= 0) then
         if (dist_p /= mpp_rank) then
             call mpi_isend(data3d%block(k)%field(domain%bnx_start(k), domain%bny_start(k), 1:nz), nz, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
-            if (parallel_dbg >= 5) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
+            if (parallel_dbg >= 12) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
             reqsts(icount) = reqst
             icount = icount + 1
         else
@@ -277,7 +277,7 @@ do k = 1, domain%bcount
 enddo
 _OMP_BLOCKS_SYNC_END_
 
-if (parallel_dbg >= 4) print *, mpp_rank, 'icount totl:', icount-1
+if (parallel_dbg >= 10) print *, mpp_rank, 'icount totl:', icount-1
 
 ! Wait all, sync point
 call mpi_waitall(icount-1, reqsts, statuses, ierr)

@@ -22,6 +22,7 @@ module mpp_module
 
     integer, public :: mpp_count_threads
 
+    public :: mpp_sync_output
     public :: mpp_is_master, mpp_is_master_thread, mpp_is_master_process
     public :: start_timer, end_timer
     public :: mpp_init
@@ -123,6 +124,8 @@ contains
         allocate(mpp_time_kernels_threads(0 : _OMP_MAX_THREADS_ - 1, max_kernels))
         mpp_time_kernels_threads = 0
 #endif
+
+        call mpp_sync_output()
     end subroutine
 
     subroutine mpp_finalize()
@@ -245,5 +248,13 @@ contains
 
         return
     end function
+
+    subroutine mpp_sync_output()
+        call flush()
+        if (mpp_is_master()) print *, " "
+        call flush()
+    end subroutine
+
+
 
 end module mpp_module

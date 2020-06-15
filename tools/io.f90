@@ -65,6 +65,8 @@ contains
         
         endif
 
+        call mpp_sync_output()
+
         return
         98    call abort_model('Error in opening mask file')
         99    call abort_model('Error in reading mask file')

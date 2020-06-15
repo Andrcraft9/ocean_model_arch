@@ -60,6 +60,8 @@ contains
         call ocean_data%vbrtrn%fill(domain, 0.0d0)
         call ocean_data%vbrtrp%fill(domain, 0.0d0)
 
+        call mpp_sync_output()
+
     end subroutine init_ocean_data
 
     subroutine init_grid_data(domain, grid_global_data, grid_data)
@@ -92,6 +94,8 @@ contains
             call sync(domain, grid_data%hhq_rest)
             call tmp_data%clear(domain)
         endif
+
+        call mpp_sync_output()
 
     end subroutine init_grid_data
 

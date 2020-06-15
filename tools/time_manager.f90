@@ -177,6 +177,8 @@ subroutine load_config(name)
         call get_first_lexeme(comments(35), atmask)
 
     endif
+
+    call mpp_sync_output()
     
 end subroutine 
 

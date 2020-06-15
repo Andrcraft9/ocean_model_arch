@@ -63,6 +63,8 @@ program model
         print *,  '=================================================================='
     endif
 
+    call mpp_sync_output()
+
     if (is_local_print_step(local_num_step) > 0) then
         if (mpp_is_master()) print *, "Output initial local data..."
         call local_output(domain_data, &
