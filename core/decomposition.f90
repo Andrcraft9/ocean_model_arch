@@ -521,100 +521,102 @@ contains
             this%bbnd_x1 = 0; this%bbnd_x2 = 0 
             this%bbnd_y1 = 0; this%bbnd_y2 = 0
 
-
             ! Create local block numeration
             allocate(this%bglob_local_num(bnx, bny))
             this%bglob_local_num = -1
             if (sorted_blocks) then
                 allocate(mask_blocks(bnx, bny))
-                mask_blocks = .false.
-
-                ! Sort only blocks on current proc
-                do m = 1, bnx
-                    do n = 1, bny
-                        if (this%bglob_proc(m, n) == mpp_rank) then
-                            mask_blocks(m ,n) = .true.
-                        endif
-                    enddo
-                enddo
-
+                
                 ! Set sorted by weight blocks
-                k = 1; k_inner = 1; k_boundary = 1
+                k = 0; k_inner = 0; k_boundary = 0
                 do kk = 1, 2
+                
+                    ! Sort only blocks on current proc and for kk = 1: only inner blocks, for kk = 2: boundary blocks
+                    mask_blocks = .false.
                     do m = 1, bnx
                         do n = 1, bny
-                            ! Numerate inner blocks first, kk = 1: only inner blocks, kk = 2: boundary blocks
-                            if ((kk == 1 .and. is_inner_block(m, n, this%bglob_proc, bnx, bny)) .or.  &
-                                (kk == 2 .and. .not. is_inner_block(m, n, this%bglob_proc, bnx, bny))) then
-                                if (this%bglob_proc(m, n) == mpp_rank) then
-                                    max_mn = MAXLOC(bglob_weight, mask_blocks)
-                                    max_m = max_mn(1)
-                                    max_n = max_mn(2)
-                                    mask_blocks(max_m, max_n) = .false.
-                                    
-                                    ! Map local block numeration to block coords
-                                    this%bindx(k, 1) = max_m
-                                    this%bindx(k, 2) = max_n
-
-                                    this%bnx_start(k) = glob_bnx_start(max_m, max_n)
-                                    this%bnx_end(k) = glob_bnx_end(max_m, max_n)
-                                    this%bny_start(k) = glob_bny_start(max_m, max_n)
-                                    this%bny_end(k) = glob_bny_end(max_m, max_n)
-
-                                    this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
-                                    this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
-                                    this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
-                                    this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
-                                    
-                                    if (debug_level >= 9) then
-                                        print *, mpp_rank, k, max_m, max_n, bglob_weight(max_m, max_n)
-                                    endif
-
-                                    this%bglob_local_num(m, n) = k
-
-                                    k = k + 1
-                                    if (kk == 1) k_inner = k_inner + 1
-                                    if (kk == 2) k_boundary = k_boundary + 1
+                            if (this%bglob_proc(m, n) == mpp_rank) then
+                                if ((kk == 1 .and. is_inner_block(m, n, this%bglob_proc, bnx, bny)) .or.  &
+                                    (kk == 2 .and. .not. is_inner_block(m, n, this%bglob_proc, bnx, bny))) then
+                                        mask_blocks(m ,n) = .true.
+                                        if (kk == 1) k_inner = k_inner + 1
+                                        if (kk == 2) k_boundary = k_boundary + 1
                                 endif
                             endif
                         enddo
                     enddo
+                    
+                    ! Sort blocks by weight, for kk = 1: only inner blocks, for kk = 2: boundary blocks
+                    ! So numerate inner blocks first
+                    if (kk == 1) res = k_inner
+                    if (kk == 2) res = k_boundary
+                    do kkk = 1, res
+                        ! Count block
+                        k = k + 1
+
+                        max_mn = MAXLOC(bglob_weight, mask_blocks)
+                        max_m = max_mn(1)
+                        max_n = max_mn(2)
+
+                        mask_blocks(max_m, max_n) = .false.
+                        
+                        ! Map local block numeration to block coords
+                        this%bindx(k, 1) = max_m
+                        this%bindx(k, 2) = max_n
+
+                        this%bnx_start(k) = glob_bnx_start(max_m, max_n)
+                        this%bnx_end(k) = glob_bnx_end(max_m, max_n)
+                        this%bny_start(k) = glob_bny_start(max_m, max_n)
+                        this%bny_end(k) = glob_bny_end(max_m, max_n)
+
+                        this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
+                        this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
+                        this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
+                        this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
+                        
+                        if (debug_level >= 9) then
+                            if (mpp_is_master()) print *, k, max_m, max_n, bglob_weight(max_m, max_n),  &
+                                                            is_inner_block(max_m, max_n, this%bglob_proc, bnx, bny)
+                        endif
+
+                        this%bglob_local_num(max_m, max_n) = k
+                    enddo
                 enddo
             else
-                k = 1; k_inner = 1; k_boundary = 1
+                k = 0; k_inner = 0; k_boundary = 0
                 do kk = 1, 2
                     do m = 1, bnx
                         do n = 1, bny
                             ! Numerate inner blocks first, kk = 1: only inner blocks, kk = 2: boundary blocks
-                            if ((kk == 1 .and. is_inner_block(m, n, this%bglob_proc, bnx, bny)) .or.  &
-                                (kk == 2 .and. .not. is_inner_block(m, n, this%bglob_proc, bnx, bny))) then
-                                if (this%bglob_proc(m, n) == mpp_rank) then
-                                    ! Map local block numeration to block coords
-                                    this%bindx(k, 1) = m
-                                    this%bindx(k, 2) = n
+                            if (this%bglob_proc(m, n) == mpp_rank) then
+                                if ((kk == 1 .and. is_inner_block(m, n, this%bglob_proc, bnx, bny)) .or.  &
+                                    (kk == 2 .and. .not. is_inner_block(m, n, this%bglob_proc, bnx, bny))) then
+                                        ! Count block
+                                        k = k + 1
+                                        if (kk == 1) k_inner = k_inner + 1
+                                        if (kk == 2) k_boundary = k_boundary + 1
 
-                                    this%bnx_start(k) = glob_bnx_start(m, n)
-                                    this%bnx_end(k) = glob_bnx_end(m, n)
-                                    this%bny_start(k) = glob_bny_start(m, n)
-                                    this%bny_end(k) = glob_bny_end(m, n)
+                                        ! Map local block numeration to block coords
+                                        this%bindx(k, 1) = m
+                                        this%bindx(k, 2) = n
 
-                                    this%bbnd_x1(k) = glob_bbnd_x1(m, n)
-                                    this%bbnd_x2(k) = glob_bbnd_x2(m, n)
-                                    this%bbnd_y1(k) = glob_bbnd_y1(m, n)
-                                    this%bbnd_y2(k) = glob_bbnd_y2(m, n)
+                                        this%bnx_start(k) = glob_bnx_start(m, n)
+                                        this%bnx_end(k) = glob_bnx_end(m, n)
+                                        this%bny_start(k) = glob_bny_start(m, n)
+                                        this%bny_end(k) = glob_bny_end(m, n)
 
-                                    this%bglob_local_num(m, n) = k
+                                        this%bbnd_x1(k) = glob_bbnd_x1(m, n)
+                                        this%bbnd_x2(k) = glob_bbnd_x2(m, n)
+                                        this%bbnd_y1(k) = glob_bbnd_y1(m, n)
+                                        this%bbnd_y2(k) = glob_bbnd_y2(m, n)
 
-                                    k = k + 1
-                                    if (kk == 1) k_inner = k_inner + 1
-                                    if (kk == 2) k_boundary = k_boundary + 1
+                                        this%bglob_local_num(m, n) = k
                                 endif
                             endif
                         enddo
                     enddo
                 enddo
             endif
-            k = k - 1; k_inner = k_inner - 1; k_boundary = k_boundary - 1
             ! Sync bglob_local_num
             allocate(buf_int(bnx, bny))
             buf_int = this%bglob_local_num
@@ -734,6 +736,7 @@ contains
             if (debug_level >= 9) then
                 if (mpp_is_master()) then
                     do k = 1, bcount
+                        print *, k, ' is inner? ', this%blocks_info(k)%is_inner
                         write(*, '(i5, i5,i5,i5,i5)') k, this%bnx_start(k), this%bnx_end(k), this%bny_start(k), this%bny_end(k)
                         write(*, '(i5, i5,i5,i5,i5)') k, this%bbnd_x1(k), this%bbnd_x2(k), this%bbnd_y1(k), this%bbnd_y2(k)
                     enddo

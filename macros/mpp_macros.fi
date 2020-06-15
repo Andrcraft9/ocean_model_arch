@@ -10,9 +10,8 @@
 !#define _MPP_LOOP_KERNEL_MODE_
 !#define _MPP_MODEL_PARALLEL_MODE_
 
-!#define _MPP_SORTED_BLOCKS_
-!#define _MPP_BLOCK_MODE_
-#define _MPP_NO_PARALLEL_MODE_
+#define _MPP_SORTED_BLOCKS_
+#define _MPP_BLOCK_MODE_
 #define _OMP_MAX_THREADS_ 128
 !-----------------------------------------------------------------------------!
 

@@ -13,7 +13,6 @@ module mpp_sync_module
 
 #include "macros/mpp_macros.fi"
 
-
     implicit none
     save
     private
