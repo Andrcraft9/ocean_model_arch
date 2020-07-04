@@ -12,17 +12,7 @@ module decomposition_module
     private
     
 #include "macros/mpp_macros.fi"
-
-! borders
-#define _NXP_ 1
-#define _NXM_ 2
-#define _NYP_ 3
-#define _NYM_ 4
-! edges
-#define _NXP_NYP_ 5
-#define _NXP_NYM_ 6
-#define _NXM_NYP_ 7
-#define _NXM_NYM_ 8
+#include "macros/kernel_macros.fi"
 
     type, public :: block_info_type
         logical :: is_inner
@@ -51,6 +41,8 @@ module decomposition_module
         ! Local area
         integer :: bcount ! Number of data blocks at each process
         integer :: bcount_inner, bcount_boundary ! Inner blocks go first in local block numeration! bcount_inner + bcount_boundary = bcount.
+        integer :: start_inner, start_boundary ! Start indicies of inner and boundary blocks
+
         integer, pointer :: bnx_start(:), bnx_end(:) ! Significant point area in blocks (x direction)
         integer, pointer :: bny_start(:), bny_end(:) ! Significant point area in blocks (y direction)
         integer, pointer :: bbnd_x1(:), bbnd_x2(:) ! Array boundary in blocks (x direction)
@@ -87,9 +79,167 @@ module decomposition_module
 
 !------------------------------------------------------------------------------
 
+    public :: get_boundary_points_of_block, get_halo_points_of_block
+    public :: get_inverse_dir, get_rank_of_block, get_loc_num_of_block, fill_direction_array
+    public :: is_block_on_current_proc, is_inner_block
+
     type(domain_type), public, target :: domain_data
 
 contains
+
+    subroutine get_boundary_points_of_block(domain, k, dir, nx_start, nx_end, ny_start, ny_end)
+        type(domain_type), intent(in) :: domain
+        integer, intent(in) :: k, dir
+        integer, intent(out) :: nx_start, nx_end, ny_start, ny_end
+
+        select case(dir)
+            ! borders
+            case(_NXP_)
+                nx_start = domain%bnx_end(k)
+                nx_end   = domain%bnx_end(k)
+                ny_start = domain%bny_start(k)
+                ny_end   = domain%bny_end(k)
+
+            case(_NXM_)
+                nx_start = domain%bnx_start(k)
+                nx_end   = domain%bnx_start(k)
+                ny_start = domain%bny_start(k)
+                ny_end   = domain%bny_end(k)
+
+            case(_NYP_)
+                nx_start = domain%bnx_start(k)
+                nx_end   = domain%bnx_end(k)
+                ny_start = domain%bny_end(k)
+                ny_end   = domain%bny_end(k)
+
+            case(_NYM_)
+                nx_start = domain%bnx_start(k)
+                nx_end   = domain%bnx_end(k)
+                ny_start = domain%bny_start(k)
+                ny_end   = domain%bny_start(k)
+
+            ! edges
+            case (_NXP_NYP_)
+                nx_start = domain%bnx_end(k)
+                nx_end   = domain%bnx_end(k)
+                ny_start = domain%bny_end(k)
+                ny_end   = domain%bny_end(k)
+
+            case (_NXP_NYM_)
+                nx_start = domain%bnx_end(k)
+                nx_end   = domain%bnx_end(k)
+                ny_start = domain%bny_start(k)
+                ny_end   = domain%bny_start(k)
+
+            case (_NXM_NYP_)
+                nx_start = domain%bnx_start(k)
+                nx_end   = domain%bnx_start(k)
+                ny_start = domain%bny_end(k)
+                ny_end   = domain%bny_end(k)
+
+            case (_NXM_NYM_)
+                nx_start = domain%bnx_start(k)
+                nx_end   = domain%bnx_start(k)
+                ny_start = domain%bny_start(k)
+                ny_end   = domain%bny_start(k)
+
+            case default
+                call abort_model("Unknown direction in get_boundary_points_of_block")
+        end select
+        
+    end subroutine
+
+    subroutine get_halo_points_of_block(domain, k, dir, nx_start, nx_end, ny_start, ny_end)
+        type(domain_type), intent(in) :: domain
+        integer, intent(in) :: k, dir
+        integer, intent(out) :: nx_start, nx_end, ny_start, ny_end
+
+        select case(dir)
+            ! borders
+            case(_NXP_)
+                nx_start = domain%bnx_end(k) + 1
+                nx_end   = domain%bnx_end(k) + 1
+                ny_start = domain%bny_start(k)
+                ny_end   = domain%bny_end(k)
+
+            case(_NXM_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_start(k) - 1
+                ny_start = domain%bny_start(k)
+                ny_end   = domain%bny_end(k)
+
+            case(_NYP_)
+                nx_start = domain%bnx_start(k)
+                nx_end   = domain%bnx_end(k)
+                ny_start = domain%bny_end(k) + 1
+                ny_end   = domain%bny_end(k) + 1
+
+            case(_NYM_)
+                nx_start = domain%bnx_start(k)
+                nx_end   = domain%bnx_end(k)
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_start(k) - 1
+
+            ! edges
+            case (_NXP_NYP_)
+                nx_start = domain%bnx_end(k) + 1
+                nx_end   = domain%bnx_end(k) + 1
+                ny_start = domain%bny_end(k) + 1
+                ny_end   = domain%bny_end(k) + 1
+
+            case (_NXP_NYM_)
+                nx_start = domain%bnx_end(k) + 1
+                nx_end   = domain%bnx_end(k) + 1
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_start(k) - 1
+
+            case (_NXM_NYP_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_start(k) - 1
+                ny_start = domain%bny_end(k) + 1
+                ny_end   = domain%bny_end(k) + 1
+
+            case (_NXM_NYM_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_start(k) - 1
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_start(k) - 1
+
+            case default
+                call abort_model("Unknown direction in get_halo_points_of_block")
+        end select
+        
+    end subroutine
+
+    function get_inverse_dir(dir) result(inverse_dir)
+        integer, intent(in) :: dir
+        integer :: inverse_dir
+
+        select case(dir)
+            ! borders
+            case(_NXP_)
+                inverse_dir = _NXM_
+            case(_NXM_)
+                inverse_dir = _NXP_
+            case(_NYP_)
+                inverse_dir = _NYM_
+            case(_NYM_)
+                inverse_dir = _NYP_
+            ! edges
+            case (_NXP_NYP_)
+                inverse_dir = _NXM_NYM_
+            case (_NXP_NYM_)
+                inverse_dir = _NXM_NYP_
+            case (_NXM_NYP_)
+                inverse_dir = _NXP_NYM_
+            case (_NXM_NYM_)
+                inverse_dir = _NXP_NYP_
+            case default
+                call abort_model("Unknown direction in get_inverse_dir")
+            end select
+
+            return
+    end function
 
     function get_rank_of_block(bm, bn, bglob_proc, bnx, bny) result(r)
         integer, intent(in) :: bm, bn
@@ -178,6 +328,31 @@ contains
         
         return
     end function
+
+    subroutine check_domain_data(domain)
+        type(domain_type), intent(in) :: domain
+
+        integer :: k
+        
+        do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
+            if (.not. domain%blocks_info(k)%is_inner) then
+                call abort_model("Incorrect inner block")
+            endif
+        enddo
+
+        do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
+            if (domain%blocks_info(k)%is_inner) then
+                call abort_model("Incorrect boundary block")
+            endif
+        enddo
+
+        if (domain%start_inner + domain%bcount_inner - domain%start_inner + domain%start_boundary + domain%bcount_boundary - domain%start_boundary /= domain%bcount) then
+            print *, domain%start_inner, domain%bcount_inner, domain%start_boundary, domain%bcount_boundary
+            print *, domain%bcount
+            call abort_model("Incorrect amount of inner and boundary blocks")
+        endif
+        
+    end subroutine
 
     subroutine block_uniform_decomposition(this, lbasins,  &
                                            glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end,  & 
@@ -637,6 +812,13 @@ contains
                 print *, mpp_rank, " k=", k, " bcount=", bcount, " k_inner=", k_inner, " k_boundary=", k_boundary
                 call abort_model("Error in block numeration")
             endif
+
+            ! Set values
+            this%bcount_inner = k_inner
+            this%bcount_boundary = k_boundary
+            this%start_inner = 1
+            this%start_boundary = k_inner + 1
+
             ! DEBUG
             if (debug_level >= 1) then
                 max_points_per_block = 0
@@ -744,6 +926,9 @@ contains
             endif
 
             call mpp_sync_output()
+            
+            ! Check domain data
+            call check_domain_data(this)
 
         end associate
     end subroutine
