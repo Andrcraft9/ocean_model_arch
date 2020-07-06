@@ -1,0 +1,368 @@
+!------------------------------------------------------------------------------
+!     SYNCBORDER BLOCK2D -- BODY OF GENERIC SUBROUTINE
+!------------------------------------------------------------------------------
+integer :: k, lock, bm, bn, reqst
+integer, dimension(2) :: src_block, dist_block
+integer :: src_p, dist_p
+integer :: send_size, recv_size
+integer :: ierr
+integer :: tag, icount
+
+real(wp8) :: t_local
+
+! TIMER
+_OMP_MASTER_BEGIN_
+call start_timer(t_local)
+_OMP_MASTER_END_
+
+icount = 1
+
+! Non-blocking Recv calls
+_OMP_BLOCKS_SYNC_BEGIN_
+do k = 1, domain%bcount
+    bm = domain%bindx(k, 1)
+    bn = domain%bindx(k, 2)
+
+    ! irecv in ny+
+    src_block(1) = bm; src_block(2) = bn - 1
+    !tag = src_block(2) + (src_block(1) - 1)*domain%bnx
+    tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx) + 1
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            recv_size = domain%bnx_end(k) - domain%bnx_start(k) + 1
+            call _IRECV_(k, src_block, src_p, _SYNC_BUF_RECV_NYP_(k)%field, recv_size, tag, reqst)
+            !call _IRECV_(k, src_block, src_p, data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bbnd_y1(k) + 1), recv_size, bn, reqst)
+            reqsts(icount) = reqst
+            icount = icount + 1
+        endif
+    endif
+    ! irecv in nx+
+    src_block(1) = bm - 1; src_block(2) = bn
+    !tag = src_block(2) + (src_block(1) - 1)*domain%bnx
+    tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx) + 2
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            recv_size = domain%bny_end(k) - domain%bny_start(k) + 1
+            call _IRECV_(k, src_block, src_p, _SYNC_BUF_RECV_NXP_(k)%field, recv_size, tag, reqst)
+            !call _IRECV_(k, src_block, src_p, data2d%block(k)%field(domain%bbnd_x1(k) + 1, domain%bny_start(k):domain%bny_end(k)), recv_size, bn, reqst)
+            reqsts(icount) = reqst
+            icount = icount + 1
+        endif
+    endif
+    ! irecv in ny-
+    src_block(1) = bm; src_block(2) = bn + 1
+    !tag = src_block(2) + (src_block(1) - 1)*domain%bnx
+    tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx) + 3
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            recv_size = domain%bnx_end(k) - domain%bnx_start(k) + 1
+            call _IRECV_(k, src_block, src_p, _SYNC_BUF_RECV_NYM_(k)%field, recv_size, tag, reqst)
+            !call _IRECV_(k, src_block, src_p, data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bbnd_y2(k) - 1), recv_size, bn, reqst)
+            reqsts(icount) = reqst
+            icount = icount + 1
+        endif
+    endif
+    ! irecv in nx-
+    src_block(1) = bm + 1; src_block(2) = bn
+    !tag = src_block(2) + (src_block(1) - 1)*domain%bnx
+    tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx) + 4
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            recv_size = domain%bny_end(k) - domain%bny_start(k) + 1
+            call _IRECV_(k, src_block, src_p, _SYNC_BUF_RECV_NXM_(k)%field, recv_size, tag, reqst)
+            !call _IRECV_(k, src_block, src_p, data2d%block(k)%field(domain%bbnd_x2(k) - 1, domain%bny_start(k):domain%bny_end(k)), recv_size, bn, reqst)
+            reqsts(icount) = reqst
+            icount = icount + 1
+        endif
+    endif
+
+    !----------------------------Edge points----------------------------!
+    ! Edge irecv in nx+ ny+
+    src_block(1) = bm - 1; src_block(2) = bn - 1
+    !tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx)
+    tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx) + 5
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXP_NYP_(k), 1, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
+            if (parallel_dbg >= 12) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
+            reqsts(icount) = reqst
+            icount = icount + 1
+        endif
+    endif
+    ! Edge irecv in nx+ ny-
+    src_block(1) = bm - 1; src_block(2) = bn + 1
+    !tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx)
+    tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx) + 6
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXP_NYM_(k), 1, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
+            if (parallel_dbg >= 12) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
+            reqsts(icount) = reqst
+            icount = icount + 1
+        endif
+    endif
+    ! Edge irecv in nx- ny+
+    src_block(1) = bm + 1; src_block(2) = bn - 1
+    !tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx)
+    tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx) + 7
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXM_NYP_(k), 1, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
+            if (parallel_dbg >= 12) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
+            reqsts(icount) = reqst
+            icount = icount + 1
+        endif
+    endif
+    ! Edge irecv in nx- ny-
+    src_block(1) = bm + 1; src_block(2) = bn + 1
+    !tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx)
+    tag = 10*(src_block(2) + (src_block(1) - 1)*domain%bnx) + 8
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            call mpi_irecv(_SYNC_EDGE_BUF_RECV_NXM_NYM_(k), 1, _MPI_TYPE_, src_p, tag, mpp_cart_comm, reqst, ierr)
+            if (parallel_dbg >= 12) print *, mpp_rank, 'IRECV EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'src_block:', src_block(1), src_block(2), 'src_p:', src_p, 'tag', tag
+            reqsts(icount) = reqst
+            icount = icount + 1
+        endif
+    endif
+
+enddo
+_OMP_BLOCKS_SYNC_END_
+
+if (parallel_dbg >= 10) print *, mpp_rank, 'icount recv:', icount-1
+
+! Non-blocking Send calls
+_OMP_BLOCKS_SYNC_BEGIN_
+do k = 1, domain%bcount
+    bm = domain%bindx(k, 1)
+    bn = domain%bindx(k, 2)
+
+    !tag = bn + (bm - 1)*domain%bnx
+
+    ! isend in ny+
+    dist_block(1) = bm; dist_block(2) = bn + 1
+    tag = 10*(bn + (bm - 1)*domain%bnx) + 1
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
+    if (dist_p >= 0) then
+        if (dist_p /= mpp_rank) then
+            send_size = domain%bnx_end(k) - domain%bnx_start(k) + 1
+            _SYNC_BUF_SEND_NYP_(k)%field = data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bny_end(k))
+            call _ISEND_(k, dist_block, dist_p, _SYNC_BUF_SEND_NYP_(k)%field, send_size, tag, reqst)
+            !call _ISEND_(k, dist_block, dist_p, data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bny_end(k)), send_size, dist_block(2), reqst)
+            reqsts(icount) = reqst
+            icount = icount + 1
+        else
+            lock = get_local_block_number(domain%bindx, domain%bcount, dist_block(1), dist_block(2))
+            data2d%block(lock)%field(domain%bnx_start(lock):domain%bnx_end(lock), domain%bbnd_y1(lock) + 1) = data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bny_end(k))
+        endif
+    endif
+    ! isend in nx+
+    dist_block(1) = bm + 1; dist_block(2) = bn
+    tag = 10*(bn + (bm - 1)*domain%bnx) + 2
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
+    if (dist_p >= 0) then
+        if (dist_p /= mpp_rank) then
+            send_size = domain%bny_end(k) - domain%bny_start(k) + 1
+            _SYNC_BUF_SEND_NXP_(k)%field = data2d%block(k)%field(domain%bnx_end(k), domain%bny_start(k):domain%bny_end(k))
+            call _ISEND_(k, dist_block, dist_p, _SYNC_BUF_SEND_NXP_(k)%field, send_size, tag, reqst)
+            !call _ISEND_(k, dist_block, dist_p, data2d%block(k)%field(domain%bnx_end(k), domain%bny_start(k):domain%bny_end(k)), send_size, dist_block(2), reqst)
+            reqsts(icount) = reqst
+            icount = icount + 1
+        else
+            lock = get_local_block_number(domain%bindx, domain%bcount, dist_block(1), dist_block(2))
+            data2d%block(lock)%field(domain%bbnd_x1(lock) + 1, domain%bny_start(lock):domain%bny_end(lock)) = data2d%block(k)%field(domain%bnx_end(k), domain%bny_start(k):domain%bny_end(k))
+        endif
+    endif
+    ! isend in ny-
+    dist_block(1) = bm; dist_block(2) = bn - 1
+    tag = 10*(bn + (bm - 1)*domain%bnx) + 3
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
+    if (dist_p >= 0) then
+        if (dist_p /= mpp_rank) then
+            send_size = domain%bnx_end(k) - domain%bnx_start(k) + 1
+            _SYNC_BUF_SEND_NYM_(k)%field = data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bny_start(k))
+            call _ISEND_(k, dist_block, dist_p, _SYNC_BUF_SEND_NYM_(k)%field, send_size, tag, reqst)
+            !call _ISEND_(k, dist_block, dist_p, data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bny_start(k)), send_size, dist_block(2), reqst)
+            reqsts(icount) = reqst
+            icount = icount + 1
+        else
+            lock = get_local_block_number(domain%bindx, domain%bcount, dist_block(1), dist_block(2))
+            data2d%block(lock)%field(domain%bnx_start(lock):domain%bnx_end(lock), domain%bbnd_y2(lock) - 1) = data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bny_start(k))
+        endif
+    endif
+    ! isend in nx-
+    dist_block(1) = bm - 1; dist_block(2) = bn
+    tag = 10*(bn + (bm - 1)*domain%bnx) + 4
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
+    if (dist_p >= 0) then
+        if (dist_p /= mpp_rank) then
+            send_size = domain%bny_end(k) - domain%bny_start(k) + 1
+            _SYNC_BUF_SEND_NXM_(k)%field = data2d%block(k)%field(domain%bnx_start(k), domain%bny_start(k):domain%bny_end(k))
+            call _ISEND_(k, dist_block, dist_p, _SYNC_BUF_SEND_NXM_(k)%field, send_size, tag, reqst)
+            !call _ISEND_(k, dist_block, dist_p, data2d%block(k)%field(domain%bnx_start(k), domain%bny_start(k):domain%bny_end(k)), send_size, dist_block(2), reqst)
+            reqsts(icount) = reqst
+            icount = icount + 1
+        else
+            lock = get_local_block_number(domain%bindx, domain%bcount, dist_block(1), dist_block(2))
+            data2d%block(lock)%field(domain%bbnd_x2(lock) - 1, domain%bny_start(lock):domain%bny_end(lock)) = data2d%block(k)%field(domain%bnx_start(k), domain%bny_start(k):domain%bny_end(k))
+        endif
+    endif
+
+    !----------------------------Edge points----------------------------!
+    !tag = 10*(bn + (bm - 1)*domain%bnx)
+
+    ! Edge isend in nx+ ny+
+    dist_block(1) = bm + 1; dist_block(2) = bn + 1
+    tag = 10*(bn + (bm - 1)*domain%bnx) + 5
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
+    if (dist_p >= 0) then
+        if (dist_p /= mpp_rank) then
+            call mpi_isend(data2d%block(k)%field(domain%bnx_end(k), domain%bny_end(k)), 1, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
+            if (parallel_dbg >= 12) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
+            reqsts(icount) = reqst
+            icount = icount + 1
+        else
+            lock = get_local_block_number(domain%bindx, domain%bcount, dist_block(1), dist_block(2))
+            data2d%block(lock)%field(domain%bbnd_x1(lock) + 1, domain%bbnd_y1(lock) + 1) = data2d%block(k)%field(domain%bnx_end(k), domain%bny_end(k))
+        endif
+    endif
+    ! Edge isend in nx+ ny-
+    dist_block(1) = bm + 1; dist_block(2) = bn - 1
+    tag = 10*(bn + (bm - 1)*domain%bnx) + 6
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
+    if (dist_p >= 0) then
+        if (dist_p /= mpp_rank) then
+            call mpi_isend(data2d%block(k)%field(domain%bnx_end(k), domain%bny_start(k)), 1, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
+            if (parallel_dbg >= 12) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
+            reqsts(icount) = reqst
+            icount = icount + 1
+        else
+            lock = get_local_block_number(domain%bindx, domain%bcount, dist_block(1), dist_block(2))
+            data2d%block(lock)%field(domain%bbnd_x1(lock) + 1, domain%bbnd_y2(lock) - 1) = data2d%block(k)%field(domain%bnx_end(k), domain%bny_start(k))
+        endif
+    endif
+    ! Edge isend in nx- ny+
+    dist_block(1) = bm - 1; dist_block(2) = bn + 1
+    tag = 10*(bn + (bm - 1)*domain%bnx) + 7
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
+    if (dist_p >= 0) then
+        if (dist_p /= mpp_rank) then
+            call mpi_isend(data2d%block(k)%field(domain%bnx_start(k), domain%bny_end(k)), 1, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
+            if (parallel_dbg >= 12) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
+            reqsts(icount) = reqst
+            icount = icount + 1
+        else
+            lock = get_local_block_number(domain%bindx, domain%bcount, dist_block(1), dist_block(2))
+            data2d%block(lock)%field(domain%bbnd_x2(lock) - 1, domain%bbnd_y1(lock) + 1) = data2d%block(k)%field(domain%bnx_start(k), domain%bny_end(k))
+        endif
+    endif
+    ! Edge isend in nx- ny-
+    dist_block(1) = bm - 1; dist_block(2) = bn - 1
+    tag = 10*(bn + (bm - 1)*domain%bnx) + 8
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, dist_block, dist_p)
+    if (dist_p >= 0) then
+        if (dist_p /= mpp_rank) then
+            call mpi_isend(data2d%block(k)%field(domain%bnx_start(k), domain%bny_start(k)), 1, _MPI_TYPE_, dist_p, tag, mpp_cart_comm, reqst, ierr)
+            if (parallel_dbg >= 12) print *, mpp_rank, 'ISEND EDGE. block: ', domain%bindx(k, 1), domain%bindx(k, 2), 'dst_block:', dist_block(1), dist_block(2), 'dst_p:', dist_p, 'tag', tag
+            reqsts(icount) = reqst
+            icount = icount + 1
+        else
+            lock = get_local_block_number(domain%bindx, domain%bcount, dist_block(1), dist_block(2))
+            data2d%block(lock)%field(domain%bbnd_x2(lock) - 1, domain%bbnd_y2(lock) - 1) = data2d%block(k)%field(domain%bnx_start(k), domain%bny_start(k))
+        endif
+    endif
+enddo
+_OMP_BLOCKS_SYNC_END_
+
+if (parallel_dbg >= 10) print *, mpp_rank, 'icount totl:', icount-1
+
+! Wait all, sync point
+call mpi_waitall(icount-1, reqsts, statuses, ierr)
+
+_OMP_BLOCKS_SYNC_BEGIN_
+do k = 1, domain%bcount
+    bm = domain%bindx(k, 1)
+    bn = domain%bindx(k, 2)
+
+    ! ny+
+    src_block(1) = bm; src_block(2) = bn - 1
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bbnd_y1(k) + 1) = _SYNC_BUF_RECV_NYP_(k)%field
+        endif
+    endif
+    ! nx+
+    src_block(1) = bm - 1; src_block(2) = bn
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            data2d%block(k)%field(domain%bbnd_x1(k) + 1, domain%bny_start(k):domain%bny_end(k)) = _SYNC_BUF_RECV_NXP_(k)%field
+        endif
+    endif
+    ! ny-
+    src_block(1) = bm; src_block(2) = bn + 1
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            data2d%block(k)%field(domain%bnx_start(k):domain%bnx_end(k), domain%bbnd_y2(k) - 1) = _SYNC_BUF_RECV_NYM_(k)%field
+        endif
+    endif
+    ! nx-
+    src_block(1) = bm + 1; src_block(2) = bn
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            data2d%block(k)%field(domain%bbnd_x2(k) - 1, domain%bny_start(k):domain%bny_end(k)) = _SYNC_BUF_RECV_NXM_(k)%field
+        endif
+    endif
+
+    !----------------------------Edge points----------------------------!
+    ! Edge in nx+ ny+
+    src_block(1) = bm - 1; src_block(2) = bn - 1
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            data2d%block(k)%field(domain%bbnd_x1(k) + 1, domain%bbnd_y1(k) + 1) = _SYNC_EDGE_BUF_RECV_NXP_NYP_(k)
+        endif
+    endif
+    ! Edge in nx+ ny-
+    src_block(1) = bm - 1; src_block(2) = bn + 1
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            data2d%block(k)%field(domain%bbnd_x1(k) + 1, domain%bbnd_y2(k) - 1) = _SYNC_EDGE_BUF_RECV_NXP_NYM_(k)
+        endif
+    endif
+    ! Edge irecv in nx- ny+
+    src_block(1) = bm + 1; src_block(2) = bn - 1
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            data2d%block(k)%field(domain%bbnd_x2(k) - 1, domain%bbnd_y1(k) + 1) = _SYNC_EDGE_BUF_RECV_NXM_NYP_(k)
+        endif
+    endif
+    ! Edge irecv in nx- ny-
+    src_block(1) = bm + 1; src_block(2) = bn + 1
+    call check_block_status(domain%bglob_proc, domain%bnx, domain%bny, src_block, src_p)
+    if (src_p >= 0) then
+        if (src_p /= mpp_rank) then
+            data2d%block(k)%field(domain%bbnd_x2(k) - 1, domain%bbnd_y2(k) - 1) = _SYNC_EDGE_BUF_RECV_NXM_NYM_(k)
+        endif
+    endif
+enddo
+_OMP_BLOCKS_SYNC_END_
+
+! TIMER
+_OMP_MASTER_BEGIN_
+call end_timer(t_local)
+mpp_time_sync = mpp_time_sync + t_local
+_OMP_MASTER_END_
