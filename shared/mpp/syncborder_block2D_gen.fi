@@ -11,7 +11,7 @@
 !
 !------------------------------------------------------------------------------
 
-integer :: k, kk
+integer :: dir, k, kk
 integer :: sync_dir(8)
 integer :: k_dir(8)
 integer :: rank_dir(8)
@@ -45,6 +45,7 @@ enddo
 ! Prepare MPI buffers for each near rank
 !
 
+sync_buf_pos = 1
 do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
 
     sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
@@ -63,34 +64,47 @@ do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
         if (rk >= 0) then
             if (rk /= mpp_rank) then
                 ! Set local block number (local number is relative to rk) and direction of transfer (direction is relative to rk)
-                _SYNC_BUF_(sync_buf_pos(rk), rk) = get_inverse_dir(sync_dir(kk))
+                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk) = get_inverse_dir(sync_dir(kk))
                 sync_buf_pos(rk) = sync_buf_pos(rk) + 1
-                _SYNC_BUF_(sync_buf_pos(rk), rk) = k_dir(kk)
+                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk) = k_dir(kk)
                 sync_buf_pos(rk) = sync_buf_pos(rk) + 1
 
                 ! Set boundary points
                 call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)
 
                 ! Pack buffer
-                ! TODO. reshape?
                 buf_size = (nxe - nxs + 1) + (nye - nys + 1)
-                if ((nxe - nxs + 1) == 1) then
-
-                else if ((nye - nys + 1) == 1) then
-
-                else
-
-                endif
-
-                _SYNC_BUF_(sync_buf_pos(rk) : sync_buf_pos(rk) + buf_size - 1, rk) = data2d%block(k)%field(nxs : nxe, nys : nye)
+                _SYNC_SEND_BUF_(sync_buf_pos(rk) : sync_buf_pos(rk) + buf_size - 1, rk) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), (/buf_size/))
                 sync_buf_pos(rk) = sync_buf_pos(rk) + buf_size
             endif
         endif
     enddo
 enddo
 
-! Send MPI buffers for each near rank
+! Send/Recv MPI buffers for each near rank
 !
+
+! Unpack MPI buffers
+!
+
+sync_buf_pos = 1
+do kk = 1, domain%amount_of_ranks_near
+    rk = domain%ranks_near(kk)
+
+    dir = _SYNC_RECV_BUF_(sync_buf_pos(rk), rk)
+    sync_buf_pos(rk) = sync_buf_pos(rk) + 1
+    k = _SYNC_RECV_BUF_(sync_buf_pos(rk), rk)
+    sync_buf_pos(rk) = sync_buf_pos(rk) + 1
+
+    call get_halo_points_of_block(domain, k, dir, hnxs, hnxe, hnys, hnye)
+
+    buf_size = (hnxe - hnxs + 1) + (hnye - hnys + 1)
+    data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = reshape(_SYNC_RECV_BUF_(sync_buf_pos(rk) : sync_buf_pos(rk) + buf_size - 1, rk), (/hnxe - hnxs + 1, hnye - hnys + 1/))
+    sync_buf_pos(rk) = sync_buf_pos(rk) + buf_size
+
+    ! TODO: When end?
+enddo
+
 
 ! Update halo for boundray blocks
 !
@@ -116,13 +130,6 @@ do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
                 call get_boundary_points_of_block(domain, k_dir(kk), get_inverse_dir(sync_dir(kk)), nxs, nxe, nys, nye)
                 call get_halo_points_of_block(domain, k, sync_dir(kk), hnxs, hnxe, hnys, hnye)
                 data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = data2d%block(k_dir(kk))%field(nxs : nxe, nys : nye)
-            else
-                ! MPI Send/Recv data. Take from MPI buffers
-                !
-
-                ! TODO
-                call get_halo_points_of_block(domain, k, sync_dir(kk), hnxs, hnxe, hnys, hnye)
-
             endif
         endif
     enddo

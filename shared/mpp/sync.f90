@@ -32,8 +32,10 @@ module mpp_sync_module
     public :: sync
 
     ! Buffers for each near rank
-    real(wp8), allocatable :: sync_buf_r8(:, :)
-    real(wp4), allocatable :: sync_buf_r4(:, :)
+    real(wp8), allocatable :: sync_send_buf_r8(:, :)
+    real(wp4), allocatable :: sync_send_buf_r4(:, :)
+    real(wp8), allocatable :: sync_recv_buf_r8(:, :)
+    real(wp4), allocatable :: sync_recv_buf_r4(:, :)
     integer, allocatable :: sync_buf_pos(:)  ! Position of buffers, need for prepare buffers. Position of buffer for each near rank
 
 !------------------------------------------------------------------------------
@@ -97,11 +99,14 @@ contains
             print *, "MPP SYNC INFO: rank, max buffer size = ", mpp_rank, max_buf_size
         endif
 
-        allocate(sync_buf_r4(max_buf_size, mpp_count))
-        allocate(sync_buf_r8(max_buf_size, mpp_count))
-        allocate(sync_buf_pos(mpp_count))
-        sync_buf_r4 = 0; sync_buf_r8 = 0
-        sync_buf_pos = 1
+        allocate(sync_send_buf_r4(max_buf_size, domain%amount_of_ranks_near))
+        allocate(sync_send_buf_r8(max_buf_size, domain%amount_of_ranks_near))
+        allocate(sync_recv_buf_r4(max_buf_size, domain%amount_of_ranks_near))
+        allocate(sync_recv_buf_r8(max_buf_size, domain%amount_of_ranks_near))
+        allocate(sync_buf_pos(domain%amount_of_ranks_near))
+        sync_send_buf_r4 = 0; sync_send_buf_r8 = 0
+        sync_recv_buf_r4 = 0; sync_recv_buf_r8 = 0
+        sync_buf_pos = 0
 
         call mpp_sync_output()
     end subroutine
@@ -109,8 +114,10 @@ contains
     subroutine deallocate_mpp_sync_buffers(domain)
         type(domain_type), intent(in) :: domain
 
-        deallocate(sync_buf_r4)
-        deallocate(sync_buf_r8)
+        deallocate(sync_send_buf_r4)
+        deallocate(sync_send_buf_r8)
+        deallocate(sync_recv_buf_r4)
+        deallocate(sync_recv_buf_r8)
         deallocate(sync_buf_pos)
     end subroutine
 
@@ -119,7 +126,8 @@ contains
 
         subroutine syncborder_data2D_real8(domain, data2d)
 #define _MPI_TYPE_ mpi_real8
-#define _SYNC_BUF_ sync_buf_r8
+#define _SYNC_SEND_BUF_ sync_send_buf_r8
+#define _SYNC_RECV_BUF_ sync_recv_buf_r8
         
         implicit none
         type(data2D_real8_type), intent(inout) :: data2d
@@ -128,12 +136,14 @@ contains
 #include    "syncborder_block2D_gen.fi"
 
 #undef _MPI_TYPE_
-#undef _SYNC_BUF_
+#undef _SYNC_SEND_BUF_
+#undef _SYNC_RECV_BUF_
         end subroutine
 
         subroutine syncborder_data2D_real4(domain, data2d)
 #define _MPI_TYPE_ mpi_real4
-#define _SYNC_BUF_ sync_buf_r4
+#define _SYNC_SEND_BUF_ sync_send_buf_r4
+#define _SYNC_RECV_BUF_ sync_recv_buf_r4
 
         implicit none
         type(data2D_real4_type), intent(inout) :: data2d
@@ -142,7 +152,8 @@ contains
 #include    "syncborder_block2D_gen.fi"
 
 #undef _MPI_TYPE_
-#undef _SYNC_BUF_
+#undef _SYNC_SEND_BUF_
+#undef _SYNC_RECV_BUF_
         end subroutine
 
 end module mpp_sync_module
