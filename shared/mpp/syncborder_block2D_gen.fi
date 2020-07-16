@@ -21,8 +21,95 @@ integer :: hnxs, hnxe, hnys, hnye ! Halo points
 integer :: buf_size
 integer :: rk                     ! Local index of buffers for rank, see sync_map_rank
 
+real(wp8) :: t_local
+
+_OMP_MASTER_BEGIN_
+call start_timer(t_local)
+_OMP_MASTER_END_
+
+! Prepare MPI buffers for each near rank
+!
+
+!sync_buf_pos = 1
+!do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
+!
+!    sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
+!    sync_dir(2) = _NXM_; k_dir(2) = domain%blocks_info(k)%k_nxm; rank_dir(2) = domain%blocks_info(k)%rank_nxm
+!    sync_dir(3) = _NYP_; k_dir(3) = domain%blocks_info(k)%k_nyp; rank_dir(3) = domain%blocks_info(k)%rank_nyp
+!    sync_dir(4) = _NYM_; k_dir(4) = domain%blocks_info(k)%k_nym; rank_dir(4) = domain%blocks_info(k)%rank_nym
+!
+!    sync_dir(5) = _NXP_NYP_; k_dir(5) = domain%blocks_info(k)%k_nxp_nyp; rank_dir(5) = domain%blocks_info(k)%rank_nxp_nyp
+!    sync_dir(6) = _NXP_NYM_; k_dir(6) = domain%blocks_info(k)%k_nxp_nym; rank_dir(6) = domain%blocks_info(k)%rank_nxp_nym
+!    sync_dir(7) = _NXM_NYP_; k_dir(7) = domain%blocks_info(k)%k_nxm_nyp; rank_dir(7) = domain%blocks_info(k)%rank_nxm_nyp
+!    sync_dir(8) = _NXM_NYM_; k_dir(8) = domain%blocks_info(k)%k_nxm_nym; rank_dir(8) = domain%blocks_info(k)%rank_nxm_nym
+!
+!    do kk = 1, 8
+!        ! Get rank of proc (rk) for transfer in current direction. It is near rank.
+!        if (rank_dir(kk) >= 0) then
+!            if (rank_dir(kk) /= mpp_rank) then
+!                rk = sync_map_rank(rank_dir(kk))
+!                ! Set local block number (local number is relative to rk) and direction of transfer (direction is relative to rk)
+!                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk) = get_inverse_dir(sync_dir(kk))
+!                sync_buf_pos(rk) = sync_buf_pos(rk) + 1
+!                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk) = k_dir(kk)
+!                sync_buf_pos(rk) = sync_buf_pos(rk) + 1
+!
+!                ! Set boundary points
+!                call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)
+!
+!                ! Pack buffer
+!                buf_size = (nxe - nxs + 1)*(nye - nys + 1)
+!                _SYNC_SEND_BUF_(sync_buf_pos(rk) : sync_buf_pos(rk) + buf_size - 1, rk) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
+!                sync_buf_pos(rk) = sync_buf_pos(rk) + buf_size
+!            endif
+!        endif
+!    enddo
+!enddo
+!
+!! Send/Recv MPI buffers for each near rank
+!!
+!
+!count_send_recv = 0
+!do rk = 1, domain%amount_of_ranks_near
+!    call mpi_irecv(_SYNC_RECV_BUF_(:, rk), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), MPI_ANY_TAG, mpp_cart_comm, reqst, ierr)
+!    count_send_recv = count_send_recv + 1
+!    sync_requests(count_send_recv) = reqst
+!enddo
+!
+!do rk = 1, domain%amount_of_ranks_near
+!    call mpi_isend(_SYNC_SEND_BUF_(:, rk), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), mpp_rank, mpp_cart_comm, reqst, ierr)
+!    count_send_recv = count_send_recv + 1
+!    sync_requests(count_send_recv) = reqst
+!enddo
+!
+!call mpi_waitall(count_send_recv, sync_requests, sync_statuses, ierr)
+!
+!! Unpack MPI buffers
+!!
+!
+!do rk = 1, domain%amount_of_ranks_near
+!    i = 1
+!    do while (i <= sync_buf_pos(rk) - 1)
+!        ! Unpack direction and block number
+!        dir = _SYNC_RECV_BUF_(i, rk)
+!        i = i + 1
+!        k = _SYNC_RECV_BUF_(i, rk)
+!        i = i + 1
+!
+!        ! Get halo area
+!        call get_halo_points_of_block(domain, k, dir, hnxs, hnxe, hnys, hnye)
+!
+!        ! Unpack buffer
+!        buf_size = (hnxe - hnxs + 1)*(hnye - hnys + 1)
+!        data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = reshape(_SYNC_RECV_BUF_(i : i + buf_size - 1, rk), shape=(/hnxe - hnxs + 1, hnye - hnys + 1/))
+!        i = i + buf_size
+!    end do
+!enddo
+
 ! Update halo for inner blocks (only copy, without MPI send/recv)
 !
+
+#ifdef _DEFAULT_SYNC_
 
 do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
     
@@ -42,86 +129,6 @@ do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
         data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = data2d%block(k_dir(kk))%field(nxs : nxe, nys : nye)
     enddo
 enddo
-
-! Prepare MPI buffers for each near rank
-!
-
-sync_buf_pos = 1
-do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
-
-    sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
-    sync_dir(2) = _NXM_; k_dir(2) = domain%blocks_info(k)%k_nxm; rank_dir(2) = domain%blocks_info(k)%rank_nxm
-    sync_dir(3) = _NYP_; k_dir(3) = domain%blocks_info(k)%k_nyp; rank_dir(3) = domain%blocks_info(k)%rank_nyp
-    sync_dir(4) = _NYM_; k_dir(4) = domain%blocks_info(k)%k_nym; rank_dir(4) = domain%blocks_info(k)%rank_nym
-
-    sync_dir(5) = _NXP_NYP_; k_dir(5) = domain%blocks_info(k)%k_nxp_nyp; rank_dir(5) = domain%blocks_info(k)%rank_nxp_nyp
-    sync_dir(6) = _NXP_NYM_; k_dir(6) = domain%blocks_info(k)%k_nxp_nym; rank_dir(6) = domain%blocks_info(k)%rank_nxp_nym
-    sync_dir(7) = _NXM_NYP_; k_dir(7) = domain%blocks_info(k)%k_nxm_nyp; rank_dir(7) = domain%blocks_info(k)%rank_nxm_nyp
-    sync_dir(8) = _NXM_NYM_; k_dir(8) = domain%blocks_info(k)%k_nxm_nym; rank_dir(8) = domain%blocks_info(k)%rank_nxm_nym
-
-    do kk = 1, 8
-        ! Get rank of proc (rk) for transfer in current direction. It is near rank.
-        if (rank_dir(kk) >= 0) then
-            if (rank_dir(kk) /= mpp_rank) then
-                rk = sync_map_rank(rank_dir(kk))
-                ! Set local block number (local number is relative to rk) and direction of transfer (direction is relative to rk)
-                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk) = get_inverse_dir(sync_dir(kk))
-                sync_buf_pos(rk) = sync_buf_pos(rk) + 1
-                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk) = k_dir(kk)
-                sync_buf_pos(rk) = sync_buf_pos(rk) + 1
-
-                ! Set boundary points
-                call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)
-
-                ! Pack buffer
-                buf_size = (nxe - nxs + 1)*(nye - nys + 1)
-                _SYNC_SEND_BUF_(sync_buf_pos(rk) : sync_buf_pos(rk) + buf_size - 1, rk) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
-                sync_buf_pos(rk) = sync_buf_pos(rk) + buf_size
-            endif
-        endif
-    enddo
-enddo
-
-! Send/Recv MPI buffers for each near rank
-!
-
-count_send_recv = 0
-do rk = 1, domain%amount_of_ranks_near
-    call mpi_irecv(_SYNC_RECV_BUF_(:, rk), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), MPI_ANY_TAG, mpp_cart_comm, reqst, ierr)
-    count_send_recv = count_send_recv + 1
-    sync_requests(count_send_recv) = reqst
-enddo
-
-do rk = 1, domain%amount_of_ranks_near
-    call mpi_isend(_SYNC_SEND_BUF_(:, rk), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), mpp_rank, mpp_cart_comm, reqst, ierr)
-    count_send_recv = count_send_recv + 1
-    sync_requests(count_send_recv) = reqst
-enddo
-
-call mpi_waitall(count_send_recv, sync_requests, sync_statuses, ierr)
-
-! Unpack MPI buffers
-!
-
-do rk = 1, domain%amount_of_ranks_near
-    i = 1
-    do while (i <= sync_buf_pos(rk) - 1)
-        ! Unpack direction and block number
-        dir = _SYNC_RECV_BUF_(i, rk)
-        i = i + 1
-        k = _SYNC_RECV_BUF_(i, rk)
-        i = i + 1
-
-        ! Get halo area
-        call get_halo_points_of_block(domain, k, dir, hnxs, hnxe, hnys, hnye)
-
-        ! Unpack buffer
-        buf_size = (hnxe - hnxs + 1)*(hnye - hnys + 1)
-        data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = reshape(_SYNC_RECV_BUF_(i : i + buf_size - 1, rk), shape=(/hnxe - hnxs + 1, hnye - hnys + 1/))
-        i = i + buf_size
-    end do
-enddo
-
 
 ! Update halo for boundray blocks
 !
@@ -151,3 +158,205 @@ do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
         endif
     enddo
 enddo
+
+#else
+
+do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
+    hnxs = domain%bnx_start(k); hnxe = domain%bnx_end(k)
+    hnys = domain%bny_start(k); hnye = domain%bny_end(k)
+
+    !_NXP_
+    kk = domain%blocks_info(k)%k_nxp
+    ! boundary
+    nxs = domain%bnx_start(kk)
+    nxe = domain%bnx_end(kk)
+    nys = domain%bny_start(kk)
+    nye = domain%bny_end(kk)
+    ! copy
+    data2d%block(k)%field(hnxe + 1, hnys : hnye) = data2d%block(kk)%field(nxs, nys : nye)
+
+    !_NXM_
+    kk = domain%blocks_info(k)%k_nxm
+    ! boundary
+    nxs = domain%bnx_start(kk)
+    nxe = domain%bnx_end(kk)
+    nys = domain%bny_start(kk)
+    nye = domain%bny_end(kk)
+    ! copy
+    data2d%block(k)%field(hnxs - 1, hnys : hnye) = data2d%block(kk)%field(nxe, nys : nye)
+
+    !_NYP_
+    kk = domain%blocks_info(k)%k_nyp
+    ! boundary
+    nxs = domain%bnx_start(kk)
+    nxe = domain%bnx_end(kk)
+    nys = domain%bny_start(kk)
+    nye = domain%bny_end(kk)
+    ! copy
+    data2d%block(k)%field(hnxs : hnxe, hnye + 1) = data2d%block(kk)%field(nxs : nxe, nys)
+
+    !_NYM_
+    kk = domain%blocks_info(k)%k_nym
+    ! boundary
+    nxs = domain%bnx_start(kk)
+    nxe = domain%bnx_end(kk)
+    nys = domain%bny_start(kk)
+    nye = domain%bny_end(kk)
+    ! copy
+    data2d%block(k)%field(hnxs : hnxe, hnys - 1) = data2d%block(kk)%field(nxs : nxe, nye)
+
+    !
+    !
+
+    !_NXP_NYP_
+    kk = domain%blocks_info(k)%k_nxp_nyp
+    ! boundary
+    nxs = domain%bnx_start(kk)
+    nxe = domain%bnx_end(kk)
+    nys = domain%bny_start(kk)
+    nye = domain%bny_end(kk)
+    ! copy
+    data2d%block(k)%field(hnxe + 1, hnye + 1) = data2d%block(kk)%field(nxs, nys)
+
+    !_NXP_NYM_
+    kk = domain%blocks_info(k)%k_nxp_nym
+    ! boundary
+    nxs = domain%bnx_start(kk)
+    nxe = domain%bnx_end(kk)
+    nys = domain%bny_start(kk)
+    nye = domain%bny_end(kk)
+    ! copy
+    data2d%block(k)%field(hnxe + 1, hnys - 1) = data2d%block(kk)%field(nxs, nye)
+
+    !_NXM_NYP_
+    kk = domain%blocks_info(k)%k_nxm_nyp
+    ! boundary
+    nxs = domain%bnx_start(kk)
+    nxe = domain%bnx_end(kk)
+    nys = domain%bny_start(kk)
+    nye = domain%bny_end(kk)
+    ! copy
+    data2d%block(k)%field(hnxs - 1, hnye + 1) = data2d%block(kk)%field(nxe, nys)
+
+    !_NXM_NYM_
+    kk = domain%blocks_info(k)%k_nxm_nym
+    ! boundary
+    nxs = domain%bnx_start(kk)
+    nxe = domain%bnx_end(kk)
+    nys = domain%bny_start(kk)
+    nye = domain%bny_end(kk)
+    ! copy
+    data2d%block(k)%field(hnxs - 1, hnys - 1) = data2d%block(kk)%field(nxe, nye)
+enddo
+
+do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
+    hnxs = domain%bnx_start(k); hnxe = domain%bnx_end(k)
+    hnys = domain%bny_start(k); hnye = domain%bny_end(k)
+
+    !_NXP_
+    kk = domain%blocks_info(k)%k_nxp; rk = domain%blocks_info(k)%rank_nxp
+    if (mpp_rank == rk) then
+        ! boundary
+        nxs = domain%bnx_start(kk)
+        nxe = domain%bnx_end(kk)
+        nys = domain%bny_start(kk)
+        nye = domain%bny_end(kk)
+        ! copy
+        data2d%block(k)%field(hnxe + 1, hnys : hnye) = data2d%block(kk)%field(nxs, nys : nye)
+    endif
+
+    !_NXM_
+    kk = domain%blocks_info(k)%k_nxm; rk = domain%blocks_info(k)%rank_nxm
+    if (mpp_rank == rk) then
+        ! boundary
+        nxs = domain%bnx_start(kk)
+        nxe = domain%bnx_end(kk)
+        nys = domain%bny_start(kk)
+        nye = domain%bny_end(kk)
+        ! copy
+        data2d%block(k)%field(hnxs - 1, hnys : hnye) = data2d%block(kk)%field(nxe, nys : nye)
+    endif
+
+    !_NYP_
+    kk = domain%blocks_info(k)%k_nyp; rk = domain%blocks_info(k)%rank_nyp
+    if (mpp_rank == rk) then
+        ! boundary
+        nxs = domain%bnx_start(kk)
+        nxe = domain%bnx_end(kk)
+        nys = domain%bny_start(kk)
+        nye = domain%bny_end(kk)
+        ! copy
+        data2d%block(k)%field(hnxs : hnxe, hnye + 1) = data2d%block(kk)%field(nxs : nxe, nys)
+    endif
+
+    !_NYM_
+    kk = domain%blocks_info(k)%k_nym; rk = domain%blocks_info(k)%rank_nym
+    if (mpp_rank == rk) then
+        ! boundary
+        nxs = domain%bnx_start(kk)
+        nxe = domain%bnx_end(kk)
+        nys = domain%bny_start(kk)
+        nye = domain%bny_end(kk)
+        ! copy
+        data2d%block(k)%field(hnxs : hnxe, hnys - 1) = data2d%block(kk)%field(nxs : nxe, nye)
+    endif
+
+    !
+    !
+
+    !_NXP_NYP_
+    kk = domain%blocks_info(k)%k_nxp_nyp; rk = domain%blocks_info(k)%rank_nxp_nyp
+    if (mpp_rank == rk) then
+        ! boundary
+        nxs = domain%bnx_start(kk)
+        nxe = domain%bnx_end(kk)
+        nys = domain%bny_start(kk)
+        nye = domain%bny_end(kk)
+        ! copy
+        data2d%block(k)%field(hnxe + 1, hnye + 1) = data2d%block(kk)%field(nxs, nys)
+    endif
+
+    !_NXP_NYM_
+    kk = domain%blocks_info(k)%k_nxp_nym; rk = domain%blocks_info(k)%rank_nxp_nym
+    if (mpp_rank == rk) then
+        ! boundary
+        nxs = domain%bnx_start(kk)
+        nxe = domain%bnx_end(kk)
+        nys = domain%bny_start(kk)
+        nye = domain%bny_end(kk)
+        ! copy
+        data2d%block(k)%field(hnxe + 1, hnys - 1) = data2d%block(kk)%field(nxs, nye)
+    endif
+
+    !_NXM_NYP_
+    kk = domain%blocks_info(k)%k_nxm_nyp; rk = domain%blocks_info(k)%rank_nxm_nyp
+    if (mpp_rank == rk) then
+        ! boundary
+        nxs = domain%bnx_start(kk)
+        nxe = domain%bnx_end(kk)
+        nys = domain%bny_start(kk)
+        nye = domain%bny_end(kk)
+        ! copy
+        data2d%block(k)%field(hnxs - 1, hnye + 1) = data2d%block(kk)%field(nxe, nys)
+    endif
+
+    !_NXM_NYM_
+    kk = domain%blocks_info(k)%k_nxm_nym; rk = domain%blocks_info(k)%rank_nxm_nym
+    if (mpp_rank == rk) then
+        ! boundary
+        nxs = domain%bnx_start(kk)
+        nxe = domain%bnx_end(kk)
+        nys = domain%bny_start(kk)
+        nye = domain%bny_end(kk)
+        ! copy
+        data2d%block(k)%field(hnxs - 1, hnys - 1) = data2d%block(kk)%field(nxe, nye)
+    endif
+enddo
+
+#endif
+
+! TIMER
+_OMP_MASTER_BEGIN_
+call end_timer(t_local)
+mpp_time_sync = mpp_time_sync + t_local
+_OMP_MASTER_END_
