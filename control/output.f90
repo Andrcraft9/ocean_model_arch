@@ -65,13 +65,14 @@ contains
 
         if (mpp_is_master()) then
             write(*,*) 'Writing local output, record number ', nrec
-          endif
+        endif
           
         ! HHQ  
         if(nrec==1) then
 
             call bufwp4%copy_from_real8(domain, grid_data%hhq_rest)
             ierr = 0
+
             call write_data(domain, 'RESULTS/', 'hhq.dat', nrec, bufwp4, grid_data%lu, ierr)
             if (mpp_is_master()) print *, 'hhq is written'
             
@@ -107,6 +108,7 @@ contains
         ! SSH
         ! writing SSH
         call bufwp4%copy_from_real8(domain, ocean_data%ssh)
+
         ierr = 0
         call write_data(domain, 'RESULTS/', 'ssh.dat', nrec, bufwp4, grid_data%lu, ierr)
         if(mpp_is_master()) print *, 'ssh is written'

@@ -10,13 +10,13 @@ FCGCC_DEBUG = -g -O -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace 
 FCINTEL_DEBUG = -g -O -finit-real=nan
 # Fast:
 # ?: --ffast-math -auto -stack_temp
-FCGCC_FAST = -O3
+FCGCC_FAST = -Ofast
 FCINTEL_FAST = -O3
 
 ################# USER SECTION BEGIN ##########################################
 ### Default compiler (GCC or Intel / Debug or Production):
-FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
-#FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
+#FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
+FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 

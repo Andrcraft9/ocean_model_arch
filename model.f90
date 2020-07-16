@@ -16,6 +16,7 @@ program model
     !use ocean_interface_module, only: envoke_div_velocity
     use output_module, only: local_output, output_init_buffers, output_clear_buffers
     use shallow_water_module, only: expl_shallow_water
+    use errors_module
 
     implicit none
 
@@ -81,6 +82,8 @@ program model
 
         call time_manager_print(local_num_step)
     endif
+
+    !call abort_model("Stop")
 
     ! Solver
     _OMP_MODEL_BEGIN_

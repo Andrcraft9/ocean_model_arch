@@ -211,10 +211,10 @@ contains
                 endif
 
                 associate(_associate_domain_value_(nx_start, domain, bnx_start, k),  &
-                        _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
-                        _associate_domain_value_(ny_start, domain, bny_start, k),  &
-                        _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
-                        field => data2d%block(k)%field, lu => lu2d%block(k)%field)
+                          _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
+                          _associate_domain_value_(ny_start, domain, bny_start, k),  &
+                          _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
+                          field => data2d%block(k)%field, lu => lu2d%block(k)%field)
 
                     offset2 = (/nx_start - nxb, ny_start - nyb/)
                     locsizes2 = (/nx_end - nx_start + 1, ny_end - ny_start + 1/)
@@ -244,10 +244,10 @@ contains
             ! Filling undefinite points by zero instead undef
             do k = 1, domain%bcount
                 associate(_associate_domain_value_(bnd_x1, domain, bbnd_x1, k),  &
-                        _associate_domain_value_(bnd_x2, domain, bbnd_x2, k),  &
-                        _associate_domain_value_(bnd_y1, domain, bbnd_y1, k),  &
-                        _associate_domain_value_(bnd_y2, domain, bbnd_y2, k),  &
-                        field => data2d%block(k)%field, lu => lu2d%block(k)%field)
+                          _associate_domain_value_(bnd_x2, domain, bbnd_x2, k),  &
+                          _associate_domain_value_(bnd_y1, domain, bbnd_y1, k),  &
+                          _associate_domain_value_(bnd_y2, domain, bbnd_y2, k),  &
+                          field => data2d%block(k)%field, lu => lu2d%block(k)%field)
 
                     do j = bnd_y1, bnd_y2
                         do i = bnd_x1, bnd_x2
@@ -314,10 +314,10 @@ contains
                 endif
 
                 associate(_associate_domain_value_(nx_start, domain, bnx_start, k),  &
-                        _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
-                        _associate_domain_value_(ny_start, domain, bny_start, k),  &
-                        _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
-                        field => data2d%block(k)%field, lu => lu2d%block(k)%field)
+                          _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
+                          _associate_domain_value_(ny_start, domain, bny_start, k),  &
+                          _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
+                          field => data2d%block(k)%field, lu => lu2d%block(k)%field)
                 
                     offset2 = (/nx_start - nxb, ny_start - nyb/)
                     locsizes2 = (/nx_end - nx_start + 1, ny_end - ny_start + 1/)
@@ -325,7 +325,7 @@ contains
                     totsize = locsizes2(1)*locsizes2(2)
 
                     call mpi_type_create_subarray(2, sizes2, locsizes2, offset2,               &
-                                                mpi_order_fortran, mpi_real, tsubarr, ierr)
+                                                  mpi_order_fortran, mpi_real, tsubarr, ierr)
                 
                     call mpi_type_commit(tsubarr, ierr)
 
@@ -353,10 +353,10 @@ contains
 
             do k = 1, domain%bcount
                 associate(_associate_domain_value_(nx_start, domain, bnx_start, k),  &
-                    _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
-                    _associate_domain_value_(ny_start, domain, bny_start, k),  &
-                    _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
-                    field => data2d%block(k)%field, lu => lu2d%block(k)%field)
+                          _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
+                          _associate_domain_value_(ny_start, domain, bny_start, k),  &
+                          _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
+                          field => data2d%block(k)%field, lu => lu2d%block(k)%field)
 
                     do j = ny_start, ny_end
                         do i = nx_start, nx_end
@@ -426,10 +426,10 @@ contains
                 endif
 
                 associate(_associate_domain_value_(nx_start, domain, bnx_start, k),  &
-                        _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
-                        _associate_domain_value_(ny_start, domain, bny_start, k),  &
-                        _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
-                        field => data2d%block(k)%field, lu => lu2d%block(k)%field)
+                          _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
+                          _associate_domain_value_(ny_start, domain, bny_start, k),  &
+                          _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
+                          field => data2d%block(k)%field, lu => lu2d%block(k)%field)
                 
                     offset2 = (/nx_start - nxb, ny_start - nyb/)
                     locsizes2 = (/nx_end - nx_start + 1, ny_end - ny_start + 1/)
@@ -465,10 +465,10 @@ contains
 
             do k = 1, domain%bcount
                 associate(_associate_domain_value_(nx_start, domain, bnx_start, k),  &
-                    _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
-                    _associate_domain_value_(ny_start, domain, bny_start, k),  &
-                    _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
-                    field => data2d%block(k)%field, lu => lu2d%block(k)%field)
+                          _associate_domain_value_(nx_end,   domain, bnx_end,   k),  &
+                          _associate_domain_value_(ny_start, domain, bny_start, k),  &
+                          _associate_domain_value_(ny_end,   domain, bny_end,   k),  &
+                          field => data2d%block(k)%field, lu => lu2d%block(k)%field)
 
                     do j = ny_start, ny_end
                         do i = nx_start, nx_end
