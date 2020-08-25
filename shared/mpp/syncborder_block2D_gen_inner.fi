@@ -1,0 +1,52 @@
+!------------------------------------------------------------------------------
+! Generic for 2D sync routine:
+! subroutine syncborder_data2D_TYPE(domain, data2d)
+!        type(data2D_real8_type), intent(inout) :: data2d
+!        type(domain_type), intent(in) :: domain
+!        ...
+! end subroutine
+!
+! Must be specified: 
+!   _MPI_TYPE_
+!
+!------------------------------------------------------------------------------
+
+integer :: reqst
+integer :: dir, k, kk, i, ierr
+integer :: sync_dir(8)
+integer :: k_dir(8)
+integer :: rank_dir(8)
+integer :: nxs, nxe, nys, nye     ! Boundary points
+integer :: hnxs, hnxe, hnys, hnye ! Halo points
+integer :: buf_size
+integer :: rk                     ! Local index of buffers for rank, see sync_map_rank
+
+real(wp8) :: t_local
+
+call start_timer(t_local)
+
+! Update halo for inner blocks (only copy, without MPI send/recv)
+!
+
+do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
+    
+    sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp
+    sync_dir(2) = _NXM_; k_dir(2) = domain%blocks_info(k)%k_nxm
+    sync_dir(3) = _NYP_; k_dir(3) = domain%blocks_info(k)%k_nyp
+    sync_dir(4) = _NYM_; k_dir(4) = domain%blocks_info(k)%k_nym
+
+    sync_dir(5) = _NXP_NYP_; k_dir(5) = domain%blocks_info(k)%k_nxp_nyp
+    sync_dir(6) = _NXP_NYM_; k_dir(6) = domain%blocks_info(k)%k_nxp_nym
+    sync_dir(7) = _NXM_NYP_; k_dir(7) = domain%blocks_info(k)%k_nxm_nyp
+    sync_dir(8) = _NXM_NYM_; k_dir(8) = domain%blocks_info(k)%k_nxm_nym
+    
+    do kk = 1, 8
+        call get_boundary_points_of_block(domain, k_dir(kk), get_inverse_dir(sync_dir(kk)), nxs, nxe, nys, nye)
+        call get_halo_points_of_block(domain, k, sync_dir(kk), hnxs, hnxe, hnys, hnye)
+        data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = data2d%block(k_dir(kk))%field(nxs : nxe, nys : nye)
+    enddo
+enddo
+
+! TIMER
+call end_timer(t_local)
+mpp_time_sync_inner = mpp_time_sync_inner + t_local
