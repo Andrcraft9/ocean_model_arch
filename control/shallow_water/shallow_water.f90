@@ -25,50 +25,70 @@ contains
         type(grid_type), intent(inout) :: grid_data
         type(ocean_type), intent(inout) :: ocean_data
 
+        procedure(envoke_empty_kernel), pointer :: sub_kernel
+        procedure(envoke_empty_sync), pointer :: sub_sync
+
         ! init
         call ocean_data%mu%fill(domain, lvisc_2)
 
         !computing ssh
-        call envoke_sw_update_ssh_kernel(domain, grid_data, tau, ocean_data%sshn, ocean_data%sshp, ocean_data%ubrtr, ocean_data%vbrtr)
+        sub_kernel => envoke_sw_update_ssh_kernel
+        sub_sync   => envoke_sw_update_ssh_sync
+        call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, tau)
 
         if (full_free_surface>0) then
-            call envoke_hh_update_kernel(domain, grid_data, ocean_data%sshn)
+            sub_kernel => envoke_hh_update_kernel
+            sub_sync   => envoke_hh_update_sync
+            call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
         endif
 
         !computing advective and lateral-viscous terms for 2d-velocity
         if (trans_terms > 0) then
-            call envoke_uv_trans_vort_kernel(domain, grid_data, ocean_data%ubrtr, ocean_data%vbrtr, ocean_data%vort)
-            call envoke_uv_trans_kernel(domain, grid_data, ocean_data%ubrtr, ocean_data%vbrtr, ocean_data%vort, ocean_data%RHSx_adv, ocean_data%RHSy_adv)
+            sub_kernel => envoke_uv_trans_vort_kernel
+            sub_sync   => envoke_uv_trans_vort_sync
+            call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
+
+            sub_kernel => envoke_uv_trans_kernel
+            sub_sync   => envoke_uv_trans_sync
+            call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
         endif
 
         if (ksw_lat > 0) then
-            call envoke_stress_components_kernel(domain, grid_data, ocean_data%ubrtrp, ocean_data%vbrtrp, ocean_data%str_t, ocean_data%str_s)
-            call envoke_uv_diff2_kernel(domain, grid_data, ocean_data%mu, ocean_data%str_t, ocean_data%str_s, ocean_data%RHSx_dif, ocean_data%RHSy_dif)
+            sub_kernel => envoke_stress_components_kernel
+            sub_sync   => envoke_stress_components_sync
+            call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
+
+            sub_kernel => envoke_uv_diff2_kernel
+            sub_sync   => envoke_uv_diff2_sync
+            call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
         endif
 
-        call envoke_sw_update_uv(domain, grid_data, tau, ocean_data%ssh, &
-                                 ocean_data%ubrtr, ocean_data%ubrtrn, ocean_data%ubrtrp, &
-                                 ocean_data%vbrtr, ocean_data%vbrtrn, ocean_data%vbrtrp, &
-                                 ocean_data%r_diss, &
-                                 ocean_data%RHSx, ocean_data%RHSy, ocean_data%RHSx_adv, ocean_data%RHSy_adv, ocean_data%RHSx_dif, ocean_data%RHSy_dif)
+        sub_kernel => envoke_sw_update_uv_kernel
+        sub_sync   => envoke_sw_update_uv_sync
+        call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, tau)
 
         !shifting time indices
-        call envoke_sw_next_step(domain, grid_data, time_smooth, &
-                                 ocean_data%ssh, ocean_data%sshn, ocean_data%sshp, &
-                                 ocean_data%ubrtr, ocean_data%ubrtrn, ocean_data%ubrtrp, &
-                                 ocean_data%vbrtr, ocean_data%vbrtrn, ocean_data%vbrtrp)
+        sub_kernel => envoke_sw_next_step_kernel
+        sub_sync   => envoke_sw_next_step_sync
+        call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, time_smooth)
 
         if(full_free_surface>0) then
-            call envoke_hh_shift_kernel(domain, grid_data)
+            sub_kernel => envoke_hh_shift_kernel
+            sub_sync   => envoke_hh_shift_sync
+            call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
         endif
 
         if(full_free_surface>0) then
             !initialize depth for external mode
-            call envoke_hh_init_kernel(domain, grid_data, ocean_data%ssh, ocean_data%sshp)
+            sub_kernel => envoke_hh_init_kernel
+            sub_sync   => envoke_hh_init_sync
+            call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
         endif
 
         ! Check error
-        call envoke_check_ssh_err_kernel(domain, grid_data, ocean_data%ssh, 'ssh')
+        sub_kernel => envoke_check_ssh_err_kernel
+        sub_sync   => envoke_check_ssh_err_sync
+        call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
 
     endsubroutine expl_shallow_water
 

@@ -24,7 +24,7 @@ contains
 
     subroutine init_ocean_data(domain, grid_data, ocean_data)
         use config_sw_module, only: ssh_init_file_name
-        use shallow_water_interface_module, only: envoke_hh_init_kernel, envoke_gaussian_elimination
+        use shallow_water_interface_module
         use config_basinpar_module, only: nx, ny
 
         type(domain_type), intent(in) :: domain
@@ -32,6 +32,8 @@ contains
         type(ocean_type), intent(inout) :: ocean_data
         
         type(data2D_real4_type) :: tmp_data
+        procedure(envoke_empty_kernel), pointer :: sub_kernel
+        procedure(envoke_empty_sync), pointer :: sub_sync
         integer :: k, ierr
 
         if (ssh_init_file_name .eq. 'none') then
@@ -48,7 +50,9 @@ contains
         call ocean_data%sshn%copy_from(domain, ocean_data%ssh)
         call ocean_data%sshp%copy_from(domain, ocean_data%ssh)
 
-        call envoke_hh_init_kernel(domain, grid_data, ocean_data%ssh, ocean_data%sshp)
+        sub_kernel => envoke_hh_init_kernel
+        sub_sync   => envoke_hh_init_sync
+        call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
 
         ! Zero velocity
         ! U
