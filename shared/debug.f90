@@ -9,7 +9,7 @@ module debug_module
     save
     public
 
-    integer, parameter :: debug_level = 7
+    integer, parameter :: debug_level = 5
     ! 0: no debug info
     ! 1: mean debug info per ranks, print only master rank
     ! 2: 
