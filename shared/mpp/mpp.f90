@@ -93,12 +93,12 @@ contains
             print *, "MPP INFO: MPP_BLOCK_MODE: yes"
 #endif
 
-#ifdef _MPP_LOOP_KERNEL_MODE_
-            print *, "MPP INFO: MPP_LOOP_KERNEL_MODE: yes"
+#ifdef _MPP_HYBRID_BLOCK_MODE_
+            print *, "MPP INFO: MPP_HYBRID_BLOCK_MODE: yes"
 #endif
 
-#ifdef _MPP_MODEL_PARALLEL_MODE_
-            print *, "MPP INFO: MPP_MODEL_PARALLEL_MODE: yes"
+#ifdef _MPP_LOOP_KERNEL_MODE_
+            print *, "MPP INFO: MPP_LOOP_KERNEL_MODE: yes"
 #endif
             print *, "------------------------------------------------------------"
         endif

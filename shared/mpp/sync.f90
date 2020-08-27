@@ -20,9 +20,18 @@ module mpp_sync_module
     save
     private
 
+    type, public :: sync_parameters_type
+        logical :: is_inner_sync
+    end type sync_parameters_type
+
     interface sync
         module procedure syncborder_data2D_real8
         module procedure syncborder_data2D_real4
+    end interface
+
+    interface hybrid_sync
+        module procedure syncborder_data2D_hybrid_real8
+        module procedure syncborder_data2D_hybrid_real4
     end interface
 
     interface sync_inner
@@ -37,7 +46,7 @@ module mpp_sync_module
 
     public :: mpp_sync_init
     public :: mpp_sync_finalize
-    public :: sync, sync_inner, sync_boundary
+    public :: sync, hybrid_sync
 
     ! MPI info
     integer :: sync_count_send_recv
@@ -173,6 +182,34 @@ contains
 
             call syncborder_data2D_inner_real4(domain, data2d)
             call syncborder_data2D_boundary_real4(domain, data2d)
+        end subroutine
+
+!------------------------------------------------------------------------------
+! Generic subroutines, hybrid:
+        subroutine syncborder_data2D_hybrid_real8(sync_parameters, domain, data2d)
+            implicit none
+            type(sync_parameters_type), intent(in) :: sync_parameters
+            type(data2D_real8_type), intent(inout) :: data2d
+            type(domain_type), intent(in) :: domain
+
+            if (sync_parameters%is_inner_sync) then
+                call syncborder_data2D_inner_real8(domain, data2d)
+            else
+                call syncborder_data2D_boundary_real8(domain, data2d)
+            endif
+        end subroutine
+
+        subroutine syncborder_data2D_hybrid_real4(sync_parameters, domain, data2d)
+            implicit none
+            type(sync_parameters_type), intent(in) :: sync_parameters
+            type(data2D_real4_type), intent(inout) :: data2d
+            type(domain_type), intent(in) :: domain
+
+            if (sync_parameters%is_inner_sync) then
+                call syncborder_data2D_inner_real4(domain, data2d)
+            else
+                call syncborder_data2D_boundary_real4(domain, data2d)
+            endif
         end subroutine
 
 !------------------------------------------------------------------------------

@@ -7,12 +7,12 @@
 !#define _MPP_SORTED_BLOCKS_
 !#define _MPP_NO_PARALLEL_MODE_
 !#define _MPP_BLOCK_MODE_
+!#define _MPP_HYBRID_BLOCK_MODE_
 !#define _MPP_LOOP_KERNEL_MODE_
-!#define _MPP_MODEL_PARALLEL_MODE_
+
 
 #define _MPP_SORTED_BLOCKS_
-!#define _MPP_BLOCK_MODE_
-#define _MPP_NO_PARALLEL_MODE_
+#define _MPP_HYBRID_BLOCK_MODE_
 #define _OMP_MAX_THREADS_ 128
 !-----------------------------------------------------------------------------!
 
@@ -22,79 +22,78 @@
 #define _OMP_BARRIER_ !$omp barrier
 #define _OMP_MASTER_BEGIN_ !$omp master
 #define _OMP_MASTER_END_ !$omp end master
+#define _OMP_SINGLE_BEGIN_ !$omp single
+#define _OMP_SINGLE_END_ !$omp end single
 
+!-----------------------------------------------------------------------------!
 #ifdef _MPP_NO_PARALLEL_MODE_
 
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ 
 #define _OMP_BLOCKS_PARALLEL_END_ 
 
+#define _OMP_INNER_BLOCKS_PARALLEL_BEGIN_ 
+#define _OMP_INNER_BLOCKS_PARALLEL_END_ 
+
+#define _OMP_BOUNDARY_BLOCKS_PARALLEL_BEGIN_ 
+#define _OMP_BOUNDARY_BLOCKS_PARALLEL_END_ 
+
 #define _OMP_KERNEL_PARALLEL_BEGIN_ 
 #define _OMP_KERNEL_PARALLEL_END_ 
 
-#define _OMP_MODEL_BEGIN_ 
-#define _OMP_MODEL_END_ 
+#endif
 
-#define _OMP_BLOCKS_BEGIN_ 
-#define _OMP_BLOCKS_END_ 
+!-----------------------------------------------------------------------------!
+#ifdef _MPP_HYBRID_BLOCK_MODE_
+! MPP_HYBRID_BLOCK_MODE
 
-!#define _OMP_BLOCKS_SYNC_BEGIN_ 
-!#define _OMP_BLOCKS_SYNC_END_ 
-#define _OMP_BLOCKS_SYNC_BEGIN_ 
-#define _OMP_BLOCKS_SYNC_END_ 
+#define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
+#define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do
+
+#define _OMP_INNER_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
+#define _OMP_INNER_BLOCKS_PARALLEL_END_ !$omp end parallel do
+
+#define _OMP_BOUNDARY_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
+#define _OMP_BOUNDARY_BLOCKS_PARALLEL_END_ !$omp end parallel do
+
+#define _OMP_KERNEL_PARALLEL_BEGIN_ 
+#define _OMP_KERNEL_PARALLEL_END_ 
 
 #endif
 
+
+!-----------------------------------------------------------------------------!
 #ifdef _MPP_BLOCK_MODE_
 ! MPP_BLOCK MODE
 
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
 #define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do
 
+#define _OMP_INNER_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
+#define _OMP_INNER_BLOCKS_PARALLEL_END_ !$omp end parallel do
+
+#define _OMP_BOUNDARY_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
+#define _OMP_BOUNDARY_BLOCKS_PARALLEL_END_ !$omp end parallel do
+
 #define _OMP_KERNEL_PARALLEL_BEGIN_ 
 #define _OMP_KERNEL_PARALLEL_END_ 
 
-#define _OMP_MODEL_BEGIN_ 
-#define _OMP_MODEL_END_ 
-
-#define _OMP_BLOCKS_BEGIN_ !$omp parallel do schedule(static, 1) private(k)
-#define _OMP_BLOCKS_END_ !$omp end parallel do
-
-!#define _OMP_BLOCKS_SYNC_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k, lock, bm, bn, reqst, src_block, dist_block, src_p, dist_p, send_size, recv_size, ierr, tag)
-!#define _OMP_BLOCKS_SYNC_END_ !$omp end parallel do
-#define _OMP_BLOCKS_SYNC_BEGIN_ 
-#define _OMP_BLOCKS_SYNC_END_ 
-
 #endif
 
+!-----------------------------------------------------------------------------!
 #ifdef _MPP_LOOP_KERNEL_MODE_
 ! MPP_LOOP_KERNEL_MODE
 
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ 
 #define _OMP_BLOCKS_PARALLEL_END_ 
 
+#define _OMP_INNER_BLOCKS_PARALLEL_BEGIN_ 
+#define _OMP_INNER_BLOCKS_PARALLEL_END_ 
+
+#define _OMP_BOUNDARY_BLOCKS_PARALLEL_BEGIN_ 
+#define _OMP_BOUNDARY_BLOCKS_PARALLEL_END_ 
+
 #define _OMP_KERNEL_PARALLEL_BEGIN_ !$omp parallel do private(m, n)
 #define _OMP_KERNEL_PARALLEL_END_ !$omp end parallel do
-
-#define _OMP_MODEL_BEGIN_ 
-#define _OMP_MODEL_END_ 
-
-#define _OMP_BLOCKS_BEGIN_ 
-#define _OMP_BLOCKS_END_ 
-
-#define _OMP_BLOCKS_SYNC_BEGIN_ 
-#define _OMP_BLOCKS_SYNC_END_ 
-
-#endif
-
-#ifdef _MPP_MODEL_PARALLEL_MODE_
-! MPP_MODEL_PARALLEL_MODE
-
-#define _OMP_MODEL_BEGIN_ !$omp parallel default(shared) firstprivate(local_num_step)
-#define _OMP_MODEL_END_ !$omp end parallel
-#define _OMP_BLOCKS_BEGIN_ !$omp do private(k)
-#define _OMP_BLOCKS_END_ !$omp end do
-#define _OMP_BLOCKS_SYNC_BEGIN_ !$omp do private(k, lock, bm, bn, reqst, src_block, dist_block, src_p, dist_p, send_size, recv_size, ierr, tag)
-#define _OMP_BLOCKS_SYNC_END_ !$omp end do
 
 #endif
 

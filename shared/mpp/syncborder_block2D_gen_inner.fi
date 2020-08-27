@@ -23,11 +23,14 @@ integer :: rk                     ! Local index of buffers for rank, see sync_ma
 
 real(wp8) :: t_local
 
+!$omp master
 call start_timer(t_local)
+!$omp end master
 
 ! Update halo for inner blocks (only copy, without MPI send/recv)
 !
 
+!$omp do private(k, kk, sync_dir, k_dir, nxs, nxe, nys, nye, hnxs, hnxe, hnys, hnye) schedule(static, 1)
 do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
     
     sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp
@@ -46,7 +49,10 @@ do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
         data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = data2d%block(k_dir(kk))%field(nxs : nxe, nys : nye)
     enddo
 enddo
+!$omp end do
 
 ! TIMER
+!$omp master
 call end_timer(t_local)
 mpp_time_sync_inner = mpp_time_sync_inner + t_local
+!$omp end master

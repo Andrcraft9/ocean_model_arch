@@ -86,7 +86,6 @@ program model
     !call abort_model("Stop")
 
     ! Solver
-    _OMP_MODEL_BEGIN_
     do while(local_num_step < num_step_max)
         if (mpp_is_master_thread())  call start_timer(t_local)
 
@@ -126,7 +125,6 @@ program model
         _OMP_BARRIER_
 
     enddo
-    _OMP_MODEL_END_
 
     ! Clear data
     call ocean_data%clear(domain_data)
