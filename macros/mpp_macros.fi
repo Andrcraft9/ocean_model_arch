@@ -2,21 +2,26 @@
 
 ! User defines:
 !-----------------------------------------------------------------------------!
-! Possible user defines, you can configure it from makefile
-!#define _MPP_KERNEL_TIMER_ON_
-!#define _MPP_SORTED_BLOCKS_
-!#define _MPP_NO_PARALLEL_MODE_
-!#define _MPP_BLOCK_MODE_
-!#define _MPP_HYBRID_BLOCK_MODE_
-!#define _MPP_LOOP_KERNEL_MODE_
-
+! Possible user defines, you can configure it from makefile:
+!   #define _MPP_KERNEL_TIMER_ON_
+!   #define _MPP_SORTED_BLOCKS_
+!       Load balancing for OMP threads, sort blocks which works faster with use schedule(static, 1)
+!   #define _MPP_NO_PARALLEL_MODE_
+!       No OMP
+!   #define _MPP_BLOCK_MODE_
+!       OMP loops for blocks
+!   #define _MPP_HYBRID_BLOCK_MODE_
+!       OMP loops for inner blocks and boundary blocks, overlap computation with communication
+!   #define _MPP_LOOP_KERNEL_MODE_
+!       OMP loops for kernels
+!-----------------------------------------------------------------------------!
 
 #define _MPP_SORTED_BLOCKS_
 #define _MPP_HYBRID_BLOCK_MODE_
 #define _OMP_MAX_THREADS_ 128
-!-----------------------------------------------------------------------------!
 
-! Defines:
+!-----------------------------------------------------------------------------!
+! System Defines:
 !-----------------------------------------------------------------------------!
 
 #define _OMP_BARRIER_ !$omp barrier
@@ -31,12 +36,6 @@
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ 
 #define _OMP_BLOCKS_PARALLEL_END_ 
 
-#define _OMP_INNER_BLOCKS_PARALLEL_BEGIN_ 
-#define _OMP_INNER_BLOCKS_PARALLEL_END_ 
-
-#define _OMP_BOUNDARY_BLOCKS_PARALLEL_BEGIN_ 
-#define _OMP_BOUNDARY_BLOCKS_PARALLEL_END_ 
-
 #define _OMP_KERNEL_PARALLEL_BEGIN_ 
 #define _OMP_KERNEL_PARALLEL_END_ 
 
@@ -49,17 +48,10 @@
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
 #define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do
 
-#define _OMP_INNER_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
-#define _OMP_INNER_BLOCKS_PARALLEL_END_ !$omp end parallel do
-
-#define _OMP_BOUNDARY_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
-#define _OMP_BOUNDARY_BLOCKS_PARALLEL_END_ !$omp end parallel do
-
 #define _OMP_KERNEL_PARALLEL_BEGIN_ 
 #define _OMP_KERNEL_PARALLEL_END_ 
 
 #endif
-
 
 !-----------------------------------------------------------------------------!
 #ifdef _MPP_BLOCK_MODE_
@@ -67,12 +59,6 @@
 
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
 #define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do
-
-#define _OMP_INNER_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
-#define _OMP_INNER_BLOCKS_PARALLEL_END_ !$omp end parallel do
-
-#define _OMP_BOUNDARY_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
-#define _OMP_BOUNDARY_BLOCKS_PARALLEL_END_ !$omp end parallel do
 
 #define _OMP_KERNEL_PARALLEL_BEGIN_ 
 #define _OMP_KERNEL_PARALLEL_END_ 
@@ -85,12 +71,6 @@
 
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ 
 #define _OMP_BLOCKS_PARALLEL_END_ 
-
-#define _OMP_INNER_BLOCKS_PARALLEL_BEGIN_ 
-#define _OMP_INNER_BLOCKS_PARALLEL_END_ 
-
-#define _OMP_BOUNDARY_BLOCKS_PARALLEL_BEGIN_ 
-#define _OMP_BOUNDARY_BLOCKS_PARALLEL_END_ 
 
 #define _OMP_KERNEL_PARALLEL_BEGIN_ !$omp parallel do private(m, n)
 #define _OMP_KERNEL_PARALLEL_END_ !$omp end parallel do

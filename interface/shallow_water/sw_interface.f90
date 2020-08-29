@@ -69,6 +69,8 @@ contains
         sync_parameters_inner%is_inner_sync = .true.
         sync_parameters_boundary%is_inner_sync = .false.
 
+#ifdef _MPP_HYBRID_BLOCK_MODE_
+
         !$omp parallel default(shared)
     
         !$omp do private(k) schedule(static, 1)
@@ -90,6 +92,18 @@ contains
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
 
         !$omp end parallel
+#else
+
+    _OMP_BLOCKS_PARALLEL_BEGIN_
+    do k = 1, domain%bcount
+        call sub_kernel(k, domain, grid_data, ocean_data, param)
+    enddo
+    _OMP_BLOCKS_PARALLEL_END_
+
+    call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
+    call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
+
+#endif
     end subroutine
 
 !-----------------------------------------------------------------------------!
