@@ -260,9 +260,9 @@ contains
     end function
 
     subroutine mpp_sync_output()
-        call flush()
+        call flush(6)
         if (mpp_is_master()) print *, " "
-        call flush()
+        call flush(6)
     end subroutine
 
 
