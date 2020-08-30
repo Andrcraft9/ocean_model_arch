@@ -94,14 +94,21 @@ contains
         !$omp end parallel
 #else
 
-    _OMP_BLOCKS_PARALLEL_BEGIN_
-    do k = 1, domain%bcount
-        call sub_kernel(k, domain, grid_data, ocean_data, param)
-    enddo
-    _OMP_BLOCKS_PARALLEL_END_
+        !$omp parallel default(shared)
 
-    call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
-    call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
+        !$omp do private(k) schedule(static, 1)
+        do k = 1, domain%bcount
+            call sub_kernel(k, domain, grid_data, ocean_data, param)
+        enddo
+        !$omp end do
+
+        !$omp master
+        call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
+        !$omp end master
+
+        call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
+
+        !$omp end parallel
 
 #endif
     end subroutine
