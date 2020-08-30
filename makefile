@@ -3,11 +3,11 @@
 
 # Definitions and Options:
 FCGCC = -fopenmp -cpp -dM -ffree-line-length-0 -I./ -Imacros/
-FCINTEL = -assume byterecl -openmp -cpp -I./ -Imacros/
+FCINTEL = -assume byterecl -openmp -fpp -allow nofpp_comments -I./ -Imacros/
 # Debug: (from book Introduction to Programming with Fortran)
 # ?: -fPIC
 FCGCC_DEBUG = -g -O -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
-FCINTEL_DEBUG = -g -O -finit-real=nan
+FCINTEL_DEBUG = -g -O -check all -traceback
 # Fast:
 # ?: --ffast-math -auto -stack_temp
 FCGCC_FAST = -Ofast
