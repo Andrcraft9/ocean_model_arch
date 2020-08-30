@@ -30,7 +30,6 @@ contains
         integer :: m, n, k, ierr
 
         ! conversion integer diogin mask to real model mask
-        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
           associate(bnd_x1 => domain%bbnd_x1(k), bnd_x2 => domain%bbnd_x2(k),  &
                     bnd_y1 => domain%bbnd_y1(k), bnd_y2 => domain%bbnd_y2(k),  &
@@ -50,7 +49,6 @@ contains
           
           end associate
         enddo
-        _OMP_BLOCKS_PARALLEL_END_
 
         call sync(domain, grid_data%lu)
 
@@ -63,7 +61,6 @@ contains
           write(*,*) 'LUH (includes boundary) and LUU (does not include boundary)'
         endif 
         
-        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
           associate(bnd_x1 => domain%bbnd_x1(k), bnd_x2 => domain%bbnd_x2(k),  &
                     bnd_y1 => domain%bbnd_y1(k), bnd_y2 => domain%bbnd_y2(k),  &
@@ -87,7 +84,6 @@ contains
 
           end associate
         enddo
-        _OMP_BLOCKS_PARALLEL_END_
 
         call sync(domain, grid_data%luh)
         call sync(domain, grid_data%luu)
@@ -97,7 +93,6 @@ contains
           write(*,*) 'LCU and LCV (do not include boundary) and LLU and LLV (include boundary)'
         endif
         
-        _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
           associate(bnd_x1 => domain%bbnd_x1(k), bnd_x2 => domain%bbnd_x2(k),  &
                     bnd_y1 => domain%bbnd_y1(k), bnd_y2 => domain%bbnd_y2(k),  &
@@ -133,7 +128,6 @@ contains
 
           end associate
         enddo
-        _OMP_BLOCKS_PARALLEL_END_
 
         call sync(domain, grid_data%lcu)
         call sync(domain, grid_data%llu)
