@@ -215,13 +215,11 @@ contains
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = 0.0
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -244,13 +242,11 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = copy_data%block(k)%field(m, n)
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -263,13 +259,11 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = copy_data%block(k)%field(m, n)
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -282,13 +276,11 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = val
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -304,13 +296,11 @@ contains
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = 0.0
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -379,13 +369,11 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = dble(copy_data%block(k)%field(m, n))
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -398,13 +386,11 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = copy_data%block(k)%field(m, n)
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -417,13 +403,11 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = val
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -442,13 +426,11 @@ contains
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n, :) = 0.0
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -475,13 +457,11 @@ contains
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
-            _OMP_KERNEL_PARALLEL_BEGIN_
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n, :) = 0.0d0
                 enddo
             enddo
-            _OMP_KERNEL_PARALLEL_END_
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine

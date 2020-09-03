@@ -69,29 +69,14 @@ contains
         sync_parameters_inner%is_inner_sync = .true.
         sync_parameters_boundary%is_inner_sync = .false.
 
-#ifdef _MPP_HYBRID_BLOCK_MODE_
+#ifdef _MPP_NO_PARALLEL_MODE_
 
-        !$omp parallel default(shared)
-    
-        !$omp do private(k) schedule(static, 1)
-        do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
+        do k = 1, domain%bcount
             call sub_kernel(k, domain, grid_data, ocean_data, param)
         enddo
-        !$omp end do
 
-        !$omp master
         call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
-        !$omp end master
-
-        !$omp do private(k) schedule(static, 1)
-        do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
-            call sub_kernel(k, domain, grid_data, ocean_data, param)
-        enddo
-        !$omp end do
-
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
-
-        !$omp end parallel
 
 #endif
 
@@ -115,27 +100,33 @@ contains
 
 #endif
 
-#ifdef _MPP_LOOP_KERNEL_MODE_
+#ifdef _MPP_HYBRID_BLOCK_MODE_
 
-        do k = 1, domain%bcount
+        !$omp parallel default(shared)
+    
+        !$omp do private(k) schedule(static, 1)
+        do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
             call sub_kernel(k, domain, grid_data, ocean_data, param)
         enddo
+        !$omp end do
 
+        !$omp master
         call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
-        !$omp parallel default(shared)
+        !$omp end master
+
+        !$omp do private(k) schedule(guided)
+        do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
+            call sub_kernel(k, domain, grid_data, ocean_data, param)
+        enddo
+        !$omp end do
+
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
+
         !$omp end parallel
 
 #endif
 
-#ifdef _MPP_NO_PARALLEL_MODE_
-
-        do k = 1, domain%bcount
-            call sub_kernel(k, domain, grid_data, ocean_data, param)
-        enddo
-
-        call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
-        call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
+#ifdef _MPP_HYBRID_BLOCK_INNER_MODE_
 
 #endif
 

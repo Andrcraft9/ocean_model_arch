@@ -28,7 +28,6 @@ subroutine gaussian_elimination_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x
   integer :: m, n, ierr
   real(wp8) :: dx, dy
 
-  _OMP_KERNEL_PARALLEL_BEGIN_
   do n = ny_start, ny_end
     do m = nx_start, nx_end
         if (lu(m,n)>0.5) then
@@ -38,7 +37,6 @@ subroutine gaussian_elimination_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x
         endif
     enddo
   enddo
-  _OMP_KERNEL_PARALLEL_END_
 
 end subroutine
 
@@ -96,7 +94,6 @@ subroutine sw_update_ssh_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
   
   integer :: m, n
 
-  _OMP_KERNEL_PARALLEL_BEGIN_
   do n=ny_start,ny_end
     do m=nx_start,nx_end
 
@@ -108,7 +105,6 @@ subroutine sw_update_ssh_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
 
     enddo
   enddo
-  _OMP_KERNEL_PARALLEL_END_
 
 end subroutine
 
@@ -167,7 +163,6 @@ subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
   integer :: m, n
   real(wp8) :: bp, bp0, slx, sly, grx, gry
 
-  _OMP_KERNEL_PARALLEL_BEGIN_
   do n=ny_start,ny_end
     do m=nx_start,nx_end
         !zonal flux
@@ -199,7 +194,6 @@ subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
         endif
     enddo
   enddo
-  _OMP_KERNEL_PARALLEL_END_
 
 end subroutine
 
@@ -232,7 +226,6 @@ subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
 
   integer :: m, n
 
-  _OMP_KERNEL_PARALLEL_BEGIN_
   do n=ny_start-1,ny_end+1
     do m=nx_start-1,nx_end+1
 
@@ -251,7 +244,6 @@ subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
 
     enddo
   enddo
-  _OMP_KERNEL_PARALLEL_END_
 
 end subroutine
 
@@ -277,7 +269,6 @@ subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
 
  integer :: m, n, k
 
- _OMP_KERNEL_PARALLEL_BEGIN_
  do n=ny_start, ny_end
    do m=nx_start, nx_end
     if(luu(m,n)>0.5) then
@@ -289,7 +280,6 @@ subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
     endif
    enddo
  enddo
- _OMP_KERNEL_PARALLEL_END_
 
 end subroutine uv_trans_vort_kernel
 
@@ -328,7 +318,6 @@ subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
 
  integer :: m, n, k
 
- _OMP_KERNEL_PARALLEL_BEGIN_
   do n=ny_start,ny_end
     do m=nx_start,nx_end
 
@@ -383,7 +372,6 @@ subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
 
     end do
   end do
-  _OMP_KERNEL_PARALLEL_END_
 
 endsubroutine uv_trans_kernel
 
@@ -426,7 +414,6 @@ subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
  real(wp8) :: muh_p, muh_m
  integer :: m, n, k
 
-  _OMP_KERNEL_PARALLEL_BEGIN_
   do n=ny_start,ny_end
     do m=nx_start,nx_end
 
@@ -464,7 +451,6 @@ subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
 
     end do
   end do
-  _OMP_KERNEL_PARALLEL_END_
 
 endsubroutine uv_diff2_kernel
 
