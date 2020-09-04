@@ -35,6 +35,7 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, 
      
      integer :: m, n, k
     
+     !$omp parallel do private(m, n, k)
      do n=ny_start, ny_end
        do m=nx_start, nx_end
     
@@ -54,6 +55,7 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, 
     
        enddo
      enddo
+     !$omp end parallel do
     
     endsubroutine
 

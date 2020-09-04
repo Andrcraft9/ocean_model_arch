@@ -219,11 +219,13 @@ contains
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = 0.0
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -246,11 +248,13 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = copy_data%block(k)%field(m, n)
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -263,11 +267,13 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = copy_data%block(k)%field(m, n)
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -280,11 +286,13 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = val
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -316,11 +324,13 @@ contains
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = 0.0
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -389,11 +399,13 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = dble(copy_data%block(k)%field(m, n))
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -406,11 +418,13 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = copy_data%block(k)%field(m, n)
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -423,11 +437,13 @@ contains
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = val
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -462,11 +478,13 @@ contains
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n, :) = 0.0
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
@@ -493,11 +511,13 @@ contains
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
             allocate(this%block(k)%field(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
+            !$omp parallel do private(m, n)
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n, :) = 0.0d0
                 enddo
             enddo
+            !$omp end parallel do
         enddo
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
