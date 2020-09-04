@@ -64,10 +64,11 @@ contains
         real(wp8), intent(in) :: param
     
         integer :: k
-        type(sync_parameters_type) :: sync_parameters_inner, sync_parameters_boundary
+        type(sync_parameters_type) :: sync_parameters_inner, sync_parameters_boundary, sync_parameters_intermediate
 
-        sync_parameters_inner%is_inner_sync = .true.
-        sync_parameters_boundary%is_inner_sync = .false.
+        sync_parameters_inner%sync_mode = 0
+        sync_parameters_boundary%sync_mode = 1
+        sync_parameters_intermediate%sync_mode = 2
 
 #ifdef _MPP_NO_PARALLEL_MODE_
 
@@ -77,6 +78,7 @@ contains
 
         call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
+        call sub_sync(sync_parameters_intermediate, domain, grid_data, ocean_data)
 
 #endif
 
@@ -95,6 +97,8 @@ contains
         !$omp end master
 
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
+        
+        call sub_sync(sync_parameters_intermediate, domain, grid_data, ocean_data)
 
         !$omp end parallel
 
@@ -121,6 +125,8 @@ contains
         !$omp end do
 
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
+
+        call sub_sync(sync_parameters_intermediate, domain, grid_data, ocean_data)
 
         !$omp end parallel
 

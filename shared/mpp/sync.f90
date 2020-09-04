@@ -4,7 +4,7 @@ module mpp_sync_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     !use mpi
     use debug_module
-    use mpp_module, only: mpp_rank, mpp_count, mpp_cart_comm, mpp_size, mpp_coord, mpp_time_sync, start_timer, end_timer
+    use mpp_module
     use errors_module, only: abort_model, check_error
     use data_types_module, only: block1D_real4_type, block1D_real8_type, block2D_real4_type, block2D_real8_type,  &
                                  data1D_real4_type, data1D_real8_type, data2D_real4_type, data2D_real8_type,      &
@@ -21,7 +21,7 @@ module mpp_sync_module
     private
 
     type, public :: sync_parameters_type
-        logical :: is_inner_sync
+        integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate
     end type sync_parameters_type
 
     interface sync
@@ -42,6 +42,11 @@ module mpp_sync_module
     interface sync_boundary
         module procedure syncborder_data2D_boundary_real8
         module procedure syncborder_data2D_boundary_real4
+    end interface
+
+    interface sync_intermediate
+        module procedure syncborder_data2D_intermediate_real8
+        module procedure syncborder_data2D_intermediate_real4
     end interface
 
     public :: mpp_sync_init
@@ -173,6 +178,7 @@ contains
 
             call syncborder_data2D_inner_real8(domain, data2d)
             call syncborder_data2D_boundary_real8(domain, data2d)
+            call syncborder_data2D_intermediate_real8(domain, data2d)
         end subroutine
 
         subroutine syncborder_data2D_real4(domain, data2d)
@@ -182,6 +188,7 @@ contains
 
             call syncborder_data2D_inner_real4(domain, data2d)
             call syncborder_data2D_boundary_real4(domain, data2d)
+            call syncborder_data2D_intermediate_real4(domain, data2d)
         end subroutine
 
 !------------------------------------------------------------------------------
@@ -192,11 +199,16 @@ contains
             type(data2D_real8_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
-            if (sync_parameters%is_inner_sync) then
-                call syncborder_data2D_inner_real8(domain, data2d)
-            else
-                call syncborder_data2D_boundary_real8(domain, data2d)
-            endif
+            select case(sync_parameters%sync_mode)
+                case(0)
+                    call syncborder_data2D_inner_real8(domain, data2d)
+                case(1)
+                    call syncborder_data2D_boundary_real8(domain, data2d)
+                case(2)
+                    call syncborder_data2D_intermediate_real8(domain, data2d)
+                case default
+                    call abort_model("Unknown sync mode, error")
+            end select
         end subroutine
 
         subroutine syncborder_data2D_hybrid_real4(sync_parameters, domain, data2d)
@@ -205,11 +217,16 @@ contains
             type(data2D_real4_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
-            if (sync_parameters%is_inner_sync) then
-                call syncborder_data2D_inner_real4(domain, data2d)
-            else
-                call syncborder_data2D_boundary_real4(domain, data2d)
-            endif
+            select case(sync_parameters%sync_mode)
+                case(0)
+                    call syncborder_data2D_inner_real4(domain, data2d)
+                case(1)
+                    call syncborder_data2D_boundary_real4(domain, data2d)
+                case(2)
+                    call syncborder_data2D_intermediate_real4(domain, data2d)
+                case default
+                    call abort_model("Unknown sync mode, error")
+            end select
         end subroutine
 
 !------------------------------------------------------------------------------
@@ -276,6 +293,41 @@ contains
         type(domain_type), intent(in) :: domain
 
 #include    "syncborder_block2D_gen_boundary.fi"
+
+#undef _MPI_TYPE_
+#undef _SYNC_SEND_BUF_
+#undef _SYNC_RECV_BUF_
+        end subroutine
+
+!------------------------------------------------------------------------------
+! Generic subroutines, intermediate:
+
+        subroutine syncborder_data2D_intermediate_real8(domain, data2d)
+#define _MPI_TYPE_ mpi_real8
+#define _SYNC_SEND_BUF_ sync_send_buf_r8
+#define _SYNC_RECV_BUF_ sync_recv_buf_r8
+        
+        implicit none
+        type(data2D_real8_type), intent(inout) :: data2d
+        type(domain_type), intent(in) :: domain
+
+#include    "syncborder_block2D_gen_intermediate.fi"
+
+#undef _MPI_TYPE_
+#undef _SYNC_SEND_BUF_
+#undef _SYNC_RECV_BUF_
+        end subroutine
+
+        subroutine syncborder_data2D_intermediate_real4(domain, data2d)
+#define _MPI_TYPE_ mpi_real4
+#define _SYNC_SEND_BUF_ sync_send_buf_r4
+#define _SYNC_RECV_BUF_ sync_recv_buf_r4
+
+        implicit none
+        type(data2D_real4_type), intent(inout) :: data2d
+        type(domain_type), intent(in) :: domain
+
+#include    "syncborder_block2D_gen_intermediate.fi"
 
 #undef _MPI_TYPE_
 #undef _SYNC_SEND_BUF_

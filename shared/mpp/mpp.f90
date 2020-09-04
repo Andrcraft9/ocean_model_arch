@@ -29,7 +29,7 @@ module mpp_module
     public :: mpp_finalize
 
     ! Timers for master thread
-    real(wp8) :: mpp_time_model_step, mpp_time_sync, mpp_time_sync_inner, mpp_time_sync_boundary
+    real(wp8) :: mpp_time_model_step, mpp_time_sync, mpp_time_sync_inner, mpp_time_sync_boundary, mpp_time_sync_intermediate
     real(wp8), allocatable :: mpp_time_kernels(:)
     integer, allocatable :: mpp_calls_kernels(:)
 
@@ -117,6 +117,7 @@ contains
         mpp_time_sync = 0.0d0
         mpp_time_sync_inner = 0.0d0
         mpp_time_sync_boundary = 0.0d0
+        mpp_time_sync_intermediate = 0.0d0
 
 #ifdef _MPP_KERNEL_TIMER_ON_
         allocate(mpp_time_kernels(max_kernels))
@@ -157,6 +158,9 @@ contains
         call mpi_allreduce(mpp_time_sync_boundary, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_time_sync_boundary, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
         if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time sync boundary (max and min): ", maxtime_sync, mintime_sync
+        call mpi_allreduce(mpp_time_sync_intermediate, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_time_sync_intermediate, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time sync intermediate (max and min): ", maxtime_sync, mintime_sync
 
 
 #ifdef _MPP_KERNEL_TIMER_ON_
