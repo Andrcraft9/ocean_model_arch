@@ -368,34 +368,66 @@ contains
                                              glob_bbnd_y1(:, :), glob_bbnd_y2(:, :)
         real(wp8), allocatable, intent(inout) :: bglob_weight(:, :)
         integer, intent(out) :: land_blocks
-        integer :: m, n, i, j, locn, ierr
+        
+        integer :: m, n, i, j, ierr, xsize, ysize, total_x_size, total_y_size
+        integer, allocatable :: x_sizes(:), y_sizes(:), x_start(:), y_start(:)
         
         associate(bnx => this%bnx,  &
                   bny => this%bny)
+
+            ! Compute optimal sizes x of blocks
+            allocate(x_sizes(bnx), x_start(bnx))
+            total_x_size = 0
+            do m = 1, bnx
+                if (m .eq. bnx) then
+                    xsize = (nx - 4) - total_x_size
+                else
+                    xsize = floor(real((nx - 4) - total_x_size)/real(bnx - m + 1))
+                endif
+
+                if (xsize <= 0) then
+                    call abort_model('Error in decomposition to uniform blocks: x size less or equal zero')
+                endif
+
+                x_sizes(m) = xsize
+                x_start(m) = total_x_size
+                total_x_size = total_x_size + xsize
+            enddo
+            if (SUM(x_sizes) /= (nx - 4)) call abort_model('Error in decomposition to uniform blocks: x total size not equal to nx - 4')
+
+            ! Compute optimal sizes y of blocks
+            allocate(y_sizes(bny), y_start(bny))
+            total_y_size = 0
+            do n = 1, bny
+                if (n .eq. bny) then
+                    ysize = (ny - 4) - total_y_size
+                else
+                    ysize = floor(real((ny - 4) - total_y_size)/real(bny - n + 1))
+                endif
+
+                if (ysize <= 0) then
+                    call abort_model('Error in decomposition to uniform blocks: y size less or equal zero')
+                endif
+
+                y_sizes(n) = ysize
+                y_start(n) = total_y_size
+                total_y_size = total_y_size + ysize
+            enddo
+            if (SUM(y_sizes) /= (ny - 4)) call abort_model('Error in decomposition to uniform blocks: y total size not equal to ny - 4')
             
+            ! Fill data with uniform decomposition and accumulate land blocks
             land_blocks = 0
             bglob_weight = 0.0
-
             do m = 1, bnx
                 do n = 1, bny
-                    locn = floor(real(nx - 4)/real(bnx))
-                    glob_bnx_start(m, n) = locn*(m-1) + 1 + 2
-                    if (m .eq. bnx) then
-                        locn = (nx - 2) - glob_bnx_start(m, n) + 1
-                    endif
-                    glob_bnx_end(m, n) = glob_bnx_start(m, n) + locn - 1
-                    glob_bnx_start(m, n) = glob_bnx_start(m, n)
+                    glob_bnx_start(m, n) = 3 + x_start(m)
+                    glob_bnx_end(m, n) = glob_bnx_start(m, n) + x_sizes(m) - 1
                     ! border area
                     glob_bbnd_x1(m, n) = glob_bnx_start(m, n) - 2
                     glob_bbnd_x2(m, n) = glob_bnx_end(m, n) + 2
 
-                    locn = floor(real(ny - 4)/real(bny))
-                    glob_bny_start(m, n) = locn*(n-1) + 1 + 2
-                    if (n .eq. bny) then
-                        locn = (ny - 2) - glob_bny_start(m, n) + 1
-                    endif
-                    glob_bny_end(m, n) = glob_bny_start(m, n) + locn - 1
-                    glob_bny_start(m, n) = glob_bny_start(m, n)
+                    glob_bny_start(m, n) = 3 + y_start(n)
+                    glob_bny_end(m, n) = glob_bny_start(m, n) + y_sizes(n) - 1
                     ! border area
                     glob_bbnd_y1(m, n) = glob_bny_start(m, n) - 2
                     glob_bbnd_y2(m, n) = glob_bny_end(m, n) + 2
@@ -417,6 +449,8 @@ contains
             ierr = 0
             if (bnx*bny - land_blocks < mpp_count) ierr = 1
             call check_error(ierr,  'procs > computational-blocks... Error!')
+
+            deallocate(x_sizes, y_sizes, x_start, y_start)
         end associate
     end subroutine
 
