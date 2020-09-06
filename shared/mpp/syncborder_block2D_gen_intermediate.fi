@@ -82,6 +82,27 @@ do k = 1, domain%bcount
 enddo
 !$omp end do
 
+call mpi_waitall(sync_count_send_recv, sync_requests, sync_statuses, ierr)
+
+do rk = 1, domain%amount_of_ranks_near
+    i = 1
+    do while (i <= sync_buf_pos(rk) - 1)
+        ! Unpack direction and block number
+        dir = _SYNC_RECV_BUF_(i, rk)
+        i = i + 1
+        k = _SYNC_RECV_BUF_(i, rk)
+        i = i + 1
+
+        ! Get halo area
+        call get_halo_points_of_block(domain, k, dir, hnxs, hnxe, hnys, hnye)
+
+        ! Unpack buffer
+        buf_size = (hnxe - hnxs + 1)*(hnye - hnys + 1)
+        data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = reshape(_SYNC_RECV_BUF_(i : i + buf_size - 1, rk), shape=(/hnxe - hnxs + 1, hnye - hnys + 1/))
+        i = i + buf_size
+    end do
+enddo
+
 ! TIMER
 !$omp master
 call end_timer(t_local)
