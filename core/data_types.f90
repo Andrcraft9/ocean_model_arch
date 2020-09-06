@@ -67,6 +67,8 @@ module data_types_module
         procedure, public :: copy_from => copy_data2D_real4_from_real4
         procedure, public :: copy_from_real8 => copy_data2D_real4_from_real8
         procedure, public :: fill => fill_data2D_real4
+        ! debug
+        procedure, public :: fill_debug => fill_debug_data2D_real4
     end type data2D_real4_type
 
     type, public :: data2D_real8_type
@@ -77,6 +79,8 @@ module data_types_module
         procedure, public :: copy_from => copy_data2D_real8_from_real8
         procedure, public :: copy_from_real4 => copy_data2D_real8_from_real4
         procedure, public :: fill => fill_data2D_real8
+        ! debug
+        procedure, public :: fill_debug => fill_debug_data2D_real8
         procedure, public :: init_nans => init_nans_data2D_real8
     end type data2D_real8_type
 
@@ -285,6 +289,22 @@ contains
         _OMP_BLOCKS_PARALLEL_END_
     end subroutine
 
+    subroutine fill_debug_data2D_real4(this, domain)
+        class(data2D_real4_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        integer :: k, m, n
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
+        do k = 1, domain%bcount
+            do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
+                do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
+                    this%block(k)%field(m, n) = k
+                enddo
+            enddo
+        enddo
+        _OMP_BLOCKS_PARALLEL_END_
+    end subroutine
+
     ! real8 base type
     subroutine init_data2D_real8(this, domain)
         class(data2D_real8_type), intent(inout) :: this
@@ -406,6 +426,22 @@ contains
             do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
                 do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
                     this%block(k)%field(m, n) = val
+                enddo
+            enddo
+        enddo
+        _OMP_BLOCKS_PARALLEL_END_
+    end subroutine
+
+    subroutine fill_debug_data2D_real8(this, domain)
+        class(data2D_real8_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        integer :: k, m, n
+
+        _OMP_BLOCKS_PARALLEL_BEGIN_
+        do k = 1, domain%bcount
+            do n = domain%bbnd_y1(k), domain%bbnd_y2(k)
+                do m = domain%bbnd_x1(k), domain%bbnd_x2(k)
+                    this%block(k)%field(m, n) = k
                 enddo
             enddo
         enddo
