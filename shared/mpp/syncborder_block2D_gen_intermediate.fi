@@ -27,7 +27,7 @@ real(wp8) :: t_local
 call start_timer(t_local)
 !$omp end master
 
-!$omp do private(k, kk, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye, hnxs, hnxe, hnys, hnye) schedule(guided)
+!$omp do private(k, kk, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye, hnxs, hnxe, hnys, hnye) schedule(static, 1)
 do k = 1, domain%bcount
     
     sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp
@@ -82,6 +82,11 @@ do k = 1, domain%bcount
 enddo
 !$omp end do
 
+!$omp master
+
+! Unpack MPI buffers
+!
+
 call mpi_waitall(sync_count_send_recv, sync_requests, sync_statuses, ierr)
 
 do rk = 1, domain%amount_of_ranks_near
@@ -102,6 +107,8 @@ do rk = 1, domain%amount_of_ranks_near
         i = i + buf_size
     end do
 enddo
+
+!$omp end master
 
 ! TIMER
 !$omp master

@@ -97,10 +97,6 @@ contains
             print *, "MPP INFO: MPP_HYBRID_BLOCK_MODE: yes"
 #endif
 
-#ifdef _MPP_HYBRID_BLOCK_INNER_MODE_
-            print *, "MPP INFO: MPP_HYBRID_BLOCK_INNER_MODE: yes"
-#endif
-
             print *, "------------------------------------------------------------"
         endif
         call mpi_barrier(mpp_cart_comm, ierr)

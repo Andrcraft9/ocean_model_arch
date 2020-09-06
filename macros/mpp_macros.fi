@@ -12,8 +12,6 @@
 !       OMP loops for blocks
 !   #define _MPP_HYBRID_BLOCK_MODE_
 !       OMP loops for inner blocks and boundary blocks, overlap computation with communication, hide boundary blocks sync
-!   #define _MPP_HYBRID_BLOCK_INNER_MODE_
-!       OMP loops for inner blocks and boundary blocks, overlap computation with communication, hide inner blocks sync
 !-----------------------------------------------------------------------------!
 
 #define _MPP_SORTED_BLOCKS_
@@ -41,15 +39,6 @@
 !-----------------------------------------------------------------------------!
 #ifdef _MPP_HYBRID_BLOCK_MODE_
 ! MPP_HYBRID_BLOCK_MODE
-
-#define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
-#define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do
-
-#endif
-
-!-----------------------------------------------------------------------------!
-#ifdef _MPP_HYBRID_BLOCK_INNER_MODE_
-! MPP_HYBRID_BLOCK_INNER_MODE
 
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ !$omp parallel do schedule(static, 1) default(shared) private(k)
 #define _OMP_BLOCKS_PARALLEL_END_ !$omp end parallel do

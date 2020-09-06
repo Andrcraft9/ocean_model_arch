@@ -92,9 +92,7 @@ contains
         enddo
         !$omp end do
 
-        !$omp master
         call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
-        !$omp end master
 
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
         
@@ -114,11 +112,9 @@ contains
         enddo
         !$omp end do
 
-        !$omp master
         call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
-        !$omp end master
 
-        !$omp do private(k) schedule(guided)
+        !$omp do private(k) schedule(static, 1)
         do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
             call sub_kernel(k, domain, grid_data, ocean_data, param)
         enddo
@@ -129,10 +125,6 @@ contains
         call sub_sync(sync_parameters_intermediate, domain, grid_data, ocean_data)
 
         !$omp end parallel
-
-#endif
-
-#ifdef _MPP_HYBRID_BLOCK_INNER_MODE_
 
 #endif
 

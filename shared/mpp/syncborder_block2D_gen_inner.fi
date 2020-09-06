@@ -30,7 +30,7 @@ call start_timer(t_local)
 ! Update halo for inner blocks (only copy, without MPI send/recv), only from inner
 !
 
-!$omp do private(k, kk, sync_dir, k_dir, nxs, nxe, nys, nye, hnxs, hnxe, hnys, hnye) schedule(guided)
+!$omp do private(k, kk, sync_dir, k_dir, nxs, nxe, nys, nye, hnxs, hnxe, hnys, hnye) schedule(static, 1)
 do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
     
     sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp
