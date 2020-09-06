@@ -45,7 +45,8 @@ contains
 
         mpp_period = (/.true., .true./)
         mpp_size = (/0,0/)
-        req = MPI_THREAD_MULTIPLE
+        !req = MPI_THREAD_MULTIPLE
+        req = MPI_THREAD_FUNNELED
         ierr = 0
 
         !call mpi_init(ierr)
