@@ -24,14 +24,11 @@ integer :: rk                     ! Local index of buffers for rank, see sync_ma
 real(wp8) :: t_local
 
 !$omp master
-call start_timer(t_local)
-!$omp end master
-
-
-!$omp master
 
 ! Prepare MPI buffers for each near rank
 !
+
+call start_timer(t_local)
 
 sync_buf_pos = 1
 do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
@@ -69,8 +66,13 @@ do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
     enddo
 enddo
 
+call end_timer(t_local)
+mpp_time_sync_pack_mpi = mpp_time_sync_pack_mpi + t_local
+
 ! Send/Recv MPI buffers for each near rank
 !
+
+call start_timer(t_local)
 
 sync_count_send_recv = 0
 do rk = 1, domain%amount_of_ranks_near
@@ -85,10 +87,17 @@ do rk = 1, domain%amount_of_ranks_near
     sync_requests(sync_count_send_recv) = reqst
 enddo
 
+call end_timer(t_local)
+mpp_time_sync_isend_irecv = mpp_time_sync_isend_irecv + t_local
+
 !$omp end master
 
 ! Update halo for boundray blocks, only from boundary
 !
+
+!$omp master
+call start_timer(t_local)
+!$omp end master
 
 !$omp do private(k, kk, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye, hnxs, hnxe, hnys, hnye) schedule(static, 1)
 do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1

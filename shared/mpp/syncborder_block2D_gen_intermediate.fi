@@ -82,12 +82,28 @@ do k = 1, domain%bcount
 enddo
 !$omp end do
 
+! TIMER
 !$omp master
+call end_timer(t_local)
+mpp_time_sync_intermediate = mpp_time_sync_intermediate + t_local
+!$omp end master
+
+!$omp master
+
+! Wait all
+!
+
+call start_timer(t_local)
+
+call mpi_waitall(sync_count_send_recv, sync_requests, sync_statuses, ierr)
+
+call end_timer(t_local)
+mpp_time_sync_wait = mpp_time_sync_wait + t_local
 
 ! Unpack MPI buffers
 !
 
-call mpi_waitall(sync_count_send_recv, sync_requests, sync_statuses, ierr)
+call start_timer(t_local)
 
 do rk = 1, domain%amount_of_ranks_near
     i = 1
@@ -108,10 +124,8 @@ do rk = 1, domain%amount_of_ranks_near
     end do
 enddo
 
+call end_timer(t_local)
+mpp_time_sync_unpack_mpi = mpp_time_sync_unpack_mpi + t_local
+
 !$omp end master
 
-! TIMER
-!$omp master
-call end_timer(t_local)
-mpp_time_sync_intermediate = mpp_time_sync_intermediate + t_local
-!$omp end master
