@@ -31,6 +31,7 @@ module mpp_module
     ! Timers for master thread
     real(wp8) :: mpp_time_model_step, mpp_time_sync, mpp_time_sync_inner, mpp_time_sync_boundary, mpp_time_sync_intermediate
     real(wp8) :: mpp_time_sync_pack_mpi, mpp_time_sync_unpack_mpi, mpp_time_sync_isend_irecv, mpp_time_sync_wait
+    integer :: mpp_max_count_sync_send_recv, mpp_min_count_sync_send_recv
     real(wp8), allocatable :: mpp_time_kernels(:)
     integer, allocatable :: mpp_calls_kernels(:)
 
@@ -122,6 +123,9 @@ contains
         mpp_time_sync_isend_irecv = 0.0d0
         mpp_time_sync_wait = 0.0d0
 
+        mpp_max_count_sync_send_recv = 0
+        mpp_min_count_sync_send_recv = 0
+
 #ifdef _MPP_KERNEL_TIMER_ON_
         allocate(mpp_time_kernels(max_kernels))
         allocate(mpp_calls_kernels(max_kernels))
@@ -141,6 +145,7 @@ contains
         real(wp8) :: maxtime_sync, mintime_sync
         real(wp8) :: maxtime_kernel, mintime_kernel
         real(wp8) :: maxtime_kernel_threads(0 : _OMP_MAX_THREADS_ - 1), mintime_kernel_threads(0 : _OMP_MAX_THREADS_ - 1)
+        integer :: maxcount, mincount
         character(80) :: kernel_name
 
         if (mpp_is_master()) then
@@ -181,6 +186,14 @@ contains
         call mpi_allreduce(mpp_time_sync_wait, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_time_sync_wait, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
         if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time sync wait (max and min): ", maxtime_sync, mintime_sync
+
+        call mpi_allreduce(mpp_max_count_sync_send_recv, maxcount, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_max_count_sync_send_recv, mincount, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Max Count of sync send, recv (max and min): ", maxcount, mincount
+
+        call mpi_allreduce(mpp_min_count_sync_send_recv, maxcount, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_min_count_sync_send_recv, mincount, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Min Count of sync send, recv (max and min): ", maxcount, mincount
 
 
 #ifdef _MPP_KERNEL_TIMER_ON_
