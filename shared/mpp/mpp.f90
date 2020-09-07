@@ -189,11 +189,11 @@ contains
 
         call mpi_allreduce(mpp_max_count_sync_send_recv, maxcount, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_max_count_sync_send_recv, mincount, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
-        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Max Count of sync send, recv (max and min): ", maxcount, mincount
+        if (mpp_rank == 0) write(*,'(a50, I12, I12)') "Max Count of sync send, recv (max and min): ", maxcount, mincount
 
         call mpi_allreduce(mpp_min_count_sync_send_recv, maxcount, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_min_count_sync_send_recv, mincount, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
-        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Min Count of sync send, recv (max and min): ", maxcount, mincount
+        if (mpp_rank == 0) write(*,'(a50, I12, I12)') "Min Count of sync send, recv (max and min): ", maxcount, mincount
 
 
 #ifdef _MPP_KERNEL_TIMER_ON_
