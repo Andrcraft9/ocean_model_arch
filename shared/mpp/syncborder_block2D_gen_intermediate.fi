@@ -115,9 +115,9 @@ do rk = 1, domain%amount_of_ranks_near
     i = 1
     do while (i <= sync_buf_pos(rk) - 1)
         ! Unpack direction and block number
-        dir = _SYNC_RECV_BUF_(i, rk)
+        dir = _SYNC_RECV_BUF_(i, rk, sync_tag)
         i = i + 1
-        k = _SYNC_RECV_BUF_(i, rk)
+        k = _SYNC_RECV_BUF_(i, rk, sync_tag)
         i = i + 1
 
         ! Get halo area
@@ -125,7 +125,7 @@ do rk = 1, domain%amount_of_ranks_near
 
         ! Unpack buffer
         buf_size = (hnxe - hnxs + 1)*(hnye - hnys + 1)
-        data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = reshape(_SYNC_RECV_BUF_(i : i + buf_size - 1, rk), shape=(/hnxe - hnxs + 1, hnye - hnys + 1/))
+        data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = reshape(_SYNC_RECV_BUF_(i : i + buf_size - 1, rk, sync_tag), shape=(/hnxe - hnxs + 1, hnye - hnys + 1/))
         i = i + buf_size
     end do
 enddo

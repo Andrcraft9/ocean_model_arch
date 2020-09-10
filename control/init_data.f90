@@ -10,7 +10,7 @@ module init_data_module
     use io_module, only: read_data
     use gridcon_module, only: gridcon
     use basinpar_module, only: basinpar
-    use mpp_sync_module, only: sync
+    use mpp_sync_module, only: sync, sync_test
     use errors_module, only: abort_model
 
     implicit none
@@ -35,6 +35,11 @@ contains
         procedure(envoke_empty_kernel), pointer :: sub_kernel
         procedure(envoke_empty_sync), pointer :: sub_sync
         integer :: k, ierr
+
+        !debug
+        !call sync_test(domain, ocean_data%ssh)
+        !call sync_test(domain, grid_data%lu)
+        !return
 
         if (ssh_init_file_name .eq. 'none') then
             if (mpp_is_master()) print *, "WARNING: SSH init file is none. Set gaussian elimination as init ssh level."

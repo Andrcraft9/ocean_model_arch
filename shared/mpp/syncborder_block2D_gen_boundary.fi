@@ -49,9 +49,9 @@ do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
             if (rank_dir(kk) /= mpp_rank) then
                 rk = sync_map_rank(rank_dir(kk))
                 ! Set local block number (local number is relative to rk) and direction of transfer (direction is relative to rk)
-                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk) = get_inverse_dir(sync_dir(kk))
+                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = get_inverse_dir(sync_dir(kk))
                 sync_buf_pos(rk) = sync_buf_pos(rk) + 1
-                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk) = k_dir(kk)
+                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = k_dir(kk)
                 sync_buf_pos(rk) = sync_buf_pos(rk) + 1
 
                 ! Set boundary points
@@ -59,7 +59,7 @@ do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
 
                 ! Pack buffer
                 buf_size = (nxe - nxs + 1)*(nye - nys + 1)
-                _SYNC_SEND_BUF_(sync_buf_pos(rk) : sync_buf_pos(rk) + buf_size - 1, rk) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
+                _SYNC_SEND_BUF_(sync_buf_pos(rk) : sync_buf_pos(rk) + buf_size - 1, rk, sync_tag) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
                 sync_buf_pos(rk) = sync_buf_pos(rk) + buf_size
             endif
         endif
@@ -76,13 +76,13 @@ call start_timer(t_local)
 
 sync_count_send_recv = 0
 do rk = 1, domain%amount_of_ranks_near
-    call mpi_irecv(_SYNC_RECV_BUF_(:, rk), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), MPI_ANY_TAG, mpp_cart_comm, reqst, ierr)
+    call mpi_irecv(_SYNC_RECV_BUF_(:, rk, sync_tag), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), MPI_ANY_TAG, mpp_cart_comm, reqst, ierr)
     sync_count_send_recv = sync_count_send_recv + 1
     sync_requests(sync_count_send_recv) = reqst
 enddo
 
 do rk = 1, domain%amount_of_ranks_near
-    call mpi_isend(_SYNC_SEND_BUF_(:, rk), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), mpp_rank, mpp_cart_comm, reqst, ierr)
+    call mpi_isend(_SYNC_SEND_BUF_(:, rk, sync_tag), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), mpp_rank, mpp_cart_comm, reqst, ierr)
     sync_count_send_recv = sync_count_send_recv + 1
     sync_requests(sync_count_send_recv) = reqst
 enddo

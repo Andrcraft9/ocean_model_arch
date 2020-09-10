@@ -83,6 +83,7 @@ program model
         call time_manager_print(local_num_step)
     endif
 
+    !debug
     !call abort_model("Stop")
 
     ! Solver

@@ -24,6 +24,11 @@ module mpp_sync_module
         integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate
     end type sync_parameters_type
 
+    interface sync_test
+        module procedure syncborder_test_data2D_real8
+        module procedure syncborder_test_data2D_real4
+    end interface
+
     interface sync
         module procedure syncborder_data2D_real8
         module procedure syncborder_data2D_real4
@@ -53,14 +58,16 @@ module mpp_sync_module
     public :: mpp_sync_finalize
     public :: sync, hybrid_sync
 
+    public :: sync_test
+
     ! MPI info
     integer :: sync_count_send_recv
     integer, allocatable :: sync_requests(:), sync_statuses(:, :)
     ! Buffers for each near rank
-    real(wp8), allocatable :: sync_send_buf_r8(:, :)
-    real(wp4), allocatable :: sync_send_buf_r4(:, :)
-    real(wp8), allocatable :: sync_recv_buf_r8(:, :)
-    real(wp4), allocatable :: sync_recv_buf_r4(:, :)
+    real(wp8), allocatable :: sync_send_buf_r8(:, :, :)
+    real(wp4), allocatable :: sync_send_buf_r4(:, :, :)
+    real(wp8), allocatable :: sync_recv_buf_r8(:, :, :)
+    real(wp4), allocatable :: sync_recv_buf_r4(:, :, :)
     integer, allocatable :: sync_buf_pos(:)   ! Position of buffers, need for prepare buffers. Position of buffer for each near rank
 
     integer, allocatable :: sync_map_rank(:)  ! Map: Gloabl rank to local rank number. 
@@ -140,10 +147,10 @@ contains
             print *, "MPP SYNC INFO: rank, max buffer size = ", mpp_rank, max_buf_size
         endif
 
-        allocate(sync_send_buf_r4(max_buf_size, domain%amount_of_ranks_near))
-        allocate(sync_send_buf_r8(max_buf_size, domain%amount_of_ranks_near))
-        allocate(sync_recv_buf_r4(max_buf_size, domain%amount_of_ranks_near))
-        allocate(sync_recv_buf_r8(max_buf_size, domain%amount_of_ranks_near))
+        allocate(sync_send_buf_r4(max_buf_size, domain%amount_of_ranks_near, _MPP_MAX_SIMUL_SYNCS_))
+        allocate(sync_send_buf_r8(max_buf_size, domain%amount_of_ranks_near, _MPP_MAX_SIMUL_SYNCS_))
+        allocate(sync_recv_buf_r4(max_buf_size, domain%amount_of_ranks_near, _MPP_MAX_SIMUL_SYNCS_))
+        allocate(sync_recv_buf_r8(max_buf_size, domain%amount_of_ranks_near, _MPP_MAX_SIMUL_SYNCS_))
         allocate(sync_buf_pos(domain%amount_of_ranks_near))
         sync_send_buf_r4 = 0; sync_send_buf_r8 = 0
         sync_recv_buf_r4 = 0; sync_recv_buf_r8 = 0
@@ -169,6 +176,34 @@ contains
     end subroutine
 
 !------------------------------------------------------------------------------
+! Test
+
+    subroutine syncborder_test_data2D_real8(domain, data2d)
+#define _MPI_TYPE_ mpi_real8
+        
+        implicit none
+        type(data2D_real8_type), intent(inout) :: data2d
+        type(domain_type), intent(in) :: domain
+
+#include    "syncborder_block2D_gen_test.fi"
+
+#undef _MPI_TYPE_
+
+    end subroutine
+
+    subroutine syncborder_test_data2D_real4(domain, data2d)
+#define _MPI_TYPE_ mpi_real4
+        
+        implicit none
+        type(data2D_real4_type), intent(inout) :: data2d
+        type(domain_type), intent(in) :: domain
+
+#include    "syncborder_block2D_gen_test.fi"
+
+#undef _MPI_TYPE_
+
+    end subroutine
+!------------------------------------------------------------------------------
 ! Generic subroutines, all sync:
 
         subroutine syncborder_data2D_real8(domain, data2d)
@@ -176,9 +211,11 @@ contains
             type(data2D_real8_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
-            call syncborder_data2D_inner_real8(domain, data2d)
-            call syncborder_data2D_boundary_real8(domain, data2d)
-            call syncborder_data2D_intermediate_real8(domain, data2d)
+            integer, parameter :: sync_tag = 1
+
+            call syncborder_data2D_inner_real8(sync_tag, domain, data2d)
+            call syncborder_data2D_boundary_real8(sync_tag, domain, data2d)
+            call syncborder_data2D_intermediate_real8(sync_tag, domain, data2d)
         end subroutine
 
         subroutine syncborder_data2D_real4(domain, data2d)
@@ -186,44 +223,48 @@ contains
             type(data2D_real4_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
-            call syncborder_data2D_inner_real4(domain, data2d)
-            call syncborder_data2D_boundary_real4(domain, data2d)
-            call syncborder_data2D_intermediate_real4(domain, data2d)
+            integer, parameter :: sync_tag = 1
+
+            call syncborder_data2D_inner_real4(sync_tag, domain, data2d)
+            call syncborder_data2D_boundary_real4(sync_tag, domain, data2d)
+            call syncborder_data2D_intermediate_real4(sync_tag, domain, data2d)
         end subroutine
 
 !------------------------------------------------------------------------------
 ! Generic subroutines, hybrid:
-        subroutine syncborder_data2D_hybrid_real8(sync_parameters, domain, data2d)
+        subroutine syncborder_data2D_hybrid_real8(sync_parameters, sync_tag, domain, data2d)
             implicit none
             type(sync_parameters_type), intent(in) :: sync_parameters
+            integer, intent(in) :: sync_tag
             type(data2D_real8_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
             select case(sync_parameters%sync_mode)
                 case(0)
-                    call syncborder_data2D_inner_real8(domain, data2d)
+                    call syncborder_data2D_inner_real8(sync_tag, domain, data2d)
                 case(1)
-                    call syncborder_data2D_boundary_real8(domain, data2d)
+                    call syncborder_data2D_boundary_real8(sync_tag, domain, data2d)
                 case(2)
-                    call syncborder_data2D_intermediate_real8(domain, data2d)
+                    call syncborder_data2D_intermediate_real8(sync_tag, domain, data2d)
                 case default
                     call abort_model("Unknown sync mode, error")
             end select
         end subroutine
 
-        subroutine syncborder_data2D_hybrid_real4(sync_parameters, domain, data2d)
+        subroutine syncborder_data2D_hybrid_real4(sync_parameters, sync_tag, domain, data2d)
             implicit none
             type(sync_parameters_type), intent(in) :: sync_parameters
+            integer, intent(in) :: sync_tag
             type(data2D_real4_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
             select case(sync_parameters%sync_mode)
                 case(0)
-                    call syncborder_data2D_inner_real4(domain, data2d)
+                    call syncborder_data2D_inner_real4(sync_tag, domain, data2d)
                 case(1)
-                    call syncborder_data2D_boundary_real4(domain, data2d)
+                    call syncborder_data2D_boundary_real4(sync_tag, domain, data2d)
                 case(2)
-                    call syncborder_data2D_intermediate_real4(domain, data2d)
+                    call syncborder_data2D_intermediate_real4(sync_tag, domain, data2d)
                 case default
                     call abort_model("Unknown sync mode, error")
             end select
@@ -232,12 +273,13 @@ contains
 !------------------------------------------------------------------------------
 ! Generic subroutines, inner:
 
-        subroutine syncborder_data2D_inner_real8(domain, data2d)
+        subroutine syncborder_data2D_inner_real8(sync_tag, domain, data2d)
 #define _MPI_TYPE_ mpi_real8
 #define _SYNC_SEND_BUF_ sync_send_buf_r8
 #define _SYNC_RECV_BUF_ sync_recv_buf_r8
         
         implicit none
+        integer, intent(in) :: sync_tag
         type(data2D_real8_type), intent(inout) :: data2d
         type(domain_type), intent(in) :: domain
 
@@ -248,12 +290,13 @@ contains
 #undef _SYNC_RECV_BUF_
         end subroutine
 
-        subroutine syncborder_data2D_inner_real4(domain, data2d)
+        subroutine syncborder_data2D_inner_real4(sync_tag, domain, data2d)
 #define _MPI_TYPE_ mpi_real4
 #define _SYNC_SEND_BUF_ sync_send_buf_r4
 #define _SYNC_RECV_BUF_ sync_recv_buf_r4
 
         implicit none
+        integer, intent(in) :: sync_tag
         type(data2D_real4_type), intent(inout) :: data2d
         type(domain_type), intent(in) :: domain
 
@@ -267,12 +310,13 @@ contains
 !------------------------------------------------------------------------------
 ! Generic subroutines, boundary:
 
-        subroutine syncborder_data2D_boundary_real8(domain, data2d)
+        subroutine syncborder_data2D_boundary_real8(sync_tag, domain, data2d)
 #define _MPI_TYPE_ mpi_real8
 #define _SYNC_SEND_BUF_ sync_send_buf_r8
 #define _SYNC_RECV_BUF_ sync_recv_buf_r8
         
         implicit none
+        integer, intent(in) :: sync_tag
         type(data2D_real8_type), intent(inout) :: data2d
         type(domain_type), intent(in) :: domain
 
@@ -283,12 +327,13 @@ contains
 #undef _SYNC_RECV_BUF_
         end subroutine
 
-        subroutine syncborder_data2D_boundary_real4(domain, data2d)
+        subroutine syncborder_data2D_boundary_real4(sync_tag, domain, data2d)
 #define _MPI_TYPE_ mpi_real4
 #define _SYNC_SEND_BUF_ sync_send_buf_r4
 #define _SYNC_RECV_BUF_ sync_recv_buf_r4
 
         implicit none
+        integer, intent(in) :: sync_tag
         type(data2D_real4_type), intent(inout) :: data2d
         type(domain_type), intent(in) :: domain
 
@@ -302,12 +347,13 @@ contains
 !------------------------------------------------------------------------------
 ! Generic subroutines, intermediate:
 
-        subroutine syncborder_data2D_intermediate_real8(domain, data2d)
+        subroutine syncborder_data2D_intermediate_real8(sync_tag, domain, data2d)
 #define _MPI_TYPE_ mpi_real8
 #define _SYNC_SEND_BUF_ sync_send_buf_r8
 #define _SYNC_RECV_BUF_ sync_recv_buf_r8
         
         implicit none
+        integer, intent(in) :: sync_tag
         type(data2D_real8_type), intent(inout) :: data2d
         type(domain_type), intent(in) :: domain
 
@@ -318,12 +364,13 @@ contains
 #undef _SYNC_RECV_BUF_
         end subroutine
 
-        subroutine syncborder_data2D_intermediate_real4(domain, data2d)
+        subroutine syncborder_data2D_intermediate_real4(sync_tag, domain, data2d)
 #define _MPI_TYPE_ mpi_real4
 #define _SYNC_SEND_BUF_ sync_send_buf_r4
 #define _SYNC_RECV_BUF_ sync_recv_buf_r4
 
         implicit none
+        integer, intent(in) :: sync_tag
         type(data2D_real4_type), intent(inout) :: data2d
         type(domain_type), intent(in) :: domain
 
