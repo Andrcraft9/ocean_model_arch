@@ -93,7 +93,7 @@ contains
     subroutine allocate_mpp_sync_buffers(domain)
         type(domain_type), intent(in) :: domain
 
-        integer :: k, kk
+        integer :: k, kk, rank, ierr
         integer :: sync_dir(8)
         integer :: k_dir(8)
         integer :: rank_dir(8)
@@ -144,7 +144,12 @@ contains
         deallocate(buf_sizes)
 
         if (debug_level >= 5) then
-            print *, "MPP SYNC INFO: rank, max buffer size = ", mpp_rank, max_buf_size
+            do rank = 0, mpp_count - 1
+                if (mpp_rank == rank) then
+                    print *, "SYNC INFO: rank, max buffer size = ", mpp_rank, max_buf_size
+                endif
+                call mpi_barrier(mpp_cart_comm, ierr)
+            enddo
         endif
 
         allocate(sync_send_buf_r4(max_buf_size, domain%amount_of_ranks_near, _MPP_MAX_SIMUL_SYNCS_))

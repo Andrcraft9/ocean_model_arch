@@ -347,8 +347,9 @@ contains
         enddo
 
         if (domain%start_inner + domain%bcount_inner - domain%start_inner + domain%start_boundary + domain%bcount_boundary - domain%start_boundary /= domain%bcount) then
-            print *, domain%start_inner, domain%bcount_inner, domain%start_boundary, domain%bcount_boundary
-            print *, domain%bcount
+            print *, 'DD INFO: start inner, count inner, start bound, count bound',  &
+                     domain%start_inner, domain%bcount_inner, domain%start_boundary, domain%bcount_boundary
+            print *, 'DD INFO: bcount', domain%bcount
             call abort_model("Incorrect amount of inner and boundary blocks")
         endif
         
@@ -444,7 +445,7 @@ contains
                     endif
                 enddo
             enddo
-            if (mpp_is_master()) print *, "Total land blocks:", land_blocks
+            if (mpp_is_master()) print *, "DD INFO: Total land blocks:", land_blocks
 
             ierr = 0
             if (bnx*bny - land_blocks < mpp_count) ierr = 1
@@ -470,23 +471,23 @@ contains
         hilbert_index = int(log(real(this%bnx))/ log(2.0))
         ierr = 0
         if (this%bnx /= this%bny) then
-            if (mpp_is_master()) print *, 'bnx not equal to bny! Can`t build Hilbert curve for this geometry!'
+            if (mpp_is_master()) print *, 'DD INFO: bnx not equal to bny! Can`t build Hilbert curve for this geometry!'
             ierr = 1
         endif
         if (2**hilbert_index /= this%bnx) then
-            if (mpp_is_master()) print *, '2**M not eqal to bnx! Can`t build Hilbert curve for this geometry!'
+            if (mpp_is_master()) print *, 'DD INFO: 2**M not eqal to bnx! Can`t build Hilbert curve for this geometry!'
             ierr = 1
         endif
         call check_error(ierr, 'Can`t build Hilbert curve for this geometry!')
 
-        if (mpp_is_master()) print *, 'Hilbert curve index:', hilbert_index
+        if (mpp_is_master()) print *, 'DD INFO: Hilbert curve index:', hilbert_index
 
         tot_weight = sum(bglob_weight)
         mean_weight = tot_weight / mpp_count
         sea_blocks = this%bnx * this%bny - land_blocks
 
         if (debug_level >= 1) then
-            if (mpp_is_master()) print *, 'Total blocks weigth:', tot_weight, "Mean blocks weigth:", mean_weight
+            if (mpp_is_master()) print *, 'DD INFO: Total blocks weigth:', tot_weight, "Mean blocks weigth:", mean_weight
         endif
         call mpi_barrier(mpp_cart_comm, ierr)
 
@@ -517,7 +518,7 @@ contains
                     if (i > mpp_count - 1) then
                         i = mpp_count - 1
                         !if (rank == 0 .and. parallel_dbg < 2) print *, 'Warning! Last procs ...'
-                        if (mpp_is_master()) print *, k, 'Warning! Last procs ...'
+                        if (mpp_is_master()) print *, 'DD INFO: for block', k, 'Warning! Last procs ...'
                     endif
                 endif
             !else
@@ -537,7 +538,7 @@ contains
     subroutine create_uniform_decomposition(this, bglob_weight)
         class(domain_type), intent(inout) :: this
         real(wp8), allocatable, intent(in) :: bglob_weight(:, :)
-        integer :: m, n, ierr
+        integer :: m, n, rank, ierr
         integer :: loc_bnx, loc_bny
         integer :: xblock_start, yblock_start
         integer, allocatable :: buf_int(:, :)
@@ -555,8 +556,12 @@ contains
             xblock_start = 1 + mpp_coord(1)*loc_bnx
             yblock_start = 1 + mpp_coord(2)*loc_bny
             if (debug_level >= 1) then 
-                print *, mpp_rank, 'xb_start, yb_start', xblock_start, yblock_start
-                call mpi_barrier(mpp_cart_comm, ierr)
+                do rank = 0, mpp_count - 1
+                    if (mpp_rank == rank) then
+                        print *, 'DD INFO: Uniform decomposition. rank, xb_start, yb_start', mpp_rank, xblock_start, yblock_start
+                    endif
+                    call mpi_barrier(mpp_cart_comm, ierr)
+                enddo
             endif
             bgproc = -1
             do m = xblock_start, xblock_start + loc_bnx - 1
@@ -574,7 +579,7 @@ contains
             bgproc = bgproc - 1
     
             if (debug_level >= 7) then
-                call parallel_int_output(bgproc, 1, bnx, 1, bny, 'bglob_proc from uniform decomposition')
+                call parallel_int_output(bgproc, 1, bnx, 1, bny, 'DD INFO: bglob_proc from uniform decomposition')
             endif
     
             deallocate(buf_int)
@@ -599,7 +604,7 @@ contains
         integer, allocatable :: glob_bbnd_x1(:, :), glob_bbnd_x2(:, :),  &
                                 glob_bbnd_y1(:, :), glob_bbnd_y2(:, :)
 
-        integer :: m, n, k, k_inner, k_boundary, kk, kkk, res
+        integer :: m, n, k, k_inner, k_boundary, kk, kkk, res, rank
         integer :: land_blocks
         integer :: bshared
         real(wp8) :: bcomm_metric, max_bcomm_metric
@@ -622,6 +627,8 @@ contains
         integer, dimension(2) :: max_mn
         integer :: max_m, max_n
 
+        integer :: max_x, max_y, min_x, min_y
+
         real(wp8) :: max_w
 
         this%nz = nz
@@ -641,8 +648,8 @@ contains
             bnx = bppnx * mpp_size(1)
             bny = bppny * mpp_size(2)
 
-            if (mpp_is_master()) print *, 'bnx, bny and Total blocks:', bnx, bny, bnx * bny
-            if (mpp_is_master()) print *, 'pnx, pny and procs:', mpp_size(1), mpp_size(2), mpp_count
+            if (mpp_is_master()) print *, 'DD INFO: bnx, bny and Total blocks:', bnx, bny, bnx * bny
+            if (mpp_is_master()) print *, 'DD INFO: pnx, pny and procs:', mpp_size(1), mpp_size(2), mpp_count
             call mpi_barrier(mpp_cart_comm, ierr)
 
             ! Check bnx and bny
@@ -667,20 +674,20 @@ contains
             allocate(this%bglob_proc(bnx, bny))
             
             if (mod_create == 0) then
-                if (mpp_is_master()) print *, "Uniform blocks decomposition!..."
+                if (mpp_is_master()) print *, "DD INFO: Uniform blocks decomposition!..."
                 call this%create_uniform_decomposition(bglob_weight)
             elseif (mod_create == 1) then
-                if (mpp_is_master()) print *, "Hilber Curve blocks decomposition!..."
+                if (mpp_is_master()) print *, "DD INFO: Hilber Curve blocks decomposition!..."
                 call this%create_hilbert_curve_decomposition(bglob_weight, land_blocks)
             else
-                if (mpp_is_master()) print *, "Unknown mode!"
+                if (mpp_is_master()) print *, "DD INFO: Unknown mode!"
                 call abort_model("Unknown decomposition mode!")
             endif
 
             ! Print decomposition in file for visualization
             if (debug_level >= 3) then
                 if (mpp_rank == 0) then
-                    print *, "Print decomposition in file decomposition.txt ..."
+                    print *, "DD INFO: Print decomposition in file decomposition.txt"
                     open(90, file = "decomposition.txt")
                     write(90, *)  bnx, bny, mpp_size(1), mpp_size(2)
                     do m = 1, bnx
@@ -689,7 +696,7 @@ contains
                         enddo
                     enddo
                     close(90)
-                    print *, "... Ok"
+                    print *, "DD INFO: Print decomposition in file decomposition.txt is OK"
                 endif
                 call mpi_barrier(mpp_cart_comm, ierr)
             endif
@@ -714,8 +721,8 @@ contains
             call check_error(ierr, 'Proc with only land-blocks... Error!')
 
             ! Print information about blocks
-            if (mpp_is_master()) print *, 'Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count)),  &
-                                        'max blocks per proc:', bcount_max, 'min blocks per proc:', bcount_min
+            if (mpp_is_master()) print *, 'DD INFO: Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count)),  &
+                                          'max blocks per proc:', bcount_max, 'min blocks per proc:', bcount_min
             call mpi_barrier(mpp_cart_comm, ierr)
             
             ! Allocate blocks arrays per proc
@@ -784,8 +791,9 @@ contains
                         this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
                         
                         if (debug_level >= 9) then
-                            if (mpp_is_master()) print *, k, max_m, max_n, bglob_weight(max_m, max_n),  &
-                                                            is_inner_block(max_m, max_n, this%bglob_proc, bnx, bny)
+                            if (mpp_is_master()) print *, 'DD INFO: SORTED_BLOCKS: k, max_m, max_n, bw, is_inner?',  &
+                                                           k, max_m, max_n, bglob_weight(max_m, max_n),  &
+                                                           is_inner_block(max_m, max_n, this%bglob_proc, bnx, bny)
                         endif
 
                         this%bglob_local_num(max_m, max_n) = k
@@ -831,7 +839,7 @@ contains
             buf_int = this%bglob_local_num
             call mpi_allreduce(buf_int, this%bglob_local_num, bnx*bny, mpi_integer, mpi_max, mpp_cart_comm, ierr)
             if (debug_level >= 7) then
-                call parallel_int_output(this%bglob_local_num, 1, bnx, 1, bny, 'bglob_local_num from uniform decomposition')
+                call parallel_int_output(this%bglob_local_num, 1, bnx, 1, bny, 'DD INFO: bglob_local_num from uniform decomposition')
             endif
             deallocate(buf_int)
 
@@ -843,7 +851,7 @@ contains
             endif
 
             if (k /= bcount .or. k_inner + k_boundary /= bcount) then
-                print *, mpp_rank, " k=", k, " bcount=", bcount, " k_inner=", k_inner, " k_boundary=", k_boundary
+                print *, 'DD INFO:', mpp_rank, " k=", k, " bcount=", bcount, " k_inner=", k_inner, " k_boundary=", k_boundary
                 call abort_model("Error in block numeration")
             endif
 
@@ -867,7 +875,7 @@ contains
                 enddo
                 call mpi_allreduce(min_points_per_block, reduced_min_points_per_block, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
                 call mpi_allreduce(max_points_per_block, reduced_max_points_per_block, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
-                if (mpp_is_master()) print *, 'Max points per block:', reduced_max_points_per_block, 'Min points per blocks: ', reduced_min_points_per_block
+                if (mpp_is_master()) print *, 'DD INFO: Max points per block:', reduced_max_points_per_block, 'Min points per blocks: ', reduced_min_points_per_block
                 call mpi_barrier(mpp_cart_comm, ierr)
             endif
 
@@ -933,18 +941,52 @@ contains
                         endif
                     endif
                 enddo
+
+                if (debug_level >= 7 .and. mpp_is_master ()) then
+                    print *, 'DD INFO: master: block k, is_inner', k, this%blocks_info(k)%is_inner
+                    print *, 'DD INFO: master: block k, k', k, this%blocks_info(k)%k
+                    print *, 'DD INFO: master: block k, bm', k, this%blocks_info(k)%bm
+                    print *, 'DD INFO: master: block k, bn', k, this%blocks_info(k)%bn
+                    print *, 'DD INFO: master: block k, rank_nxp', k, this%blocks_info(k)%rank_nxp
+                    print *, 'DD INFO: master: block k, rank_nxm', k, this%blocks_info(k)%rank_nxm
+                    print *, 'DD INFO: master: block k, rank_nyp', k, this%blocks_info(k)%rank_nyp
+                    print *, 'DD INFO: master: block k, rank_nym', k, this%blocks_info(k)%rank_nym
+                    print *, 'DD INFO: master: block k, rank_nxp_nyp', k, this%blocks_info(k)%rank_nxp_nyp
+                    print *, 'DD INFO: master: block k, rank_nxp_nym', k, this%blocks_info(k)%rank_nxp_nym
+                    print *, 'DD INFO: master: block k, rank_nxm_nyp', k, this%blocks_info(k)%rank_nxm_nyp
+                    print *, 'DD INFO: master: block k, rank_nxm_nym', k, this%blocks_info(k)%rank_nxm_nym
+                    print *, 'DD INFO: master: block k, k_nxp', k, this%blocks_info(k)%k_nxp
+                    print *, 'DD INFO: master: block k, k_nxm', k, this%blocks_info(k)%k_nxm
+                    print *, 'DD INFO: master: block k, k_nyp', k, this%blocks_info(k)%k_nyp
+                    print *, 'DD INFO: master: block k, k_nym', k, this%blocks_info(k)%k_nym
+                    print *, 'DD INFO: master: block k, k_nxp_nyp', k, this%blocks_info(k)%k_nxp_nyp
+                    print *, 'DD INFO: master: block k, k_nxp_nym', k, this%blocks_info(k)%k_nxp_nym
+                    print *, 'DD INFO: master: block k, k_nxm_nyp', k, this%blocks_info(k)%k_nxm_nyp
+                    print *, 'DD INFO: master: block k, k_nxm_nym', k, this%blocks_info(k)%k_nxm_nym
+                endif
+            enddo
+
+            ! Found max/min x and y points of compute area for each rank
+            max_x = 0; max_y = 0
+            min_x = nx; min_y = ny
+            do k = 1, bcount
+                if (this%bnx_start(k) < min_x) min_x = this%bnx_start(k)
+                if (this%bnx_end(k) > max_x) max_x = this%bnx_end(k)
+                if (this%bny_start(k) < min_y) min_y = this%bny_start(k)
+                if (this%bny_end(k) > max_y) max_y = this%bny_end(k)
             enddo
 
             ! Info per rank
             if (debug_level >= 5) then
-                if (mpp_is_master()) print *, "------- Info per rank begin: --------"
-                call mpi_barrier(mpp_cart_comm, ierr)
-
-                print *, mpp_rank, 'Blocks', bcount, 'Max points per block:', max_points_per_block, 'Min points per blocks: ', min_points_per_block,  &
-                         "Inner blocks: ", k_inner, " Boundary blocks: ", k_boundary,  &
-                         " Amount of ranks near: ", this%amount_of_ranks_near
-                
-                if (mpp_is_master()) print *, "------- Info per rank end: --------"
+                do rank = 0, mpp_count - 1
+                    if (mpp_rank == rank) then
+                        print *, 'DD INFO: rank', mpp_rank, 'Blocks:', bcount, 'Min/Max points per block:', min_points_per_block, max_points_per_block,  &
+                                 "Inner/Boundary blocks:", k_inner, k_boundary,  &
+                                 "Amount of ranks near:", this%amount_of_ranks_near
+                        print *, 'DD INFO: rank', mpp_rank, 'Min/Max nx', min_x, max_x, 'Min/Max ny', min_y, max_y
+                    endif
+                    call mpi_barrier(mpp_cart_comm, ierr)
+                enddo
                 call mpi_barrier(mpp_cart_comm, ierr)
             endif
 
@@ -952,9 +994,9 @@ contains
             if (debug_level >= 9) then
                 if (mpp_is_master()) then
                     do k = 1, bcount
-                        print *, k, ' is inner? ', this%blocks_info(k)%is_inner
-                        write(*, '(i5, i5,i5,i5,i5)') k, this%bnx_start(k), this%bnx_end(k), this%bny_start(k), this%bny_end(k)
-                        write(*, '(i5, i5,i5,i5,i5)') k, this%bbnd_x1(k), this%bbnd_x2(k), this%bbnd_y1(k), this%bbnd_y2(k)
+                        print *, 'DD INFO: master: block:', k, ' is inner? ', this%blocks_info(k)%is_inner
+                        write(*, '(A16, A42, i5, i5,i5,i5,i5)') 'DD INFO: master', 'k, nxs, nxe, nys, nye', k, this%bnx_start(k), this%bnx_end(k), this%bny_start(k), this%bny_end(k)
+                        write(*, '(A16, A42, i5, i5,i5,i5,i5)') 'DD INFO: master', 'k, bndxs, bndxe, bndys, bndye', k, this%bbnd_x1(k), this%bbnd_x2(k), this%bbnd_y1(k), this%bbnd_y2(k)
                     enddo
                 endif
             endif
