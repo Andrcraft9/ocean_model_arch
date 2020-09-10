@@ -129,8 +129,6 @@ contains
     end subroutine
 
     subroutine load_config_basinpar_as250m_test()
-        !nx = 28
-        !ny = 28
         nx = 1525
         ny = 1115
         nz = 1
@@ -163,7 +161,6 @@ contains
         q_pole = -90.0d0
 
         mask_file_name = 'data/AS/maskAzovCor_empty.txt'
-        !mask_file_name = 'maskS.txt'
         bottom_topography_file_name = 'none'
     end subroutine
 
