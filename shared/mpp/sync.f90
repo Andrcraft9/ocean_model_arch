@@ -21,7 +21,7 @@ module mpp_sync_module
     private
 
     type, public :: sync_parameters_type
-        integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate
+        integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate; 3 -- all
     end type sync_parameters_type
 
     interface sync_test
@@ -103,7 +103,8 @@ contains
         integer :: max_buf_size = 1
 
         ! MPI info
-        allocate(sync_requests(2 * domain%amount_of_ranks_near), sync_statuses(MPI_STATUS_SIZE, 2 * domain%amount_of_ranks_near))
+        allocate(sync_requests(_MPP_MAX_SIMUL_SYNCS_ * 2 * domain%amount_of_ranks_near),  &
+                 sync_statuses(MPI_STATUS_SIZE, _MPP_MAX_SIMUL_SYNCS_ * 2 * domain%amount_of_ranks_near))
 
         ! Create map: global rank numeration to local rank numeration used as indicies in MPI buffers
         allocate(sync_map_rank(0 : mpp_count - 1))
@@ -218,8 +219,8 @@ contains
 
             integer, parameter :: sync_tag = 1
 
-            call syncborder_data2D_inner_real8(sync_tag, domain, data2d)
             call syncborder_data2D_boundary_real8(sync_tag, domain, data2d)
+            call syncborder_data2D_inner_real8(sync_tag, domain, data2d)
             call syncborder_data2D_intermediate_real8(sync_tag, domain, data2d)
         end subroutine
 
@@ -230,8 +231,8 @@ contains
 
             integer, parameter :: sync_tag = 1
 
-            call syncborder_data2D_inner_real4(sync_tag, domain, data2d)
             call syncborder_data2D_boundary_real4(sync_tag, domain, data2d)
+            call syncborder_data2D_inner_real4(sync_tag, domain, data2d)
             call syncborder_data2D_intermediate_real4(sync_tag, domain, data2d)
         end subroutine
 
@@ -244,15 +245,20 @@ contains
             type(data2D_real8_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
+            if (sync_tag < 1) call abort_model("Sync Error: Invalid sync tag")
+
             select case(sync_parameters%sync_mode)
                 case(0)
                     call syncborder_data2D_inner_real8(sync_tag, domain, data2d)
                 case(1)
+                    if (sync_tag == 1 .and. sync_count_send_recv > 0) call abort_model("Sync Error: Always call sync with tag=1 first")
                     call syncborder_data2D_boundary_real8(sync_tag, domain, data2d)
                 case(2)
                     call syncborder_data2D_intermediate_real8(sync_tag, domain, data2d)
+                case(3)
+                    call syncborder_data2D_real8(domain, data2d)
                 case default
-                    call abort_model("Unknown sync mode, error")
+                    call abort_model("Sync Error: Unknown sync mode")
             end select
         end subroutine
 
@@ -263,15 +269,20 @@ contains
             type(data2D_real4_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
+            if (sync_tag < 1) call abort_model("Sync Error: Invalid sync tag")
+
             select case(sync_parameters%sync_mode)
                 case(0)
                     call syncborder_data2D_inner_real4(sync_tag, domain, data2d)
                 case(1)
+                    if (sync_tag == 1 .and. sync_count_send_recv > 0) call abort_model("Sync Error: Always call sync with tag=1 first")
                     call syncborder_data2D_boundary_real4(sync_tag, domain, data2d)
                 case(2)
                     call syncborder_data2D_intermediate_real4(sync_tag, domain, data2d)
+                case(3)
+                    call syncborder_data2D_real4(domain, data2d)
                 case default
-                    call abort_model("Unknown sync mode, error")
+                    call abort_model("Sync Error: Unknown sync mode")
             end select
         end subroutine
 

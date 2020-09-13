@@ -30,6 +30,10 @@ real(wp8) :: t_local
 
 call start_timer(t_local)
 
+if (sync_tag == 1) then
+    sync_count_send_recv = 0
+endif
+
 sync_buf_pos = 1
 do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
 
@@ -74,15 +78,14 @@ mpp_time_sync_pack_mpi = mpp_time_sync_pack_mpi + t_local
 
 call start_timer(t_local)
 
-sync_count_send_recv = 0
 do rk = 1, domain%amount_of_ranks_near
-    call mpi_irecv(_SYNC_RECV_BUF_(:, rk, sync_tag), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), MPI_ANY_TAG, mpp_cart_comm, reqst, ierr)
+    call mpi_irecv(_SYNC_RECV_BUF_(:, rk, sync_tag), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
     sync_count_send_recv = sync_count_send_recv + 1
     sync_requests(sync_count_send_recv) = reqst
 enddo
 
 do rk = 1, domain%amount_of_ranks_near
-    call mpi_isend(_SYNC_SEND_BUF_(:, rk, sync_tag), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), mpp_rank, mpp_cart_comm, reqst, ierr)
+    call mpi_isend(_SYNC_SEND_BUF_(:, rk, sync_tag), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
     sync_count_send_recv = sync_count_send_recv + 1
     sync_requests(sync_count_send_recv) = reqst
 enddo
