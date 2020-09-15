@@ -100,7 +100,8 @@ contains
         integer :: nxs, nxe, nys, nye         ! Boundary points
         integer :: rk                         ! Local index of buffers for rank, see sync_map_rank
         integer, allocatable :: buf_sizes(:)  ! Sizes of MPI buffers, different for each near rank
-        integer :: max_buf_size = 1
+        integer :: max_buf_size = 1, min_buf_size = huge(0)
+        integer :: max_val, min_val
 
         ! MPI info
         allocate(sync_requests(_MPP_MAX_SIMUL_SYNCS_ * 2 * domain%amount_of_ranks_near),  &
@@ -142,13 +143,21 @@ contains
 
         do k = 1, domain%amount_of_ranks_near
             if (max_buf_size < buf_sizes(k)) max_buf_size = buf_sizes(k)
+            if (min_buf_size > buf_sizes(k)) min_buf_size = buf_sizes(k)
         enddo
         deallocate(buf_sizes)
+
+        call mpi_allreduce(max_buf_size, max_val, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(min_buf_size, min_val, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
+
+        if (mpp_is_master()) then
+            print *, "SYNC INFO: Allreduced Min/Max buffer size = ", min_val, max_val
+        endif
 
         if (debug_level >= 5) then
             do rank = 0, mpp_count - 1
                 if (mpp_rank == rank) then
-                    print *, "SYNC INFO: rank, max buffer size = ", mpp_rank, max_buf_size
+                    print *, "SYNC INFO: rank, Min/Max buffer size = ", mpp_rank, min_buf_size, max_buf_size
                 endif
                 call mpi_barrier(mpp_cart_comm, ierr)
             enddo
