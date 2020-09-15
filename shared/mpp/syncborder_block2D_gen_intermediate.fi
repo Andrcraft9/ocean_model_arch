@@ -20,6 +20,7 @@ integer :: nxs, nxe, nys, nye     ! Boundary points
 integer :: hnxs, hnxe, hnys, hnye ! Halo points
 integer :: buf_size
 integer :: rk                     ! Local index of buffers for rank, see sync_map_rank
+integer :: val
 
 real(wp8) :: t_local
 
@@ -118,10 +119,14 @@ do rk = 1, domain%amount_of_ranks_near
     i = 1
     do while (i <= sync_buf_pos(rk) - 1)
         ! Unpack direction and block number
-        dir = _SYNC_RECV_BUF_(i, rk, sync_tag)
+        val = int(_SYNC_RECV_BUF_(i, rk, sync_tag))
+        k = val / 10
+        dir = MOD(val, 10)
         i = i + 1
-        k = _SYNC_RECV_BUF_(i, rk, sync_tag)
-        i = i + 1
+        !dir = _SYNC_RECV_BUF_(i, rk, sync_tag)
+        !i = i + 1
+        !k = _SYNC_RECV_BUF_(i, rk, sync_tag)
+        !i = i + 1
 
         ! Get halo area
         call get_halo_points_of_block(domain, k, dir, hnxs, hnxe, hnys, hnye)

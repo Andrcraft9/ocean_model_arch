@@ -53,10 +53,12 @@ do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
             if (rank_dir(kk) /= mpp_rank) then
                 rk = sync_map_rank(rank_dir(kk))
                 ! Set local block number (local number is relative to rk) and direction of transfer (direction is relative to rk)
-                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = get_inverse_dir(sync_dir(kk))
+                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = 10*k_dir(kk) + get_inverse_dir(sync_dir(kk))
                 sync_buf_pos(rk) = sync_buf_pos(rk) + 1
-                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = k_dir(kk)
-                sync_buf_pos(rk) = sync_buf_pos(rk) + 1
+                !_SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = get_inverse_dir(sync_dir(kk))
+                !sync_buf_pos(rk) = sync_buf_pos(rk) + 1
+                !_SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = k_dir(kk)
+                !sync_buf_pos(rk) = sync_buf_pos(rk) + 1
 
                 ! Set boundary points
                 call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)

@@ -133,7 +133,8 @@ contains
                     if (rank_dir(kk) /= mpp_rank) then
                         rk = sync_map_rank(rank_dir(kk))
                         call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)
-                        buf_sizes(rk) = buf_sizes(rk) + 2 + (nxe - nxs + 1)*(nye - nys + 1)
+                        buf_sizes(rk) = buf_sizes(rk) + 1 + (nxe - nxs + 1)*(nye - nys + 1)
+                        !buf_sizes(rk) = buf_sizes(rk) + 2 + (nxe - nxs + 1)*(nye - nys + 1)
                     endif
                 endif
             enddo
