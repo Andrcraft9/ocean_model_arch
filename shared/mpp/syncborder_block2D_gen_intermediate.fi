@@ -28,7 +28,7 @@ real(wp8) :: t_local
 call start_timer(t_local)
 !$omp end master
 
-!$omp do private(k, kk, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye, hnxs, hnxe, hnys, hnye) schedule(static, 1)
+!$omp do private(k, kk, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye, hnxs, hnxe, hnys, hnye) schedule(dynamic, 1)
 do k = 1, domain%bcount
     
     sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp

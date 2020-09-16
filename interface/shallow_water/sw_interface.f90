@@ -85,7 +85,7 @@ contains
 
         !$omp parallel default(shared)
 
-        !$omp do private(k) schedule(static, 1)
+        !$omp do private(k) schedule(dynamic, 1)
         do k = 1, domain%bcount
             call sub_kernel(k, domain, grid_data, ocean_data, param)
         enddo
@@ -103,7 +103,7 @@ contains
 
         !$omp parallel default(shared)
     
-        !$omp do private(k) schedule(static, 1)
+        !$omp do private(k) schedule(dynamic, 1)
         do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
             call sub_kernel(k, domain, grid_data, ocean_data, param)
         enddo
