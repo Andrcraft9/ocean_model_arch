@@ -261,7 +261,9 @@ contains
                 case(0)
                     call syncborder_data2D_inner_real8(sync_tag, domain, data2d)
                 case(1)
+                    !$omp master
                     if (sync_tag == 1 .and. sync_count_send_recv > 0) call abort_model("Sync Error: Always call sync with tag=1 first")
+                    !$omp end master
                     call syncborder_data2D_boundary_real8(sync_tag, domain, data2d)
                 case(2)
                     call syncborder_data2D_intermediate_real8(sync_tag, domain, data2d)
@@ -285,7 +287,9 @@ contains
                 case(0)
                     call syncborder_data2D_inner_real4(sync_tag, domain, data2d)
                 case(1)
+                    !$omp master
                     if (sync_tag == 1 .and. sync_count_send_recv > 0) call abort_model("Sync Error: Always call sync with tag=1 first")
+                    !$omp end master
                     call syncborder_data2D_boundary_real4(sync_tag, domain, data2d)
                 case(2)
                     call syncborder_data2D_intermediate_real4(sync_tag, domain, data2d)
