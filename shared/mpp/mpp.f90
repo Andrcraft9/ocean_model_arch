@@ -100,6 +100,7 @@ contains
             print *, "MPP INFO: MPP_HYBRID_BLOCK_MODE: yes"
 #endif
 
+            print *, "MPP INFO: one sync"
             print *, "------------------------------------------------------------"
         endif
         call mpi_barrier(mpp_cart_comm, ierr)
