@@ -101,6 +101,7 @@ contains
 #endif
 
             print *, "MPP INFO: Static sync along all blocks"
+            print *, "MPP INFO: Single OMP PARALLEL"
             print *, "------------------------------------------------------------"
         endif
         call mpi_barrier(mpp_cart_comm, ierr)
