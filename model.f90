@@ -92,8 +92,6 @@ program model
     do while(local_num_step < num_step_max)
         if (mpp_is_master_thread())  call start_timer(t_local)
 
-        !print *, omp_get_thread_num(),local_num_step
-
         ! Computing one step of ocean dynamics
         call expl_shallow_water(tau, domain_data, grid_data, ocean_data)
         
