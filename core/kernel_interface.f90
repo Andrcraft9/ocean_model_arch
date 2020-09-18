@@ -67,8 +67,6 @@ contains
 
 #ifdef _MPP_BLOCK_MODE_
 
-        !$omp parallel default(shared)
-
         !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
             call sub_kernel(k, domain, grid_data, ocean_data, param)
@@ -79,13 +77,9 @@ contains
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
         call sub_sync(sync_parameters_intermediate, domain, grid_data, ocean_data)
 
-        !$omp end parallel
-
 #endif
 
 #ifdef _MPP_HYBRID_BLOCK_MODE_
-
-        !$omp parallel default(shared)
     
         !$omp do private(k) schedule(static, 1)
         do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
@@ -104,8 +98,6 @@ contains
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
 
         call sub_sync(sync_parameters_intermediate, domain, grid_data, ocean_data)
-
-        !$omp end parallel
 
 #endif
 
