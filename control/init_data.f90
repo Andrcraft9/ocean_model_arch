@@ -23,7 +23,7 @@ module init_data_module
 contains
 
     subroutine init_ocean_data(domain, grid_data, ocean_data)
-        use config_sw_module, only: ssh_init_file_name
+        use config_sw_module, only: ssh_init_file_name, lvisc_2
         use kernel_interface_module
         use shallow_water_interface_module, only: envoke_gaussian_elimination, envoke_hh_init_kernel, envoke_hh_init_sync
         use config_basinpar_module, only: nx, ny
@@ -69,6 +69,9 @@ contains
         call ocean_data%vbrtr%fill(domain, 0.0d0)
         call ocean_data%vbrtrn%fill(domain, 0.0d0)
         call ocean_data%vbrtrp%fill(domain, 0.0d0)
+
+        ! init
+        call ocean_data%mu%fill(domain, lvisc_2)
 
         call mpp_sync_output()
 

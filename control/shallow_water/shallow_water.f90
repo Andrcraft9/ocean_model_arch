@@ -4,7 +4,7 @@ module shallow_water_module
     use decomposition_module, only: domain_type
     use ocean_module, only: ocean_type
     use grid_module, only: grid_type
-    use config_sw_module, only: full_free_surface, time_smooth, trans_terms, ksw_lat, lvisc_2
+    use config_sw_module, only: full_free_surface, time_smooth, trans_terms, ksw_lat
     use mpp_module
     use kernel_interface_module
     use shallow_water_interface_module
@@ -28,9 +28,6 @@ contains
 
         procedure(envoke_empty_kernel), pointer :: sub_kernel
         procedure(envoke_empty_sync), pointer :: sub_sync
-
-        ! init
-        call ocean_data%mu%fill(domain, lvisc_2)
 
         !computing ssh
         sub_kernel => envoke_sw_update_ssh_kernel
