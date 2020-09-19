@@ -11,9 +11,9 @@ integer :: tag, icount
 real(wp8) :: t_local
 
 ! TIMER
-_OMP_MASTER_BEGIN_
+!$omp master
 call start_timer(t_local)
-_OMP_MASTER_END_
+!$omp end master
 
 icount = 1
 
@@ -362,7 +362,7 @@ enddo
 _OMP_BLOCKS_SYNC_END_
 
 ! TIMER
-_OMP_MASTER_BEGIN_
+!$omp master
 call end_timer(t_local)
 mpp_time_sync = mpp_time_sync + t_local
-_OMP_MASTER_END_
+!$omp end master

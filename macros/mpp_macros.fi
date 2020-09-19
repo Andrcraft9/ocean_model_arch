@@ -23,12 +23,6 @@
 ! System Defines:
 !-----------------------------------------------------------------------------!
 
-#define _OMP_BARRIER_ !$omp barrier
-#define _OMP_MASTER_BEGIN_ !$omp master
-#define _OMP_MASTER_END_ !$omp end master
-#define _OMP_SINGLE_BEGIN_ !$omp single
-#define _OMP_SINGLE_END_ !$omp end single
-
 !-----------------------------------------------------------------------------!
 #ifdef _MPP_NO_PARALLEL_MODE_
 

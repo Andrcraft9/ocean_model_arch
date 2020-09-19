@@ -123,8 +123,6 @@ program model
                 call time_manager_print(local_num_step)
             endif
         endif
-        _OMP_BARRIER_
-
     enddo
 
     ! Clear data
