@@ -5,8 +5,8 @@
 FCGCC = -fopenmp -cpp -dM -ffree-line-length-0 -I./ -Imacros/
 FCINTEL = -assume byterecl -openmp -fpp -allow nofpp_comments -I./ -Imacros/
 # Debug: (from book Introduction to Programming with Fortran)
-# ?: -fPIC
-FCGCC_DEBUG = -g -O -fcheck=all -finit-real=nan -Warray-temporaries -fbacktrace -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
+# ?: -fPIC -Warray-temporaries
+FCGCC_DEBUG = -g -O -fcheck=all -finit-real=nan  -fbacktrace -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
 FCINTEL_DEBUG = -g -O -check all -traceback
 # Fast:
 # ?: --ffast-math -auto -stack_temp
@@ -37,6 +37,7 @@ FCPROF = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh $(FCGCC) $(FCGCC_FAST)
 # export TAU_OMPT_RESOLVE_ADDRESS_EAGERLY=1
 # export TAU_PROFILE=1
 # export TAU_TRACE=1 
+# export TAU_TRACK_SIGNALS=1
 # Compile:
 # make profiler
 # Run:
@@ -72,37 +73,39 @@ CORE = \
 	core/decomposition.f90 \
 	core/data_types.f90 \
 	shared/mpp/sync.f90 \
-	core/kernel_interface.f90 \
 	core/grid.f90 \
-	core/ocean.f90
+	core/ocean.f90 \
+	core/kernel_interface.f90
 
 TOOLS = \
 	tools/io.f90 \
 	tools/time_manager.f90
 
-SERVICE = \
-	service/gridcon.f90 \
-	service/grid_parameters.f90 \
-	service/basinpar_construction.f90
-
 # Kernel Layer
 PHYSICS = \
 	kernel/shallow_water/depth.f90 \
 	kernel/shallow_water/vel_ssh.f90 \
-	kernel/shallow_water/mixing.f90
+	kernel/shallow_water/mixing.f90 \
+	kernel/service/grid_parameters.f90 \
+	kernel/service/grid_kernels.f90
 
 # Parallel System Layer
 INTERFACE = \
-	interface/shallow_water/sw_interface.f90
+	interface/shallow_water/sw_interface.f90 \
+	interface/service/grid_interface.f90
 
 # Algorithm Layer
+SERVICE = \
+	service/gridcon.f90 \
+	service/basinpar_construction.f90
+
 CONTROL = \
 	control/init_data.f90 \
 	control/output.f90 \
 	control/shallow_water/shallow_water.f90
 
 ## main and clean targets
-model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL) model.f90)
+model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90)
 	$(FCD) -o $@ $+
 
 .PHONY: clean
@@ -118,7 +121,7 @@ clean:
 
 # Profiler TAU
 profiler:
-	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(SERVICE) $(PHYSICS) $(INTERFACE) $(CONTROL) model.f90 
+	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90 
 
 pack_profiler:
 	paraprof --pack LOG_TAU.ppk

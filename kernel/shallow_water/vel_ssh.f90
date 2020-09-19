@@ -5,12 +5,9 @@ module velssh_sw_module
 
   implicit none
   save
-  private
+  public
 
 #include "macros/mpp_macros.fi"
-
-  public :: gaussian_elimination_kernel
-  public :: check_ssh_err_kernel, sw_update_ssh_kernel, sw_update_uv, sw_next_step, uv_trans_vort_kernel, uv_trans_kernel, uv_diff2_kernel
 
 contains
 

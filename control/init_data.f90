@@ -24,7 +24,8 @@ contains
 
     subroutine init_ocean_data(domain, grid_data, ocean_data)
         use config_sw_module, only: ssh_init_file_name
-        use shallow_water_interface_module
+        use kernel_interface_module
+        use shallow_water_interface_module, only: envoke_gaussian_elimination, envoke_hh_init_kernel, envoke_hh_init_sync
         use config_basinpar_module, only: nx, ny
 
         type(domain_type), intent(in) :: domain

@@ -5,11 +5,9 @@ module depth_module
 
   implicit none
   save
-  private
+  public
 
 #include "macros/mpp_macros.fi"
-
-  public :: hh_init_kernel, hh_update_kernel, hh_shift_kernel
 
 contains
 

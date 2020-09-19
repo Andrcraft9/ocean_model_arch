@@ -4,11 +4,9 @@ module mixing_module
   
     implicit none
     save
-    private
+    public
 
 #include "macros/mpp_macros.fi"
-
-    public :: stress_components_kernel
 
 contains
 
@@ -17,10 +15,11 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, 
                                     lu, luu, dx, dy, dxt, dyt, dxh, dyh, dxb, dyb, u, v, str_t, str_s, nlev)
 
     integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
-
+    integer, intent(in) :: nlev
+    
     real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                              luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
-
+                             
     real(wp4), intent(in) :: dx(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
                              dy(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
                              dxt(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
@@ -33,7 +32,6 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, 
                               v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
      real(wp8), intent(inout) :: str_t(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),    &
                                  str_s(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
-     integer, intent(in) :: nlev
      
      integer :: m, n, k
     

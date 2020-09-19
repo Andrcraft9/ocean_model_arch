@@ -6,6 +6,7 @@ module shallow_water_module
     use grid_module, only: grid_type
     use config_sw_module, only: full_free_surface, time_smooth, trans_terms, ksw_lat, lvisc_2
     use mpp_module
+    use kernel_interface_module
     use shallow_water_interface_module
 
     implicit none

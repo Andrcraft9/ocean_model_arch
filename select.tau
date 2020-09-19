@@ -1,11 +1,8 @@
-BEGIN_EXCLUDE_LIST
-__decomposition_module_MOD_get_boundary_points_of_block 
-__decomposition_module_MOD_get_halo_points_of_block 
-__decomposition_module_MOD_get_inverse_dir 
-__math_tools_module_MOD_dacosd 
-__math_tools_module_MOD_dasind 
-__math_tools_module_MOD_dcosd 
-__math_tools_module_MOD_dsind 
-__velssh_sw_module_MOD_check_ssh_err_kernel 
-END_EXCLUDE_LIST
+BEGIN_FILE_EXCLUDE_LIST
+*grid_parameters.f90
+*mpp.f90
+END_FILE_EXCLUDE_LIST
 
+BEGIN_INSTRUMENT_SECTION
+loops file="data_type.f90" routine="#"
+END_INSTRUMENT_SECTION
