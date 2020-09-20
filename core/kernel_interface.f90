@@ -73,7 +73,7 @@ contains
         do k = 1, domain%bcount
             call sub_kernel(k, domain, grid_data, ocean_data, param)
         enddo
-        !$omp end do
+        !$omp end do nowait
 
         call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
@@ -91,7 +91,7 @@ contains
         do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
             call sub_kernel(k, domain, grid_data, ocean_data, param)
         enddo
-        !$omp end do
+        !$omp end do nowait
 
         call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
 
@@ -99,7 +99,7 @@ contains
         do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
             call sub_kernel(k, domain, grid_data, ocean_data, param)
         enddo
-        !$omp end do
+        !$omp end do nowait
 
         call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
 
