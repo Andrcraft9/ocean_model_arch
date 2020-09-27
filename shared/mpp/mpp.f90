@@ -100,8 +100,10 @@ contains
             print *, "MPP INFO: MPP_HYBRID_BLOCK_MODE: yes"
 #endif
 
-            print *, "MPP INFO: Static sync along all blocks"
-            print *, "MPP INFO: Single OMP PARALLEL"
+            print *, "MPP INFO: Version 1.0:"
+            print *, "MPP INFO: Single OMP PARALLEL, OMP for pack/unpack MPI buffers, nowait loops"
+            print *, "MPP INFO: Block mode:  wait for each variable (separate syncs)"
+            print *, "MPP INFO: Hybrid mode: wait for multiple variables (SIMUL sync)"
             print *, "------------------------------------------------------------"
         endif
         call mpi_barrier(mpp_cart_comm, ierr)
