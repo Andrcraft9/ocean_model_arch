@@ -22,16 +22,8 @@ integer :: rk                     ! Local index of buffers for rank, see sync_ma
 
 real(wp8) :: t_local
 
-!$omp barrier
-
 !$omp master
-
 call start_timer(t_local)
-
-if (sync_tag == 1) then
-    sync_count_send_recv = 0
-endif
-
 !$omp end master
 
 ! Prepare MPI buffers for each near rank
@@ -71,32 +63,9 @@ do k = 1, domain%bcount
         enddo
     endif
 enddo
-!$omp end do
-! Implicit Barrier
+!$omp end do nowait
 
 !$omp master
-
 call end_timer(t_local)
 mpp_time_sync_pack_mpi = mpp_time_sync_pack_mpi + t_local
-
-! Send/Recv MPI buffers for each near rank
-!
-
-call start_timer(t_local)
-
-do rk = 1, domain%amount_of_ranks_near
-    call mpi_irecv(_SYNC_RECV_BUF_(:, rk, sync_tag), sync_buf_size(rk), _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
-    sync_count_send_recv = sync_count_send_recv + 1
-    sync_requests(sync_count_send_recv) = reqst
-enddo
-
-do rk = 1, domain%amount_of_ranks_near
-    call mpi_isend(_SYNC_SEND_BUF_(:, rk, sync_tag), sync_buf_size(rk), _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
-    sync_count_send_recv = sync_count_send_recv + 1
-    sync_requests(sync_count_send_recv) = reqst
-enddo
-
-call end_timer(t_local)
-mpp_time_sync_isend_irecv = mpp_time_sync_isend_irecv + t_local
-
 !$omp end master

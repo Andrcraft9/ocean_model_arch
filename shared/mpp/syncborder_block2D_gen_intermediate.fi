@@ -24,7 +24,37 @@ integer :: val
 
 real(wp8) :: t_local
 
+!$omp barrier
+
 !$omp master
+
+if (sync_tag == 1) then
+    sync_count_send_recv = 0
+endif
+
+if (sync_tag > 1) then
+    call abort_model("Sync work only with tag 1")
+endif
+
+! Send/Recv MPI buffers for each near rank
+!
+
+call start_timer(t_local)
+
+do rk = 1, domain%amount_of_ranks_near
+    call mpi_irecv(_SYNC_RECV_BUF_(:, rk, sync_tag), sync_buf_size(rk), _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
+    sync_count_send_recv = sync_count_send_recv + 1
+    sync_requests(sync_count_send_recv) = reqst
+enddo
+
+do rk = 1, domain%amount_of_ranks_near
+    call mpi_isend(_SYNC_SEND_BUF_(:, rk, sync_tag), sync_buf_size(rk), _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
+    sync_count_send_recv = sync_count_send_recv + 1
+    sync_requests(sync_count_send_recv) = reqst
+enddo
+
+call end_timer(t_local)
+mpp_time_sync_isend_irecv = mpp_time_sync_isend_irecv + t_local
 
 ! Wait all
 !
@@ -41,10 +71,6 @@ if (sync_tag == 1) then
     call mpi_waitall(sync_count_send_recv, sync_requests, sync_statuses, ierr)
     sync_count_send_recv = 0
 endif
-
-call end_timer(t_local)
-mpp_time_sync_wait = mpp_time_sync_wait + t_local
-
 
 ! Unpack MPI buffers, create one time pos buffer
 !
@@ -82,6 +108,9 @@ if (sync_tag == 1) then
 endif
 
 !$omp master
+call end_timer(t_local)
+mpp_time_sync_wait = mpp_time_sync_wait + t_local
+
 call start_timer(t_local)
 !$omp end master
 
