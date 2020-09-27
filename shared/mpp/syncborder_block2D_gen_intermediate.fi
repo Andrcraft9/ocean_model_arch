@@ -49,8 +49,6 @@ mpp_time_sync_wait = mpp_time_sync_wait + t_local
 ! Unpack MPI buffers, create one time pos buffer
 !
 
-call start_timer(t_local)
-
 if (.not. sync_is_fully_init) then
     sync_recv_buf_pos = 0
     do rk = 1, domain%amount_of_ranks_near
@@ -82,6 +80,10 @@ endif
 if (sync_tag == 1) then
     !$omp barrier
 endif
+
+!$omp master
+call start_timer(t_local)
+!$omp end master
 
 ! Update all halo points for ALL blocks.
 !

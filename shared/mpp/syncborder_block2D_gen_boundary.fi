@@ -22,6 +22,8 @@ integer :: rk                     ! Local index of buffers for rank, see sync_ma
 
 real(wp8) :: t_local
 
+!$omp barrier
+
 !$omp master
 
 call start_timer(t_local)
