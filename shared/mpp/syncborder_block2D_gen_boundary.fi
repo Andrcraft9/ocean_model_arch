@@ -12,12 +12,11 @@
 !------------------------------------------------------------------------------
 
 integer :: reqst
-integer :: dir, k, kk, i, ierr
+integer :: k, kk, ierr
 integer :: sync_dir(8)
 integer :: k_dir(8)
 integer :: rank_dir(8)
 integer :: nxs, nxe, nys, nye     ! Boundary points
-integer :: hnxs, hnxe, hnys, hnye ! Halo points
 integer :: buf_size
 integer :: rk                     ! Local index of buffers for rank, see sync_map_rank
 
@@ -27,16 +26,18 @@ real(wp8) :: t_local
 
 !$omp master
 
-! Prepare MPI buffers for each near rank
-!
-
 call start_timer(t_local)
 
 if (sync_tag == 1) then
     sync_count_send_recv = 0
 endif
 
-sync_buf_pos = 1
+!$omp end master
+
+! Prepare MPI buffers for each near rank
+!
+
+!$omp do private(k, kk, rk, buf_size, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye) schedule(static, 1)
 do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
 
     sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
@@ -55,24 +56,23 @@ do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
             if (rank_dir(kk) /= mpp_rank) then
                 rk = sync_map_rank(rank_dir(kk))
                 ! Set local block number (local number is relative to rk) and direction of transfer (direction is relative to rk)
-                _SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = 10*k_dir(kk) + get_inverse_dir(sync_dir(kk))
-                sync_buf_pos(rk) = sync_buf_pos(rk) + 1
-                !_SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = get_inverse_dir(sync_dir(kk))
-                !sync_buf_pos(rk) = sync_buf_pos(rk) + 1
-                !_SYNC_SEND_BUF_(sync_buf_pos(rk), rk, sync_tag) = k_dir(kk)
-                !sync_buf_pos(rk) = sync_buf_pos(rk) + 1
+                _SYNC_SEND_BUF_(sync_buf_pos(kk, k), rk, sync_tag) = 10*k_dir(kk) + get_inverse_dir(sync_dir(kk))
+                !_SYNC_SEND_BUF_(, rk, sync_tag) = get_inverse_dir(sync_dir(kk))
+                !_SYNC_SEND_BUF_(+ 1, rk, sync_tag) = k_dir(kk)
 
                 ! Set boundary points
                 call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)
 
                 ! Pack buffer
                 buf_size = (nxe - nxs + 1)*(nye - nys + 1)
-                _SYNC_SEND_BUF_(sync_buf_pos(rk) : sync_buf_pos(rk) + buf_size - 1, rk, sync_tag) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
-                sync_buf_pos(rk) = sync_buf_pos(rk) + buf_size
+                _SYNC_SEND_BUF_(sync_buf_pos(kk, k) + 1 : sync_buf_pos(kk, k) + buf_size , rk, sync_tag) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
             endif
         endif
     enddo
 enddo
+!$omp end do
+
+!$omp master
 
 call end_timer(t_local)
 mpp_time_sync_pack_mpi = mpp_time_sync_pack_mpi + t_local
@@ -83,13 +83,13 @@ mpp_time_sync_pack_mpi = mpp_time_sync_pack_mpi + t_local
 call start_timer(t_local)
 
 do rk = 1, domain%amount_of_ranks_near
-    call mpi_irecv(_SYNC_RECV_BUF_(:, rk, sync_tag), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
+    call mpi_irecv(_SYNC_RECV_BUF_(:, rk, sync_tag), sync_buf_size(rk), _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
     sync_count_send_recv = sync_count_send_recv + 1
     sync_requests(sync_count_send_recv) = reqst
 enddo
 
 do rk = 1, domain%amount_of_ranks_near
-    call mpi_isend(_SYNC_SEND_BUF_(:, rk, sync_tag), sync_buf_pos(rk) - 1, _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
+    call mpi_isend(_SYNC_SEND_BUF_(:, rk, sync_tag), sync_buf_size(rk), _MPI_TYPE_, domain%ranks_near(rk), sync_tag, mpp_cart_comm, reqst, ierr)
     sync_count_send_recv = sync_count_send_recv + 1
     sync_requests(sync_count_send_recv) = reqst
 enddo

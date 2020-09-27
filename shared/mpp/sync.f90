@@ -60,6 +60,9 @@ module mpp_sync_module
 
     public :: sync_test
 
+    !
+    logical :: sync_is_fully_init
+
     ! MPI info
     integer :: sync_count_send_recv
     integer, allocatable :: sync_requests(:), sync_statuses(:, :)
@@ -68,7 +71,10 @@ module mpp_sync_module
     real(wp4), allocatable :: sync_send_buf_r4(:, :, :)
     real(wp8), allocatable :: sync_recv_buf_r8(:, :, :)
     real(wp4), allocatable :: sync_recv_buf_r4(:, :, :)
-    integer, allocatable :: sync_buf_pos(:)   ! Position of buffers, need for prepare buffers. Position of buffer for each near rank
+    integer, allocatable :: sync_buf_size(:)   ! Size of buffer for each near rank
+    integer, allocatable :: sync_buf_pos(:, :)    ! Position of buffer for each near rank and boundary block
+    integer, allocatable :: sync_recv_buf_pos(:, :)
+
 
     integer, allocatable :: sync_map_rank(:)  ! Map: Gloabl rank to local rank number. 
                                               ! Global rank numbers - MPI ranks, from 0 to mpp_count - 1
@@ -82,12 +88,14 @@ contains
         type(domain_type), intent(in) :: domain
 
         call allocate_mpp_sync_buffers(domain)
+        sync_is_fully_init = .false.
     end subroutine
 
     subroutine mpp_sync_finalize(domain)
         type(domain_type), intent(in) :: domain
 
         call deallocate_mpp_sync_buffers(domain)
+        sync_is_fully_init = .false.
     end subroutine
 
     subroutine allocate_mpp_sync_buffers(domain)
@@ -99,7 +107,6 @@ contains
         integer :: rank_dir(8)
         integer :: nxs, nxe, nys, nye         ! Boundary points
         integer :: rk                         ! Local index of buffers for rank, see sync_map_rank
-        integer, allocatable :: buf_sizes(:)  ! Sizes of MPI buffers, different for each near rank
         integer :: max_buf_size = 1, min_buf_size = huge(0)
         integer :: max_val, min_val
 
@@ -114,8 +121,12 @@ contains
             sync_map_rank(domain%ranks_near(k)) = k
         enddo
 
-        allocate(buf_sizes(domain%amount_of_ranks_near))
-        buf_sizes = 0
+        allocate(sync_buf_size(domain%amount_of_ranks_near))
+        allocate(sync_buf_pos(8, domain%start_boundary : domain%start_boundary + domain%bcount_boundary - 1))
+        allocate(sync_recv_buf_pos(8, domain%start_boundary : domain%start_boundary + domain%bcount_boundary - 1))
+        sync_buf_size = 0
+        sync_buf_pos = 0
+        sync_recv_buf_pos = 0
 
         do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
 
@@ -134,18 +145,18 @@ contains
                     if (rank_dir(kk) /= mpp_rank) then
                         rk = sync_map_rank(rank_dir(kk))
                         call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)
-                        buf_sizes(rk) = buf_sizes(rk) + 1 + (nxe - nxs + 1)*(nye - nys + 1)
-                        !buf_sizes(rk) = buf_sizes(rk) + 2 + (nxe - nxs + 1)*(nye - nys + 1)
+                        sync_buf_pos(kk, k) = sync_buf_pos(kk, k) + sync_buf_size(rk) + 1
+                        sync_buf_size(rk) = sync_buf_size(rk) + 1 + (nxe - nxs + 1)*(nye - nys + 1)
+                        !sync_buf_size(rk) = sync_buf_size(rk) + 2 + (nxe - nxs + 1)*(nye - nys + 1)
                     endif
                 endif
             enddo
         enddo
 
-        do k = 1, domain%amount_of_ranks_near
-            if (max_buf_size < buf_sizes(k)) max_buf_size = buf_sizes(k)
-            if (min_buf_size > buf_sizes(k)) min_buf_size = buf_sizes(k)
+        do rk = 1, domain%amount_of_ranks_near
+            if (max_buf_size < sync_buf_size(rk)) max_buf_size = sync_buf_size(rk)
+            if (min_buf_size > sync_buf_size(rk)) min_buf_size = sync_buf_size(rk)
         enddo
-        deallocate(buf_sizes)
 
         call mpi_allreduce(max_buf_size, max_val, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(min_buf_size, min_val, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
@@ -167,10 +178,8 @@ contains
         allocate(sync_send_buf_r8(max_buf_size, domain%amount_of_ranks_near, _MPP_MAX_SIMUL_SYNCS_))
         allocate(sync_recv_buf_r4(max_buf_size, domain%amount_of_ranks_near, _MPP_MAX_SIMUL_SYNCS_))
         allocate(sync_recv_buf_r8(max_buf_size, domain%amount_of_ranks_near, _MPP_MAX_SIMUL_SYNCS_))
-        allocate(sync_buf_pos(domain%amount_of_ranks_near))
         sync_send_buf_r4 = 0; sync_send_buf_r8 = 0
         sync_recv_buf_r4 = 0; sync_recv_buf_r8 = 0
-        sync_buf_pos = 0
 
         sync_count_send_recv = 0
 
@@ -186,7 +195,9 @@ contains
         deallocate(sync_send_buf_r8)
         deallocate(sync_recv_buf_r4)
         deallocate(sync_recv_buf_r8)
+        deallocate(sync_buf_size)
         deallocate(sync_buf_pos)
+        deallocate(sync_recv_buf_pos)
         
         deallocate(sync_map_rank)
     end subroutine

@@ -11,15 +11,12 @@
 !
 !------------------------------------------------------------------------------
 
-integer :: reqst
-integer :: dir, k, kk, i, ierr
+integer :: k, kk, ierr
 integer :: sync_dir(8)
 integer :: k_dir(8)
 integer :: rank_dir(8)
 integer :: nxs, nxe, nys, nye     ! Boundary points
 integer :: hnxs, hnxe, hnys, hnye ! Halo points
-integer :: buf_size
-integer :: rk                     ! Local index of buffers for rank, see sync_map_rank
 
 real(wp8) :: t_local
 
@@ -70,7 +67,7 @@ do k = 1, domain%bcount
         enddo
     endif
 enddo
-!$omp end do
+!$omp end do nowait
 
 
 ! TIMER
