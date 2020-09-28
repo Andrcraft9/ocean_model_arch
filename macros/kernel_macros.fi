@@ -10,6 +10,3 @@
 #define _NXP_NYM_ 6
 #define _NXM_NYP_ 7
 #define _NXM_NYM_ 8
-
-#define _associate_data_(data, value, k) value => data%value%block(k)%field
-#define _associate_data_field_(curval, data, value, k) curval => data%value%block(k)%field
