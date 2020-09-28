@@ -75,6 +75,7 @@ module decomposition_module
         procedure, private :: block_uniform_decomposition
         procedure, private :: create_uniform_decomposition
         procedure, private :: create_hilbert_curve_decomposition
+        procedure, private :: create_local_block_numearation
     end type domain_type
 
 !------------------------------------------------------------------------------
@@ -578,6 +579,146 @@ contains
         end associate
     end subroutine
 
+    subroutine create_local_block_numearation(this,  &
+                                              glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end,  & 
+                                              glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2,  &
+                                              bglob_weight)
+        class(domain_type), intent(inout) :: this
+        integer, allocatable, intent(inout) :: glob_bnx_start(:, :), glob_bnx_end(:, :),  &
+                                               glob_bny_start(:, :), glob_bny_end(:, :)
+        integer, allocatable, intent(inout) :: glob_bbnd_x1(:, :), glob_bbnd_x2(:, :),  &
+                                               glob_bbnd_y1(:, :), glob_bbnd_y2(:, :)
+        real(wp8), allocatable, intent(inout) :: bglob_weight(:, :)
+
+        integer :: k, kk, k_inner, k_boundary, m, n, ierr
+        integer, allocatable :: buf_int(:, :)
+        
+        logical, allocatable :: mask_blocks(:, :)
+        integer, dimension(2) :: max_mn
+        integer :: max_m, max_n
+
+        ! Allocate blocks arrays per proc
+        allocate(this%bindx(this%bcount, 2))
+        allocate(this%bnx_start(this%bcount), this%bnx_end(this%bcount),  &
+                 this%bny_start(this%bcount), this%bny_end(this%bcount))
+        allocate(this%bbnd_x1(this%bcount), this%bbnd_x2(this%bcount),  &
+                 this%bbnd_y1(this%bcount), this%bbnd_y2(this%bcount))
+        this%bindx = 0
+        this%bnx_start = 0; this%bnx_end = 0 
+        this%bny_start = 0; this%bny_end = 0
+        this%bbnd_x1 = 0; this%bbnd_x2 = 0 
+        this%bbnd_y1 = 0; this%bbnd_y2 = 0
+
+        ! Create local block numeration
+        allocate(this%bglob_local_num(this%bnx, this%bny))
+        this%bglob_local_num = -1
+
+#ifdef _MPP_SORTED_BLOCKS_
+            allocate(mask_blocks(this%bnx, this%bny))
+            ! Set sorted by weight blocks
+            k = 0; k_inner = 0; k_boundary = 0
+            ! Mask only blocks on current proc
+            mask_blocks = .false.
+            do m = 1, this%bnx
+                do n = 1, this%bny
+                    if (this%bglob_proc(m, n) == mpp_rank) then
+                        mask_blocks(m ,n) = .true.
+                        ! Count inner and boundary blocks
+                        if (is_inner_block(m, n, this%bglob_proc, this%bnx, this%bny)) then
+                            k_inner = k_inner + 1
+                        else
+                            k_boundary = k_boundary + 1
+                        endif
+                    endif
+                enddo
+            enddo
+                
+            ! Sort blocks by weight
+            do kk = 1, k_inner + k_boundary
+                ! Count block
+                k = k + 1
+
+                max_mn = MAXLOC(bglob_weight, mask_blocks)
+                max_m = max_mn(1)
+                max_n = max_mn(2)
+
+                mask_blocks(max_m, max_n) = .false.
+                
+                ! Map local block numeration to block coords
+                this%bindx(k, 1) = max_m
+                this%bindx(k, 2) = max_n
+
+                this%bnx_start(k) = glob_bnx_start(max_m, max_n)
+                this%bnx_end(k) = glob_bnx_end(max_m, max_n)
+                this%bny_start(k) = glob_bny_start(max_m, max_n)
+                this%bny_end(k) = glob_bny_end(max_m, max_n)
+
+                this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
+                this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
+                this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
+                this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
+                
+                if (debug_level >= 9) then
+                    if (mpp_is_master()) print *, 'DD INFO: SORTED_BLOCKS: k, max_m, max_n, bw, is_inner?',  &
+                                                    k, max_m, max_n, bglob_weight(max_m, max_n),  &
+                                                    is_inner_block(max_m, max_n, this%bglob_proc, this%bnx, this%bny)
+                endif
+
+                this%bglob_local_num(max_m, max_n) = k
+            enddo
+            deallocate(mask_blocks)
+#else
+            k = 0; k_inner = 0; k_boundary = 0
+            do m = 1, this%bnx
+                do n = 1, this%bny
+                    if (this%bglob_proc(m, n) == mpp_rank) then
+                        ! Count block
+                        k = k + 1
+                        if (is_inner_block(m, n, this%bglob_proc, this%bnx, this%bny)) then
+                            k_inner = k_inner + 1
+                        else
+                            k_boundary = k_boundary + 1
+                        endif
+
+                        ! Map local block numeration to block coords
+                        this%bindx(k, 1) = m
+                        this%bindx(k, 2) = n
+
+                        this%bnx_start(k) = glob_bnx_start(m, n)
+                        this%bnx_end(k) = glob_bnx_end(m, n)
+                        this%bny_start(k) = glob_bny_start(m, n)
+                        this%bny_end(k) = glob_bny_end(m, n)
+
+                        this%bbnd_x1(k) = glob_bbnd_x1(m, n)
+                        this%bbnd_x2(k) = glob_bbnd_x2(m, n)
+                        this%bbnd_y1(k) = glob_bbnd_y1(m, n)
+                        this%bbnd_y2(k) = glob_bbnd_y2(m, n)
+
+                        this%bglob_local_num(m, n) = k
+                    endif
+                enddo
+            enddo
+#endif
+        ! Sync bglob_local_num
+        allocate(buf_int(this%bnx, this%bny))
+        buf_int = this%bglob_local_num
+        call mpi_allreduce(buf_int, this%bglob_local_num, this%bnx * this%bny, mpi_integer, mpi_max, mpp_cart_comm, ierr)
+        if (debug_level >= 7) then
+            call parallel_int_output(this%bglob_local_num, 1, this%bnx, 1, this%bny, 'DD INFO: bglob_local_num from uniform decomposition')
+        endif
+        deallocate(buf_int)
+
+        if (k /= this%bcount .or. k_inner + k_boundary /= this%bcount) then
+            print *, 'DD INFO:', mpp_rank, " k=", k, " bcount=", this%bcount, " k_inner=", k_inner, " k_boundary=", k_boundary
+            call abort_model("Error in block numeration")
+        endif
+
+        ! Set values
+        this%bcount_inner = k_inner
+        this%bcount_boundary = k_boundary
+
+    end subroutine
+
     subroutine init(this, bppnx, bppny, mod_create, lbasins)
         use config_basinpar_module, only: nx, ny, nz
 
@@ -595,28 +736,13 @@ contains
         integer, allocatable :: glob_bbnd_x1(:, :), glob_bbnd_x2(:, :),  &
                                 glob_bbnd_y1(:, :), glob_bbnd_y2(:, :)
 
-        integer :: m, n, k, k_inner, k_boundary, kk, kkk, res, rank
+        integer :: m, n, k, k_boundary, kk, kkk, res, rank
         integer :: land_blocks
-        integer :: bshared
-        real(wp8) :: bcomm_metric, max_bcomm_metric
-        integer, dimension(2) :: kblock
         integer :: ierr
 
         integer :: itot, ishared
-        real(wp8) :: icomm_metric, max_icomm_metric
         integer :: max_points_per_block, min_points_per_block, reduced_max_points_per_block, reduced_min_points_per_block
-        integer, allocatable :: buf_int(:, :)
         integer :: buf_dirs(8)
-
-#ifdef _MPP_SORTED_BLOCKS_
-        logical, parameter :: sorted_blocks = .true.
-#else
-        logical, parameter :: sorted_blocks = .false.
-#endif
-        
-        logical, allocatable :: mask_blocks(:, :)
-        integer, dimension(2) :: max_mn
-        integer :: max_m, max_n
 
         integer :: max_x, max_y, min_x, min_y
 
@@ -715,133 +841,13 @@ contains
             if (mpp_is_master()) print *, 'DD INFO: Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count)),  &
                                           'max blocks per proc:', bcount_max, 'min blocks per proc:', bcount_min
             call mpi_barrier(mpp_cart_comm, ierr)
-            
-            ! Allocate blocks arrays per proc
-            allocate(this%bindx(bcount, 2))
-            allocate(this%bnx_start(bcount), this%bnx_end(bcount),  &
-                     this%bny_start(bcount), this%bny_end(bcount))
-            allocate(this%bbnd_x1(bcount), this%bbnd_x2(bcount),  &
-                     this%bbnd_y1(bcount), this%bbnd_y2(bcount))
-            this%bindx = 0
-            this%bnx_start = 0; this%bnx_end = 0 
-            this%bny_start = 0; this%bny_end = 0
-            this%bbnd_x1 = 0; this%bbnd_x2 = 0 
-            this%bbnd_y1 = 0; this%bbnd_y2 = 0
 
-            ! Create local block numeration
-            allocate(this%bglob_local_num(bnx, bny))
-            this%bglob_local_num = -1
-            if (sorted_blocks) then
-                allocate(mask_blocks(bnx, bny))
-                ! Set sorted by weight blocks
-                k = 0; k_inner = 0; k_boundary = 0
-                ! Mask only blocks on current proc
-                mask_blocks = .false.
-                do m = 1, bnx
-                    do n = 1, bny
-                        if (this%bglob_proc(m, n) == mpp_rank) then
-                            mask_blocks(m ,n) = .true.
-                            ! Count inner and boundary blocks
-                            if (is_inner_block(m, n, this%bglob_proc, bnx, bny)) then
-                                k_inner = k_inner + 1
-                            else
-                                k_boundary = k_boundary + 1
-                            endif
-                        endif
-                    enddo
-                enddo
-                    
-                ! Sort blocks by weight
-                do kk = 1, k_inner + k_boundary
-                    ! Count block
-                    k = k + 1
+            call this%create_local_block_numearation(glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end,  & 
+                                                     glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2,  &
+                                                     bglob_weight)
 
-                    max_mn = MAXLOC(bglob_weight, mask_blocks)
-                    max_m = max_mn(1)
-                    max_n = max_mn(2)
-
-                    mask_blocks(max_m, max_n) = .false.
-                    
-                    ! Map local block numeration to block coords
-                    this%bindx(k, 1) = max_m
-                    this%bindx(k, 2) = max_n
-
-                    this%bnx_start(k) = glob_bnx_start(max_m, max_n)
-                    this%bnx_end(k) = glob_bnx_end(max_m, max_n)
-                    this%bny_start(k) = glob_bny_start(max_m, max_n)
-                    this%bny_end(k) = glob_bny_end(max_m, max_n)
-
-                    this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
-                    this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
-                    this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
-                    this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
-                    
-                    if (debug_level >= 9) then
-                        if (mpp_is_master()) print *, 'DD INFO: SORTED_BLOCKS: k, max_m, max_n, bw, is_inner?',  &
-                                                        k, max_m, max_n, bglob_weight(max_m, max_n),  &
-                                                        is_inner_block(max_m, max_n, this%bglob_proc, bnx, bny)
-                    endif
-
-                    this%bglob_local_num(max_m, max_n) = k
-                enddo
-            else
-                k = 0; k_inner = 0; k_boundary = 0
-                do m = 1, bnx
-                    do n = 1, bny
-                        if (this%bglob_proc(m, n) == mpp_rank) then
-                            ! Count block
-                            k = k + 1
-                            if (is_inner_block(m, n, this%bglob_proc, bnx, bny)) then
-                                k_inner = k_inner + 1
-                            else
-                                k_boundary = k_boundary + 1
-                            endif
-
-                            ! Map local block numeration to block coords
-                            this%bindx(k, 1) = m
-                            this%bindx(k, 2) = n
-
-                            this%bnx_start(k) = glob_bnx_start(m, n)
-                            this%bnx_end(k) = glob_bnx_end(m, n)
-                            this%bny_start(k) = glob_bny_start(m, n)
-                            this%bny_end(k) = glob_bny_end(m, n)
-
-                            this%bbnd_x1(k) = glob_bbnd_x1(m, n)
-                            this%bbnd_x2(k) = glob_bbnd_x2(m, n)
-                            this%bbnd_y1(k) = glob_bbnd_y1(m, n)
-                            this%bbnd_y2(k) = glob_bbnd_y2(m, n)
-
-                            this%bglob_local_num(m, n) = k
-                        endif
-                    enddo
-                enddo
-            endif
-            ! Sync bglob_local_num
-            allocate(buf_int(bnx, bny))
-            buf_int = this%bglob_local_num
-            call mpi_allreduce(buf_int, this%bglob_local_num, bnx*bny, mpi_integer, mpi_max, mpp_cart_comm, ierr)
-            if (debug_level >= 7) then
-                call parallel_int_output(this%bglob_local_num, 1, bnx, 1, bny, 'DD INFO: bglob_local_num from uniform decomposition')
-            endif
-            deallocate(buf_int)
-
-            deallocate(bglob_weight)
             deallocate(glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end)
             deallocate(glob_bbnd_x1, glob_bbnd_x2, glob_bbnd_y1, glob_bbnd_y2)
-            if (sorted_blocks) then
-                deallocate(mask_blocks)
-            endif
-
-            if (k /= bcount .or. k_inner + k_boundary /= bcount) then
-                print *, 'DD INFO:', mpp_rank, " k=", k, " bcount=", bcount, " k_inner=", k_inner, " k_boundary=", k_boundary
-                call abort_model("Error in block numeration")
-            endif
-
-            ! Set values
-            this%bcount_inner = k_inner
-            this%bcount_boundary = k_boundary
-            allocate(this%boundary_blocks(this%bcount_boundary))
-            this%boundary_blocks = 0
 
             ! DEBUG
             if (debug_level >= 1) then
@@ -864,6 +870,8 @@ contains
             ! Init blocks_info: additional information about each block, especially for sync
             allocate(this%blocks_info(bcount))
             allocate(this%ranks_near(mpp_count))
+            allocate(this%boundary_blocks(this%bcount_boundary))
+            this%boundary_blocks = 0
             this%ranks_near = -1
             this%amount_of_ranks_near = 0
             k_boundary = 0
@@ -970,13 +978,39 @@ contains
                 do rank = 0, mpp_count - 1
                     if (mpp_rank == rank) then
                         print *, 'DD INFO: rank', mpp_rank, 'Blocks:', bcount, 'Min/Max points per block:', min_points_per_block, max_points_per_block,  &
-                                 "Inner/Boundary blocks:", k_inner, k_boundary,  &
+                                 "Inner/Boundary blocks:", this%bcount_inner, this%bcount_boundary,  &
                                  "Amount of ranks near:", this%amount_of_ranks_near
                         print *, 'DD INFO: rank', mpp_rank, 'Min/Max nx', min_x, max_x, 'Min/Max ny', min_y, max_y
                     endif
                     call mpi_barrier(mpp_cart_comm, ierr)
                 enddo
                 call mpi_barrier(mpp_cart_comm, ierr)
+            endif
+
+            ! Info per thread
+            if (debug_level >= 5) then
+                max_w = 0.0d0
+                res = 0
+                !$omp parallel default(shared) private(kk, bweight)
+                bweight = 0.0d0
+                kk = 0
+                !$omp do private(k) schedule(static, 1) reduction(max: max_w, res)
+                do k = 1, bcount
+                    bweight = bweight + bglob_weight(this%blocks_info(k)%bm, this%blocks_info(k)%bn)
+                    kk = kk + 1
+
+                    max_w = MAX(max_w, bweight)
+                    res = MAX(res, kk)
+                enddo
+                !$omp end do
+
+                if (debug_level >= 6) then
+                    print *, 'DD INFO: rank, thread', mpp_rank, mpp_get_thread(), 'Blocks: ', kk, 'Total Weight: ', bweight
+                endif
+                
+                !$omp end parallel
+
+                print *, 'DD INFO: rank', mpp_rank, 'Max Blocks per threads: ', res, 'Max Total Weight per threads: ', max_w
             endif
 
             ! Info per block
@@ -994,6 +1028,8 @@ contains
             
             ! Check domain data
             call check_domain_data(this)
+
+            deallocate(bglob_weight)
 
         end associate
     end subroutine

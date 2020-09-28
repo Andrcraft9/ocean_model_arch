@@ -9,14 +9,14 @@ module debug_module
     save
     public
 
-    integer, parameter :: debug_level = 5
+    integer, parameter :: debug_level = 6
     ! 0: no debug info
     ! 1: mean debug info per ranks, print only master rank
     ! 2: 
     ! 3: create debug files
     ! 4:
     ! 5: debug info for each rank
-    ! 6:
+    ! 6: debug info for each thread
     ! 7: extension debug
     ! 8:
     ! 9: debug info for each block
