@@ -638,7 +638,7 @@ contains
                 ! Count block
                 k = k + 1
 
-                max_mn = MAXLOC(bglob_weight, mask_blocks)
+                max_mn = MINLOC(bglob_weight, mask_blocks)
                 max_m = max_mn(1)
                 max_n = max_mn(2)
 
