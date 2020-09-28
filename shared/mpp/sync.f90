@@ -76,6 +76,9 @@ module mpp_sync_module
     integer, allocatable :: sync_map_rank(:)  ! Map: Gloabl rank to local rank number. 
                                               ! Global rank numbers - MPI ranks, from 0 to mpp_count - 1
                                               ! Local rank numbers  - indecies for all sync buffers, from 1 to domain%amount_of_ranks_near
+    integer, allocatable :: sync_map_bb(:)    ! Map: Block number to boundary blocks number
+                                              ! Block number: from 1 to bcount
+                                              ! Boundary block number: from 1 to bcount_boundary
 
 !------------------------------------------------------------------------------
 
@@ -102,6 +105,7 @@ contains
         integer :: rank_dir(8)
         integer :: nxs, nxe, nys, nye         ! Boundary points
         integer :: rk                         ! Local index of buffers for rank, see sync_map_rank
+        integer :: bbk                        ! Local index of boundary block
         integer :: max_buf_size = 1, min_buf_size = huge(0)
         integer :: max_val, min_val
 
@@ -116,36 +120,45 @@ contains
             sync_map_rank(domain%ranks_near(k)) = k
         enddo
 
+        ! Create map:
+        allocate(sync_map_bb(domain%bcount))
+        sync_map_bb = -1
+        do k = 1, domain%bcount_boundary
+            sync_map_bb(domain%boundary_blocks(k)) = k
+        enddo
+
         allocate(sync_buf_size(domain%amount_of_ranks_near))
-        allocate(sync_buf_pos(8, domain%start_boundary : domain%start_boundary + domain%bcount_boundary - 1))
-        allocate(sync_recv_buf_pos(8, domain%start_boundary : domain%start_boundary + domain%bcount_boundary - 1))
+        allocate(sync_buf_pos(8, domain%bcount_boundary))
+        allocate(sync_recv_buf_pos(8, domain%bcount_boundary))
         sync_buf_size = 0
         sync_buf_pos = 0
         sync_recv_buf_pos = 0
 
-        do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
+        do k = 1, domain%bcount
+            if (.not. domain%blocks_info(k)%is_inner) then
+                sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
+                sync_dir(2) = _NXM_; k_dir(2) = domain%blocks_info(k)%k_nxm; rank_dir(2) = domain%blocks_info(k)%rank_nxm
+                sync_dir(3) = _NYP_; k_dir(3) = domain%blocks_info(k)%k_nyp; rank_dir(3) = domain%blocks_info(k)%rank_nyp
+                sync_dir(4) = _NYM_; k_dir(4) = domain%blocks_info(k)%k_nym; rank_dir(4) = domain%blocks_info(k)%rank_nym
 
-            sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
-            sync_dir(2) = _NXM_; k_dir(2) = domain%blocks_info(k)%k_nxm; rank_dir(2) = domain%blocks_info(k)%rank_nxm
-            sync_dir(3) = _NYP_; k_dir(3) = domain%blocks_info(k)%k_nyp; rank_dir(3) = domain%blocks_info(k)%rank_nyp
-            sync_dir(4) = _NYM_; k_dir(4) = domain%blocks_info(k)%k_nym; rank_dir(4) = domain%blocks_info(k)%rank_nym
+                sync_dir(5) = _NXP_NYP_; k_dir(5) = domain%blocks_info(k)%k_nxp_nyp; rank_dir(5) = domain%blocks_info(k)%rank_nxp_nyp
+                sync_dir(6) = _NXP_NYM_; k_dir(6) = domain%blocks_info(k)%k_nxp_nym; rank_dir(6) = domain%blocks_info(k)%rank_nxp_nym
+                sync_dir(7) = _NXM_NYP_; k_dir(7) = domain%blocks_info(k)%k_nxm_nyp; rank_dir(7) = domain%blocks_info(k)%rank_nxm_nyp
+                sync_dir(8) = _NXM_NYM_; k_dir(8) = domain%blocks_info(k)%k_nxm_nym; rank_dir(8) = domain%blocks_info(k)%rank_nxm_nym
 
-            sync_dir(5) = _NXP_NYP_; k_dir(5) = domain%blocks_info(k)%k_nxp_nyp; rank_dir(5) = domain%blocks_info(k)%rank_nxp_nyp
-            sync_dir(6) = _NXP_NYM_; k_dir(6) = domain%blocks_info(k)%k_nxp_nym; rank_dir(6) = domain%blocks_info(k)%rank_nxp_nym
-            sync_dir(7) = _NXM_NYP_; k_dir(7) = domain%blocks_info(k)%k_nxm_nyp; rank_dir(7) = domain%blocks_info(k)%rank_nxm_nyp
-            sync_dir(8) = _NXM_NYM_; k_dir(8) = domain%blocks_info(k)%k_nxm_nym; rank_dir(8) = domain%blocks_info(k)%rank_nxm_nym
-
-            do kk = 1, 8
-                if (rank_dir(kk) >= 0) then
-                    if (rank_dir(kk) /= mpp_rank) then
-                        rk = sync_map_rank(rank_dir(kk))
-                        call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)
-                        sync_buf_pos(kk, k) = sync_buf_pos(kk, k) + sync_buf_size(rk) + 1
-                        sync_buf_size(rk) = sync_buf_size(rk) + 1 + (nxe - nxs + 1)*(nye - nys + 1)
-                        !sync_buf_size(rk) = sync_buf_size(rk) + 2 + (nxe - nxs + 1)*(nye - nys + 1)
+                do kk = 1, 8
+                    if (rank_dir(kk) >= 0) then
+                        if (rank_dir(kk) /= mpp_rank) then
+                            rk = sync_map_rank(rank_dir(kk))
+                            bbk = sync_map_bb(k)
+                            call get_boundary_points_of_block(domain, k, sync_dir(kk), nxs, nxe, nys, nye)
+                            sync_buf_pos(kk, bbk) = sync_buf_pos(kk, bbk) + sync_buf_size(rk) + 1
+                            sync_buf_size(rk) = sync_buf_size(rk) + 1 + (nxe - nxs + 1)*(nye - nys + 1)
+                            !sync_buf_size(rk) = sync_buf_size(rk) + 2 + (nxe - nxs + 1)*(nye - nys + 1)
+                        endif
                     endif
-                endif
-            enddo
+                enddo
+            endif
         enddo
 
         do rk = 1, domain%amount_of_ranks_near
@@ -195,6 +208,7 @@ contains
         deallocate(sync_recv_buf_pos)
         
         deallocate(sync_map_rank)
+        deallocate(sync_map_bb)
     end subroutine
 
 !------------------------------------------------------------------------------

@@ -40,8 +40,7 @@ module decomposition_module
     type, public :: domain_type
         ! Local area
         integer :: bcount ! Number of data blocks at each process
-        integer :: bcount_inner, bcount_boundary ! Inner blocks go first in local block numeration! bcount_inner + bcount_boundary = bcount.
-        integer :: start_inner, start_boundary ! Start indicies of inner and boundary blocks
+        integer :: bcount_inner, bcount_boundary ! bcount_inner + bcount_boundary = bcount.
 
         integer, pointer :: bnx_start(:), bnx_end(:) ! Significant point area in blocks (x direction)
         integer, pointer :: bny_start(:), bny_end(:) ! Significant point area in blocks (y direction)
@@ -64,6 +63,7 @@ module decomposition_module
         type(block_info_type), pointer :: blocks_info(:)
         integer, pointer :: ranks_near(:)
         integer :: amount_of_ranks_near
+        integer, pointer :: boundary_blocks(:)
 
         ! Z dir
         integer :: nz
@@ -333,22 +333,13 @@ contains
         type(domain_type), intent(in) :: domain
 
         integer :: k
-        
-        do k = domain%start_inner, domain%start_inner + domain%bcount_inner - 1
-            if (.not. domain%blocks_info(k)%is_inner) then
-                call abort_model("Incorrect inner block")
+
+        do k = 1, domain%bcount_boundary
+            if (domain%blocks_info( domain%boundary_blocks(k) )%is_inner) then
+                call abort_model("Incorrect boundaru blocks")
             endif
         enddo
-
-        do k = domain%start_boundary, domain%start_boundary + domain%bcount_boundary - 1
-            if (domain%blocks_info(k)%is_inner) then
-                call abort_model("Incorrect boundary block")
-            endif
-        enddo
-
-        if (domain%start_inner + domain%bcount_inner - domain%start_inner + domain%start_boundary + domain%bcount_boundary - domain%start_boundary /= domain%bcount) then
-            print *, 'DD INFO: start inner, count inner, start bound, count bound',  &
-                     domain%start_inner, domain%bcount_inner, domain%start_boundary, domain%bcount_boundary
+        if (domain%bcount_inner + domain%bcount_boundary /= domain%bcount) then
             print *, 'DD INFO: bcount', domain%bcount
             call abort_model("Incorrect amount of inner and boundary blocks")
         endif
@@ -742,95 +733,86 @@ contains
             this%bglob_local_num = -1
             if (sorted_blocks) then
                 allocate(mask_blocks(bnx, bny))
-                
                 ! Set sorted by weight blocks
                 k = 0; k_inner = 0; k_boundary = 0
-                do kk = 1, 2
-                
-                    ! Sort only blocks on current proc and for kk = 1: only inner blocks, for kk = 2: boundary blocks
-                    mask_blocks = .false.
-                    do m = 1, bnx
-                        do n = 1, bny
-                            if (this%bglob_proc(m, n) == mpp_rank) then
-                                if ((kk == 1 .and. is_inner_block(m, n, this%bglob_proc, bnx, bny)) .or.  &
-                                    (kk == 2 .and. .not. is_inner_block(m, n, this%bglob_proc, bnx, bny))) then
-                                        mask_blocks(m ,n) = .true.
-                                        if (kk == 1) k_inner = k_inner + 1
-                                        if (kk == 2) k_boundary = k_boundary + 1
-                                endif
+                ! Mask only blocks on current proc
+                mask_blocks = .false.
+                do m = 1, bnx
+                    do n = 1, bny
+                        if (this%bglob_proc(m, n) == mpp_rank) then
+                            mask_blocks(m ,n) = .true.
+                            ! Count inner and boundary blocks
+                            if (is_inner_block(m, n, this%bglob_proc, bnx, bny)) then
+                                k_inner = k_inner + 1
+                            else
+                                k_boundary = k_boundary + 1
                             endif
-                        enddo
-                    enddo
-                    
-                    ! Sort blocks by weight, for kk = 1: only inner blocks, for kk = 2: boundary blocks
-                    ! So numerate inner blocks first
-                    if (kk == 1) res = k_inner
-                    if (kk == 2) res = k_boundary
-                    do kkk = 1, res
-                        ! Count block
-                        k = k + 1
-
-                        max_mn = MAXLOC(bglob_weight, mask_blocks)
-                        max_m = max_mn(1)
-                        max_n = max_mn(2)
-
-                        mask_blocks(max_m, max_n) = .false.
-                        
-                        ! Map local block numeration to block coords
-                        this%bindx(k, 1) = max_m
-                        this%bindx(k, 2) = max_n
-
-                        this%bnx_start(k) = glob_bnx_start(max_m, max_n)
-                        this%bnx_end(k) = glob_bnx_end(max_m, max_n)
-                        this%bny_start(k) = glob_bny_start(max_m, max_n)
-                        this%bny_end(k) = glob_bny_end(max_m, max_n)
-
-                        this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
-                        this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
-                        this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
-                        this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
-                        
-                        if (debug_level >= 9) then
-                            if (mpp_is_master()) print *, 'DD INFO: SORTED_BLOCKS: k, max_m, max_n, bw, is_inner?',  &
-                                                           k, max_m, max_n, bglob_weight(max_m, max_n),  &
-                                                           is_inner_block(max_m, max_n, this%bglob_proc, bnx, bny)
                         endif
-
-                        this%bglob_local_num(max_m, max_n) = k
                     enddo
+                enddo
+                    
+                ! Sort blocks by weight
+                do kk = 1, k_inner + k_boundary
+                    ! Count block
+                    k = k + 1
+
+                    max_mn = MAXLOC(bglob_weight, mask_blocks)
+                    max_m = max_mn(1)
+                    max_n = max_mn(2)
+
+                    mask_blocks(max_m, max_n) = .false.
+                    
+                    ! Map local block numeration to block coords
+                    this%bindx(k, 1) = max_m
+                    this%bindx(k, 2) = max_n
+
+                    this%bnx_start(k) = glob_bnx_start(max_m, max_n)
+                    this%bnx_end(k) = glob_bnx_end(max_m, max_n)
+                    this%bny_start(k) = glob_bny_start(max_m, max_n)
+                    this%bny_end(k) = glob_bny_end(max_m, max_n)
+
+                    this%bbnd_x1(k) = glob_bbnd_x1(max_m, max_n)
+                    this%bbnd_x2(k) = glob_bbnd_x2(max_m, max_n)
+                    this%bbnd_y1(k) = glob_bbnd_y1(max_m, max_n)
+                    this%bbnd_y2(k) = glob_bbnd_y2(max_m, max_n)
+                    
+                    if (debug_level >= 9) then
+                        if (mpp_is_master()) print *, 'DD INFO: SORTED_BLOCKS: k, max_m, max_n, bw, is_inner?',  &
+                                                        k, max_m, max_n, bglob_weight(max_m, max_n),  &
+                                                        is_inner_block(max_m, max_n, this%bglob_proc, bnx, bny)
+                    endif
+
+                    this%bglob_local_num(max_m, max_n) = k
                 enddo
             else
                 k = 0; k_inner = 0; k_boundary = 0
-                do kk = 1, 2
-                    do m = 1, bnx
-                        do n = 1, bny
-                            ! Numerate inner blocks first, kk = 1: only inner blocks, kk = 2: boundary blocks
-                            if (this%bglob_proc(m, n) == mpp_rank) then
-                                if ((kk == 1 .and. is_inner_block(m, n, this%bglob_proc, bnx, bny)) .or.  &
-                                    (kk == 2 .and. .not. is_inner_block(m, n, this%bglob_proc, bnx, bny))) then
-                                        ! Count block
-                                        k = k + 1
-                                        if (kk == 1) k_inner = k_inner + 1
-                                        if (kk == 2) k_boundary = k_boundary + 1
-
-                                        ! Map local block numeration to block coords
-                                        this%bindx(k, 1) = m
-                                        this%bindx(k, 2) = n
-
-                                        this%bnx_start(k) = glob_bnx_start(m, n)
-                                        this%bnx_end(k) = glob_bnx_end(m, n)
-                                        this%bny_start(k) = glob_bny_start(m, n)
-                                        this%bny_end(k) = glob_bny_end(m, n)
-
-                                        this%bbnd_x1(k) = glob_bbnd_x1(m, n)
-                                        this%bbnd_x2(k) = glob_bbnd_x2(m, n)
-                                        this%bbnd_y1(k) = glob_bbnd_y1(m, n)
-                                        this%bbnd_y2(k) = glob_bbnd_y2(m, n)
-
-                                        this%bglob_local_num(m, n) = k
-                                endif
+                do m = 1, bnx
+                    do n = 1, bny
+                        if (this%bglob_proc(m, n) == mpp_rank) then
+                            ! Count block
+                            k = k + 1
+                            if (is_inner_block(m, n, this%bglob_proc, bnx, bny)) then
+                                k_inner = k_inner + 1
+                            else
+                                k_boundary = k_boundary + 1
                             endif
-                        enddo
+
+                            ! Map local block numeration to block coords
+                            this%bindx(k, 1) = m
+                            this%bindx(k, 2) = n
+
+                            this%bnx_start(k) = glob_bnx_start(m, n)
+                            this%bnx_end(k) = glob_bnx_end(m, n)
+                            this%bny_start(k) = glob_bny_start(m, n)
+                            this%bny_end(k) = glob_bny_end(m, n)
+
+                            this%bbnd_x1(k) = glob_bbnd_x1(m, n)
+                            this%bbnd_x2(k) = glob_bbnd_x2(m, n)
+                            this%bbnd_y1(k) = glob_bbnd_y1(m, n)
+                            this%bbnd_y2(k) = glob_bbnd_y2(m, n)
+
+                            this%bglob_local_num(m, n) = k
+                        endif
                     enddo
                 enddo
             endif
@@ -858,8 +840,8 @@ contains
             ! Set values
             this%bcount_inner = k_inner
             this%bcount_boundary = k_boundary
-            this%start_inner = 1
-            this%start_boundary = k_inner + 1
+            allocate(this%boundary_blocks(this%bcount_boundary))
+            this%boundary_blocks = 0
 
             ! DEBUG
             if (debug_level >= 1) then
@@ -884,6 +866,7 @@ contains
             allocate(this%ranks_near(mpp_count))
             this%ranks_near = -1
             this%amount_of_ranks_near = 0
+            k_boundary = 0
             do k = 1, bcount
                 m = this%bindx(k, 1)
                 n = this%bindx(k, 2)
@@ -924,6 +907,12 @@ contains
                 buf_dirs(6) = this%blocks_info(k)%rank_nxp_nym
                 buf_dirs(7) = this%blocks_info(k)%rank_nxm_nyp
                 buf_dirs(8) = this%blocks_info(k)%rank_nxm_nym
+
+                ! Boundary blocks
+                if (.not. this%blocks_info(k)%is_inner) then
+                    this%boundary_blocks(k_boundary + 1) = k
+                    k_boundary = k_boundary + 1
+                endif
 
                 do kk = 1, 8
                     if (buf_dirs(kk) >= 0 .and. buf_dirs(kk) /= mpp_rank) then
@@ -1026,6 +1015,8 @@ contains
         deallocate(this%blocks_info)
 
         deallocate(this%ranks_near)
+
+        deallocate(this%boundary_blocks)
     end subroutine
 
     subroutine init_from_config(this, lbasins, name)

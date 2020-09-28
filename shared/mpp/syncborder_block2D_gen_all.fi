@@ -23,6 +23,7 @@ integer :: hnxs, hnxe, hnys, hnye ! Halo points
 integer :: nxs, nxe, nys, nye     ! Boundary points
 integer :: buf_size
 integer :: rk                     ! Local index of buffers for rank, see sync_map_rank
+integer :: bbk                    ! Local index of boundary block
 integer :: val
 
 real(wp8) :: t_local, t_global
@@ -53,8 +54,9 @@ do k = 1, domain%bcount
             if (rank_dir(kk) >= 0) then
                 if (rank_dir(kk) /= mpp_rank) then
                     rk = sync_map_rank(rank_dir(kk))
+                    bbk = sync_map_bb(k)
                     ! Set local block number (local number is relative to rk) and direction of transfer (direction is relative to rk)
-                    _SYNC_SEND_BUF_(sync_buf_pos(kk, k), rk, sync_tag) = 10*k_dir(kk) + get_inverse_dir(sync_dir(kk))
+                    _SYNC_SEND_BUF_(sync_buf_pos(kk, bbk), rk, sync_tag) = 10*k_dir(kk) + get_inverse_dir(sync_dir(kk))
                     !_SYNC_SEND_BUF_(, rk, sync_tag) = get_inverse_dir(sync_dir(kk))
                     !_SYNC_SEND_BUF_(+ 1, rk, sync_tag) = k_dir(kk)
 
@@ -63,7 +65,7 @@ do k = 1, domain%bcount
 
                     ! Pack buffer
                     buf_size = (nxe - nxs + 1)*(nye - nys + 1)
-                    _SYNC_SEND_BUF_(sync_buf_pos(kk, k) + 1 : sync_buf_pos(kk, k) + buf_size , rk, sync_tag) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
+                    _SYNC_SEND_BUF_(sync_buf_pos(kk, bbk) + 1 : sync_buf_pos(kk, bbk) + buf_size , rk, sync_tag) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
                 endif
             endif
         enddo
@@ -136,7 +138,8 @@ do rk = 1, domain%amount_of_ranks_near
         val = int(_SYNC_RECV_BUF_(i, rk, sync_tag))
         k = val / 10
         dir = MOD(val, 10)
-        sync_recv_buf_pos(dir, k) = sync_recv_buf_pos(dir, k) + i
+        bbk = sync_map_bb(k)
+        sync_recv_buf_pos(dir, bbk) = sync_recv_buf_pos(dir, bbk) + i
         i = i + 1
         
         !dir = _SYNC_RECV_BUF_(i, rk, sync_tag)
@@ -187,7 +190,8 @@ do k = 1, domain%bcount
                     !
 
                     rk = sync_map_rank(rank_dir(kk))
-                    i = sync_recv_buf_pos(kk, k)
+                    bbk = sync_map_bb(k)
+                    i = sync_recv_buf_pos(kk, bbk)
 
                     ! Unpack direction and block number for check
                     val = int(_SYNC_RECV_BUF_(i, rk, sync_tag))
