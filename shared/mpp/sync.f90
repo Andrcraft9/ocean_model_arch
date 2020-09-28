@@ -166,8 +166,13 @@ contains
             if (min_buf_size > sync_buf_size(rk)) min_buf_size = sync_buf_size(rk)
         enddo
 
-        call mpi_allreduce(max_buf_size, max_val, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
-        call mpi_allreduce(min_buf_size, min_val, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_count > 1) then
+            call mpi_allreduce(max_buf_size, max_val, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
+            call mpi_allreduce(min_buf_size, min_val, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
+        else
+            max_val = 0; max_buf_size = 0
+            min_val = 0; min_buf_size = 0
+        endif
 
         if (mpp_is_master()) then
             print *, "SYNC INFO: Allreduced Min/Max buffer size = ", min_val, max_val

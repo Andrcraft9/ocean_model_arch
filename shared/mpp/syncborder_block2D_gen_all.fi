@@ -119,8 +119,10 @@ if (mpp_min_count_sync_send_recv == 0) mpp_min_count_sync_send_recv = sync_count
 if (mpp_max_count_sync_send_recv < sync_count_send_recv) mpp_max_count_sync_send_recv = sync_count_send_recv
 if (mpp_min_count_sync_send_recv > sync_count_send_recv) mpp_min_count_sync_send_recv = sync_count_send_recv
 
-call mpi_waitall(sync_count_send_recv, sync_requests, sync_statuses, ierr)
-sync_count_send_recv = 0
+if (sync_count_send_recv > 0) then
+    call mpi_waitall(sync_count_send_recv, sync_requests, sync_statuses, ierr)
+    sync_count_send_recv = 0
+endif
 
 call end_timer(t_local)
 mpp_time_sync_wait = mpp_time_sync_wait + t_local
