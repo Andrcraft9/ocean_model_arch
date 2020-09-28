@@ -746,7 +746,7 @@ contains
 
         integer :: max_x, max_y, min_x, min_y
 
-        real(wp8) :: max_w
+        real(wp8) :: max_w, min_w
 
         this%nz = nz
 
@@ -989,20 +989,21 @@ contains
 
             ! Info per thread
             if (debug_level >= 5) then
-                max_w = 0.0d0
-                res = 0
-                !$omp parallel default(shared) private(kk, bweight)
+                max_w = 0.0d0; min_w = sum(bglob_weight)
+                max_x = 0; min_x = bcount
+                !$omp parallel default(shared) private(kk, bweight) reduction(max: max_w, max_x) reduction(min: min_w, min_x)
                 bweight = 0.0d0
                 kk = 0
-                !$omp do private(k) schedule(static, 1) reduction(max: max_w, res)
+                !$omp do private(k) schedule(static, 1) 
                 do k = 1, bcount
                     bweight = bweight + bglob_weight(this%blocks_info(k)%bm, this%blocks_info(k)%bn)
                     kk = kk + 1
-
-                    max_w = MAX(max_w, bweight)
-                    res = MAX(res, kk)
                 enddo
                 !$omp end do
+                max_w = MAX(max_w, bweight)
+                max_x = MAX(max_x, kk)
+                min_w = MIN(min_w, bweight)
+                min_x = MIN(min_x, kk)
 
                 if (debug_level >= 6) then
                     print *, 'DD INFO: rank, thread', mpp_rank, mpp_get_thread(), 'Blocks: ', kk, 'Total Weight: ', bweight
@@ -1010,7 +1011,11 @@ contains
                 
                 !$omp end parallel
 
-                print *, 'DD INFO: rank', mpp_rank, 'Max Blocks per threads: ', res, 'Max Total Weight per threads: ', max_w
+                call mpi_allreduce(max_w, max_bweight, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+
+                print *, 'DD INFO: rank', mpp_rank, 'Min/Max Blocks per threads: ', min_x, max_x, 'Min/Max Total Weight per threads: ', min_w, max_w
+
+                print *, 'DD INFO: hybrid LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count_threads*mpp_count))
             endif
 
             ! Info per block
