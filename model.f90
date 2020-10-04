@@ -2,7 +2,7 @@ program model
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
-    use config_basinpar_module, only: load_config_basinpar
+    use config_basinpar_module, only: load_config_basinpar, load_config_basinpar_from_file
     use config_sw_module, only: load_config_sw
     use time_manager_module, only: num_step, num_step_max, tau,  &
                                    init_time_manager, time_manager_def, time_manager_print, is_local_print_step,  &
@@ -28,7 +28,7 @@ program model
     call mpp_init()
 
     ! Load all configs
-    call load_config_basinpar()
+    call load_config_basinpar_from_file('basin.par')
     call load_config_sw()
 
     ! Init Time Manager

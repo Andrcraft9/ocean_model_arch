@@ -56,8 +56,6 @@ SHARED = \
 	shared/kernel_runtime.f90 \
 	shared/constants.f90 \
 	shared/mpp/mpp.f90 \
-	shared/configs/basinpar.f90 \
-	shared/configs/sw.f90 \
 	shared/errors.f90 \
 	shared/debug.f90 \
 	shared/mpp/hilbert_curve.f90
@@ -67,6 +65,10 @@ LEGACY = \
 	legacy/service/rw_ctl_file.f90 \
 	legacy/service/read_write_parameters.f90 \
 	legacy/service/time_tools.f90
+
+CONFIGS = \
+	configs/basinpar.f90 \
+	configs/sw.f90
 
 CORE = \
 	core/math_tools.f90 \
@@ -105,7 +107,7 @@ CONTROL = \
 	control/shallow_water/shallow_water.f90
 
 ## main and clean targets
-model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90)
+model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90)
 	$(FCD) -o $@ $+
 
 .PHONY: clean
@@ -121,7 +123,7 @@ clean:
 
 # Profiler TAU
 profiler:
-	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CORE) $(TOOLS) $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90 
+	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS) $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90 
 
 pack_profiler:
 	paraprof --pack LOG_TAU.ppk

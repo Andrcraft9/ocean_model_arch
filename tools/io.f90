@@ -41,28 +41,37 @@ contains
         character :: frmt*16, comment*80
         integer :: m, n, ierr
         integer :: reclen
+
+        write(frmt, 1000) nx
+        1000  format('(',i9,'i1)')
         
-        if (mpp_is_master_thread()) then
-
-            write(frmt, 1000) nx
-            1000  format('(',i9,'i1)')
-            
-            ! reading mask from:
+        ! reading mask from:
+        if (mask_file_name .eq. 'none') then
+            if (mpp_is_master()) print *, "Warning: Mask is none. Set zero mask."
+            do n = 1, ny
+                do m = 1, nx
+                    if (m < 3 .or. m > nx-2 .or. n < 3 .or. n > ny-2) then
+                        grid_global_data%mask(m, n) = 1
+                    else
+                        grid_global_data%mask(m, n) = 0
+                    endif
+                enddo
+            enddo
+        else
             if (mpp_is_master()) then
-            print *, "Reading mask of computational area..."
-            print *, mask_file_name, nx, ny
+                print *, "CONFIG INFO: Reading mask of computational area"
+                print *, mask_file_name, nx, ny
 
-            open (11, file=mask_file_name, status='old', recl=nx*lrecl, err=98)
+                open (11, file=mask_file_name, status='old', recl=nx*lrecl, err=98)
                 read (11,  '(a)') comment(1:min(80,nx))
                 write(*,'(1x,a)') comment
                 do n = ny, 1, -1
-                read(11, frmt, end=99, err=99) (grid_global_data%mask(m,n), m=1,nx)
+                    read(11, frmt, end=99, err=99) (grid_global_data%mask(m,n), m=1,nx)
                 enddo
-            close(11)
-            print *, "...OK"
+                close(11)
+                print *, "CONFIG INFO: Mask is read"
             endif
             call mpi_bcast(grid_global_data%mask, nx*ny, mpi_integer, 0, mpp_cart_comm, ierr)
-        
         endif
 
         call mpp_sync_output()

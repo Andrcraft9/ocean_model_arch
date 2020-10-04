@@ -1,0 +1,20 @@
+1525            : number of total points in x-direction in base arrays
+1115            : number of total points in y-direction in base arrays
+1               : number of s-levels in vertical direction for 3d arrays
+0               : Periodicity on x-direction (0 - non-periodic, 1 - periodic)
+0               : Periodicity on y-direction (0 - non-periodic, 1 - periodic) 
+0.00312d0       : longitude step (in degrees) in case of regular grid
+0.00225d0       : latitude  step (in degrees) in case of regular grid
+34.751560d0     : first calcutable t-point (m=mmm) on latitude  (in degrees)
+44.801125d0     : first calcutable t-point (n=nnn) on longitude (in degrees)
+0               : grid type 0 - regular, 1 - levels
+0               : 
+1               : curve grid must be 0 (Carthesian coordinates), 1 (undistorted spherical grid), 2 (distorted spherical grid)
+0.0d0           : geographic coordinates of the point that has coordinates (0,0) on rotated grid
+0.0d0           : 
+90.0d0          : lon of new north pole in geographical system
+60.0d0          : lat of new north pole in geographical system
+90.0d0          : lon of new south pole in geographical system
+-90.0d0         : lat of new south pole in geographical system
+none            : name of file with temperature point sea-land mask
+none            : name of file with bottom topography

@@ -2,6 +2,8 @@ module config_basinpar_module
     ! Base parameters for model
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
+    use mpp_module
+    use rwpar_routes
 
     implicit none
     save
@@ -48,12 +50,53 @@ module config_basinpar_module
     
 contains
 
+    subroutine load_config_basinpar_from_file(filepar)
+        character(*), intent(in) :: filepar
+        character(256) :: comments(256)
+        integer :: nofcom, ierr
+
+        ! reading parameters from file
+        if (mpp_is_master()) then
+            call readpar(filepar, comments, nofcom)
+        endif
+        call mpi_bcast(comments, 256*256, mpi_character, 0, mpp_cart_comm, ierr)
+
+        read(comments( 1),*) nx
+        read(comments( 2),*) ny
+        read(comments( 3),*) nz
+        read(comments( 4),*) periodicity_x
+        read(comments( 5),*) periodicity_y
+        read(comments( 6),*) dxst
+        read(comments( 7),*) dyst
+        read(comments( 8),*) rlon
+        read(comments( 9),*) rlat
+        read(comments( 10),*) xgr_type
+        read(comments( 11),*) ygr_type
+        read(comments( 12),*) curve_grid
+        read(comments( 13),*) rotation_on_lon
+        read(comments( 14),*) rotation_on_lat
+        read(comments( 15),*) x_pole
+        read(comments( 16),*) y_pole
+        read(comments( 17),*) p_pole
+        read(comments( 18),*) q_pole
+        call get_first_lexeme(comments(19), mask_file_name)
+        call get_first_lexeme(comments(20), bottom_topography_file_name)
+
+        ! Init config dependent parameters
+        mmm = 3
+        nnn = 3
+        mm = nx-2
+        nn = ny-2
+        if (xgr_type > 0) allocate(x_levels(nx))
+        if (ygr_type > 0) allocate(y_levels(ny))
+    
+        call mpp_sync_output()
+    end subroutine
+
     subroutine load_config_basinpar()
-    ! Here must be reading from config file (parsing)
         
         !call load_config_basinpar_as250m()
         call load_config_basinpar_as250m_test()
-
     end subroutine
 
     subroutine load_config_basinpar_bs4km()
@@ -160,7 +203,7 @@ contains
         p_pole = 90.0d0
         q_pole = -90.0d0
 
-        mask_file_name = 'data/AS/maskAzovCor_empty.txt'
+        mask_file_name = 'none'
         bottom_topography_file_name = 'none'
     end subroutine
 

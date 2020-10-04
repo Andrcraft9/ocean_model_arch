@@ -765,6 +765,7 @@ contains
             bnx = bppnx * mpp_size(1)
             bny = bppny * mpp_size(2)
 
+            if (mpp_is_master()) print *, 'DD INFO: nx, ny nz:', nx, ny, nz
             if (mpp_is_master()) print *, 'DD INFO: bnx, bny and Total blocks:', bnx, bny, bnx * bny
             if (mpp_is_master()) print *, 'DD INFO: pnx, pny and procs:', mpp_size(1), mpp_size(2), mpp_count
             call mpi_barrier(mpp_cart_comm, ierr)
@@ -1077,6 +1078,7 @@ contains
         integer :: parallel_dbg
         integer :: parallel_mod
         character(128) :: file_output
+        character(len=32) :: arg
 
         if (mpp_is_master()) then
             print *, 'Read decomposition config...'
@@ -1096,6 +1098,16 @@ contains
             print *, '(ignore this) parallel_dbg=', parallel_dbg
             print *, '(ignore this) parallel_mod=', parallel_mod
             print *, '(ignore this) output file:', file_output
+
+            if (command_argument_count() > 2) then
+                call get_command_argument(1, arg)
+                read(arg, *) mod_decomposition
+                call get_command_argument(2, arg)
+                read(arg, *) bppnx
+                call get_command_argument(3, arg)
+                read(arg, *) bppny
+                print *, 'Warning: Overwtite mode, bppnx and bppny:', mod_decomposition, bppnx, bppny
+            endif
         endif
 
         call mpi_bcast(file_decomposition, 128, mpi_character, 0, mpp_cart_comm, ierr)
