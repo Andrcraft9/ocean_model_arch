@@ -86,8 +86,6 @@ program model
     !debug
     !call abort_model("Stop")
 
-    !$omp parallel default(shared) firstprivate(local_num_step, num_step_max, tau)
-
     ! Solver
     do while(local_num_step < num_step_max)
         if (mpp_is_master_thread())  call start_timer(t_local)
@@ -125,12 +123,7 @@ program model
                 call time_manager_print(local_num_step)
             endif
         endif
-
-        !$omp barrier
-
     enddo
-
-    !$omp end parallel
 
     ! Clear data
     call ocean_data%clear(domain_data)
