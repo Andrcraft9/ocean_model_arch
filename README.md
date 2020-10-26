@@ -7,21 +7,26 @@
 Structure:
 
 ```
-control   - Algorithm Layer       : work with grid_type and ocean_type
+control         - Algorithm Layer       : work with grid_type and ocean_type
 
-interface - Parallel System Layer : transfer data to kernel
+core, interface - Parallel System Layer : data types and transfer data to kernel (core/kernel_interface.f90 - main envokes for kernels)
 
-kernel    - Kernel Layer          : work with 1D, 2D and 3D fortran arrays, per one block
+kernel          - Kernel Layer          : work with 1D, 2D and 3D fortran arrays, per one block
 
-core      - Data types
+
+
 ```
 
 ```
 service   - Specific utills (grid and mask construction, etc)
 
-shared    - Common utills (MPI, configs, etc)
+shared    - Common utills (MPI, etc)
 
-legacy    - Code from INMOM
+configs   - Common configs
+
+tools     - Shell for legacy
+
+legacy    - Original code from INMOM
 ```
 
 I/O, Time Manager, Configs - from ocean model INMOM
