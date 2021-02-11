@@ -3,6 +3,7 @@ program model
     use mpp_module
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar, load_config_basinpar_from_file
+    use config_parallel_module, only: load_config_parallel_from_file_and_cmd
     use config_sw_module, only: load_config_sw
     use time_manager_module, only: num_step, num_step_max, tau,  &
                                    init_time_manager, time_manager_def, time_manager_print, is_local_print_step,  &
@@ -30,19 +31,20 @@ program model
     ! Load all configs
     call load_config_basinpar_from_file('basin.par')
     call load_config_sw()
+    call load_config_parallel_from_file_and_cmd('parallel.par')
 
     ! Init Time Manager
     call init_time_manager('ocean_run.par')
     local_num_step = num_step
 
-    ! Read mask
+    ! Read global sea-land mask
     call grid_global_data%init()
     call read_global_mask(grid_global_data)
 
     ! Make decomposition
-    call domain_data%init_from_config(grid_global_data%mask, 'parallel.par')
+    call domain_data%init_from_config(grid_global_data%mask)
 
-    ! Sync init
+    ! Init sync buffers and patterns
     call mpp_sync_init(domain_data)
 
     ! Allocate data

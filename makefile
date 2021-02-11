@@ -68,7 +68,8 @@ LEGACY = \
 
 CONFIGS = \
 	configs/basinpar.f90 \
-	configs/sw.f90
+	configs/sw.f90 \
+	configs/parallel.f90
 
 CORE = \
 	core/math_tools.f90 \

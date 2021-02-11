@@ -1061,67 +1061,13 @@ contains
         deallocate(this%boundary_blocks)
     end subroutine
 
-    subroutine init_from_config(this, lbasins, name)
-        use rwpar_routes
+    subroutine init_from_config(this, lbasins)
+        use config_parallel_module, only: bppnx, bppny, mod_decomposition
 
         class(domain_type), intent(inout) :: this
         integer, allocatable, intent(in) :: lbasins(:,:) 
-        character(*) :: name
-
-        integer :: nofcom
-        character(128) :: comments(128)
-        integer :: ierr
-
-        integer :: mod_decomposition
-        character(128) :: file_decomposition
-        integer :: bppnx, bppny
-        integer :: parallel_dbg
-        integer :: parallel_mod
-        character(128) :: file_output
-        character(len=32) :: arg
-
-        if (mpp_is_master()) then
-            print *, 'Read decomposition config...'
-            call readpar(name, comments, nofcom)
-            read(comments(1),*) mod_decomposition
-            call get_first_lexeme(comments(2), file_decomposition)
-            read(comments(3),*) bppnx
-            read(comments(4),*) bppny
-            read(comments(5),*) parallel_dbg
-            read(comments(6),*) parallel_mod
-            call get_first_lexeme(comments(7), file_output)
-
-            print *, 'mod_decomposition=', mod_decomposition
-            print *, '(ignore this) decomposition file:', file_decomposition
-            print *, 'bppnx=', bppnx
-            print *, 'bppny=', bppny
-            print *, '(ignore this) parallel_dbg=', parallel_dbg
-            print *, '(ignore this) parallel_mod=', parallel_mod
-            print *, '(ignore this) output file:', file_output
-
-            if (command_argument_count() > 2) then
-                call get_command_argument(1, arg)
-                read(arg, *) mod_decomposition
-                call get_command_argument(2, arg)
-                read(arg, *) bppnx
-                call get_command_argument(3, arg)
-                read(arg, *) bppny
-                print *, 'Warning: Overwtite mode, bppnx and bppny:', mod_decomposition, bppnx, bppny
-            endif
-        endif
-
-        call mpi_bcast(file_decomposition, 128, mpi_character, 0, mpp_cart_comm, ierr)
-        call mpi_bcast(mod_decomposition, 1, mpi_integer, 0, mpp_cart_comm, ierr)
-        call mpi_bcast(bppnx, 1, mpi_integer, 0, mpp_cart_comm, ierr)
-        call mpi_bcast(bppny, 1, mpi_integer, 0, mpp_cart_comm, ierr)
-        call mpi_bcast(parallel_dbg, 1, mpi_integer, 0, mpp_cart_comm, ierr)
-        call mpi_bcast(parallel_mod, 1, mpi_integer, 0, mpp_cart_comm, ierr)
-        call mpi_bcast(file_output, 128, mpi_character, 0, mpp_cart_comm, ierr)
-
-        call mpp_sync_output()
 
         call this%init(bppnx, bppny, mod_decomposition, lbasins)
-
     end subroutine
 
 end module decomposition_module
