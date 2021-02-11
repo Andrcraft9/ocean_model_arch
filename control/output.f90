@@ -2,10 +2,10 @@ module output_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module
-    use decomposition_module, only: domain_type
-    use ocean_module, only: ocean_type
+    use decomposition_module, only: domain_type, domain => domain_data
+    use ocean_module, only: ocean_type, ocean_data
     use data_types_module, only: data2D_real4_type
-    use grid_module, only: grid_type
+    use grid_module, only: grid_type, grid_data
     use io_module, only: write_data
     use config_basinpar_module, only: nx, ny, xgr_type, ygr_type, rlon, rlat, dxst, dyst
 
@@ -20,20 +20,15 @@ module output_module
 
 contains
     
-    subroutine output_init_buffers(domain)
-        type(domain_type), intent(in) :: domain
-
+    subroutine output_init_buffers()
         call bufwp4%init(domain)
     end subroutine
 
-    subroutine output_clear_buffers(domain)
-        type(domain_type), intent(in) :: domain
-
+    subroutine output_clear_buffers()
         call bufwp4%clear(domain)
     end subroutine
 
-    subroutine local_output(domain, grid_data, ocean_data,  &
-                            nrec,    &
+    subroutine local_output(nrec,    &
                             year,    &
                             month,   &
                             day,     &
@@ -45,9 +40,6 @@ contains
         use iodata_routes, only: fulfname, lrecl, lmpirecl, undef
         use rw_ctl_routes, only: ctl_file_write
 
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(in) :: grid_data
-        type(ocean_type), intent(in) :: ocean_data
         integer, intent(in) :: nrec, year, month, day, hour, minute, calendar
         real(wp4) :: tstep
 

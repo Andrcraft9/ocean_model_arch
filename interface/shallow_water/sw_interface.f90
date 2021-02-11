@@ -3,10 +3,10 @@ module shallow_water_interface_module
     use kernel_interface_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module
-    use decomposition_module, only: domain_type
+    use decomposition_module, only: domain_type, domain => domain_data
     use data_types_module, only: data2D_real8_type, data2D_real4_type
-    use ocean_module, only: ocean_type
-    use grid_module, only: grid_type
+    use ocean_module, only: ocean_type, ocean_data
+    use grid_module, only: grid_type, grid_data
     use mpp_sync_module, only: hybrid_sync, sync, sync_parameters_type
     use mixing_module, only: stress_components_kernel
     use depth_module, only: hh_init_kernel, hh_update_kernel, hh_shift_kernel
@@ -39,11 +39,8 @@ contains
 !-----------------------------------------------------------------------------!
 !------------------------------- Kernels -------- ----------------------------!
 !-----------------------------------------------------------------------------!
-    subroutine envoke_hh_init_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_hh_init_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
 
         call hh_init_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -77,11 +74,8 @@ contains
                             grid_data   %hhq_rest  %block(k)%field)
     end subroutine
 
-    subroutine envoke_hh_init_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_hh_init_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
         call hybrid_sync(sync_parameters, 1, domain, grid_data%hhu)
         call hybrid_sync(sync_parameters, 2, domain, grid_data%hhu_p)
@@ -95,11 +89,8 @@ contains
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_check_ssh_err_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_check_ssh_err_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
 
         call check_ssh_err_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -109,20 +100,14 @@ contains
                                   'ssh')
     end subroutine
 
-    subroutine envoke_check_ssh_err_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_check_ssh_err_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_stress_components_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_stress_components_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
 
         ! Interface only for 2D call
@@ -147,22 +132,16 @@ contains
                                       nlev)
     end subroutine
 
-    subroutine envoke_stress_components_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_stress_components_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
         call hybrid_sync(sync_parameters, 1, domain, ocean_data%str_t)
         call hybrid_sync(sync_parameters, 2, domain, ocean_data%str_s)
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_hh_update_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_hh_update_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
 
         call hh_update_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -187,11 +166,8 @@ contains
                               grid_data   %hhq_rest  %block(k)%field)
     end subroutine
 
-    subroutine envoke_hh_update_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_hh_update_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
         call hybrid_sync(sync_parameters, 1, domain, grid_data%hhu_n)
         call hybrid_sync(sync_parameters, 2, domain, grid_data%hhv_n)
@@ -199,11 +175,8 @@ contains
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_hh_shift_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_hh_shift_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
 
         call hh_shift_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -226,20 +199,14 @@ contains
                              grid_data  %hhh_n  %block(k)%field)
     end subroutine
 
-    subroutine envoke_hh_shift_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_hh_shift_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_uv_trans_vort_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_uv_trans_vort_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
 
         ! Interface only for 2D call
@@ -258,21 +225,15 @@ contains
                                   nlev)
     end subroutine
 
-    subroutine envoke_uv_trans_vort_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_uv_trans_vort_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
         call hybrid_sync(sync_parameters, 1, domain, ocean_data%vort)
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_uv_trans_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_uv_trans_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
         
         ! Interface only for 2D call
@@ -297,20 +258,14 @@ contains
                              nlev)
     end subroutine
 
-    subroutine envoke_uv_trans_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_uv_trans_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_uv_diff2_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_uv_diff2_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
         
         ! Interface only for 2D call
@@ -340,20 +295,14 @@ contains
                                  nlev)
     end subroutine
 
-    subroutine envoke_uv_diff2_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_uv_diff2_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_sw_update_ssh_kernel(k, domain, grid_data, ocean_data, tau)
+    subroutine envoke_sw_update_ssh_kernel(k, tau)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: tau
 
         call sw_update_ssh_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -372,21 +321,15 @@ contains
                                   ocean_data %vbrtr  %block(k)%field)
     end subroutine
 
-    subroutine envoke_sw_update_ssh_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_sw_update_ssh_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
         call hybrid_sync(sync_parameters, 1, domain, ocean_data%sshn)
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_sw_update_uv_kernel(k, domain, grid_data, ocean_data, tau)
+    subroutine envoke_sw_update_uv_kernel(k, tau)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: tau
 
         call sw_update_uv(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -424,22 +367,16 @@ contains
                           ocean_data %RHSy_dif  %block(k)%field)
     end subroutine
 
-    subroutine envoke_sw_update_uv_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_sw_update_uv_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
         call hybrid_sync(sync_parameters, 1, domain, ocean_data%vbrtrn)
         call hybrid_sync(sync_parameters, 2, domain, ocean_data%ubrtrn)
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_sw_next_step_kernel(k, domain, grid_data, ocean_data, time_smooth)
+    subroutine envoke_sw_next_step_kernel(k, time_smooth)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: time_smooth
 
         call sw_next_step(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
@@ -459,21 +396,16 @@ contains
                           ocean_data %vbrtrp  %block(k)%field)
     end subroutine
 
-    subroutine envoke_sw_next_step_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_sw_next_step_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
 
     end subroutine
 
 !-----------------------------------------------------------------------------!
 !-----------------------------------------------------------------------------!
 
-    subroutine envoke_gaussian_elimination(domain, grid_data, ssh, sigma, nx0, ny0)
+    subroutine envoke_gaussian_elimination(ssh, sigma, nx0, ny0)
         
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(in) :: grid_data
         type(data2D_real8_type), intent(inout) :: ssh
         real(wp8), intent(in) ::sigma
         integer, intent(in) :: nx0, ny0
@@ -487,7 +419,7 @@ contains
                                              domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                                              grid_data  %lu   %block(k)%field,  &
                                                          ssh  %block(k)%field,  &
-                                            sigma, nx0, ny0)
+                                             sigma, nx0, ny0)
     
         enddo
         _OMP_BLOCKS_PARALLEL_END_

@@ -4,9 +4,9 @@ module init_data_module
 
     use mpp_module
     use data_types_module, only: data2D_real4_type, data2D_real8_type
-    use decomposition_module, only: domain_type
-    use ocean_module, only: ocean_type
-    use grid_module, only: grid_type, grid_global_type
+    use decomposition_module, only: domain_type, domain => domain_data
+    use ocean_module, only: ocean_type, ocean_data
+    use grid_module, only: grid_type, grid_data, grid_global_type, grid_global_data
     use io_module, only: read_data
     use gridcon_module, only: gridcon
     use basinpar_module, only: basinpar
@@ -22,15 +22,11 @@ module init_data_module
 
 contains
 
-    subroutine init_ocean_data(domain, grid_data, ocean_data)
+    subroutine init_ocean_data()
         use config_sw_module, only: ssh_init_file_name, lvisc_2
         use kernel_interface_module
         use shallow_water_interface_module, only: envoke_gaussian_elimination, envoke_hh_init_kernel, envoke_hh_init_sync
         use config_basinpar_module, only: nx, ny
-
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         
         type(data2D_real4_type) :: tmp_data
         procedure(envoke_empty_kernel), pointer :: sub_kernel
@@ -44,7 +40,7 @@ contains
 
         if (ssh_init_file_name .eq. 'none') then
             if (mpp_is_master()) print *, "WARNING: SSH init file is none. Set gaussian elimination as init ssh level."
-            call envoke_gaussian_elimination(domain, grid_data, ocean_data%ssh, 1.0d0, nx / 2, ny / 2)
+            call envoke_gaussian_elimination(ocean_data%ssh, 1.0d0, nx / 2, ny / 2)
         else
             call tmp_data%init(domain)
             call read_data(domain, 'INIT/', ssh_init_file_name, 1, tmp_data, grid_data%lu, ierr)
@@ -58,7 +54,7 @@ contains
 
         sub_kernel => envoke_hh_init_kernel
         sub_sync   => envoke_hh_init_sync
-        call envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, 0.0d0)
+        call envoke(sub_kernel, sub_sync, 0.0d0)
 
         ! Zero velocity
         ! U
@@ -77,24 +73,20 @@ contains
 
     end subroutine init_ocean_data
 
-    subroutine init_grid_data(domain, grid_global_data, grid_data)
+    subroutine init_grid_data()
         use config_basinpar_module, only: bottom_topography_file_name
-
-        type(domain_type), intent(in) :: domain
-        type(grid_global_type), intent(inout) :: grid_global_data
-        type(grid_type), intent(inout) :: grid_data
 
         type(data2D_real4_type) :: tmp_data
         integer :: ierr
 
         ! area mask initialization
-        call gridcon(domain, grid_global_data, grid_data)
+        call gridcon
 
         ! setting vertical t-,w- grid levels
         !call vgrid
         
         ! define grid geographical coordinates, steps and coriolis parameters
-        call basinpar(domain, grid_data)
+        call basinpar
 
         ! Read bottom topograhy (real4 binary file)
         if (bottom_topography_file_name .eq. 'none') then

@@ -3,9 +3,9 @@ module grid_interface_module
     use kernel_interface_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module
-    use decomposition_module, only: domain_type
+    use decomposition_module, only: domain_type, domain => domain_data
     use data_types_module, only: data2D_real8_type, data2D_real4_type
-    use grid_module, only: grid_type, grid_global_type
+    use grid_module, only: grid_type, grid_data, grid_global_type, grid_global_data
     use mpp_sync_module, only: hybrid_sync, sync, sync_parameters_type
     use grid_kernels_module, only: lu_init_kernel, lu_lv_init_kernel, grid_base_init_kernel, grid_geo_init_kernel
     use errors_module, only: abort_model, check_error
@@ -28,11 +28,7 @@ contains
 !------------------------------- Kernels -------- ----------------------------!
 !-----------------------------------------------------------------------------!
 
-subroutine envoke_lu_init_kernel(domain, grid_data, grid_global_data)
-    type(domain_type), intent(in) :: domain
-    type(grid_type), intent(inout) :: grid_data
-    type(grid_global_type), intent(in) :: grid_global_data
-
+subroutine envoke_lu_init_kernel()
     integer :: k
 
     _OMP_BLOCKS_PARALLEL_BEGIN_
@@ -50,10 +46,7 @@ subroutine envoke_lu_init_kernel(domain, grid_data, grid_global_data)
         
 end subroutine
 
-subroutine envoke_lu_lv_init_kernel(domain, grid_data)
-    type(domain_type), intent(in) :: domain
-    type(grid_type), intent(inout) :: grid_data
-
+subroutine envoke_lu_lv_init_kernel()
     integer :: k
 
     _OMP_BLOCKS_PARALLEL_BEGIN_
@@ -78,10 +71,7 @@ subroutine envoke_lu_lv_init_kernel(domain, grid_data)
 
 end subroutine
 
-subroutine envoke_grid_base_init_kernel(domain, grid_data)
-    type(domain_type), intent(in) :: domain
-    type(grid_type), intent(inout) :: grid_data
-
+subroutine envoke_grid_base_init_kernel()
     integer :: k
 
     _OMP_BLOCKS_PARALLEL_BEGIN_
@@ -116,10 +106,7 @@ subroutine envoke_grid_base_init_kernel(domain, grid_data)
 
 end subroutine
 
-subroutine envoke_grid_geo_init_kernel(domain, grid_data)
-    type(domain_type), intent(in) :: domain
-    type(grid_type), intent(inout) :: grid_data
-
+subroutine envoke_grid_geo_init_kernel()
     integer :: k
 
     _OMP_BLOCKS_PARALLEL_BEGIN_

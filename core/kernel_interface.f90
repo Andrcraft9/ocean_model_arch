@@ -3,11 +3,8 @@ module kernel_interface_module
     use kernel_runtime_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module
-    use decomposition_module, only: domain_type
-    use data_types_module, only: data2D_real8_type, data2D_real4_type
-    use ocean_module, only: ocean_type
-    use grid_module, only: grid_type
     use mpp_sync_module, only: hybrid_sync, sync, sync_parameters_type
+    use decomposition_module, only: domain_type, domain => domain_data
 
 #include "macros/mpp_macros.fi"
 
@@ -24,25 +21,16 @@ contains
 !-----------------------------------------------------------------------------!
 !-------------------------- Interface subroutines ----------------------------!
 !-----------------------------------------------------------------------------!
-    subroutine envoke_empty_kernel(k, domain, grid_data, ocean_data, param)
+    subroutine envoke_empty_kernel(k, param)
         integer, intent(in) :: k
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
         real(wp8), intent(in) :: param
     end subroutine 
 
-    subroutine envoke_empty_sync(sync_parameters, domain, grid_data, ocean_data)
+    subroutine envoke_empty_sync(sync_parameters)
         type(sync_parameters_type), intent(in) :: sync_parameters
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
     end subroutine 
 
-    subroutine envoke(domain, grid_data, ocean_data, sub_kernel, sub_sync, param)
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
-        type(ocean_type), intent(inout) :: ocean_data
+    subroutine envoke(sub_kernel, sub_sync, param)
         procedure(envoke_empty_kernel), pointer :: sub_kernel
         procedure(envoke_empty_sync), pointer :: sub_sync
         real(wp8), intent(in) :: param
@@ -58,10 +46,10 @@ contains
 #ifdef _MPP_NO_PARALLEL_MODE_
 
         do k = 1, domain%bcount
-            call sub_kernel(k, domain, grid_data, ocean_data, param)
+            call sub_kernel(k, param)
         enddo
 
-        call sub_sync(sync_parameters_all, domain, grid_data, ocean_data)
+        call sub_sync(sync_parameters_all)
 
 #endif
 
@@ -69,11 +57,11 @@ contains
 
         !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
-            call sub_kernel(k, domain, grid_data, ocean_data, param)
+            call sub_kernel(k, param)
         enddo
         !$omp end do nowait
 
-        call sub_sync(sync_parameters_all, domain, grid_data, ocean_data)
+        call sub_sync(sync_parameters_all)
 
 #endif
 
@@ -81,13 +69,13 @@ contains
     
         !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
-            call sub_kernel(k, domain, grid_data, ocean_data, param)
+            call sub_kernel(k, param)
         enddo
         !$omp end do nowait
 
-        call sub_sync(sync_parameters_boundary, domain, grid_data, ocean_data)
-        call sub_sync(sync_parameters_inner, domain, grid_data, ocean_data)
-        call sub_sync(sync_parameters_intermediate, domain, grid_data, ocean_data)
+        call sub_sync(sync_parameters_boundary)
+        call sub_sync(sync_parameters_inner)
+        call sub_sync(sync_parameters_intermediate)
 
 #endif
 

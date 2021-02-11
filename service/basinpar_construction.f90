@@ -6,8 +6,6 @@ module basinpar_module
     use config_basinpar_module, only: nx, ny, nz, mm, mmm, nn, nnn, dxst, dyst, rlon, rlat,    &
                                       curve_grid, xgr_type, ygr_type, x_levels, y_levels,      &
                                       rotation_on_lon, rotation_on_lat, x_pole, y_pole, p_pole, q_pole
-    use decomposition_module, only: domain_type
-    use grid_module, only: grid_type
     use grid_interface_module, only: envoke_grid_base_init_kernel, envoke_grid_geo_init_kernel
 
     implicit none
@@ -20,9 +18,7 @@ contains
 
 !===========================================================================================
 
-    subroutine basinpar(domain, grid_data)
-        type(domain_type), intent(in) :: domain
-        type(grid_type), intent(inout) :: grid_data
+    subroutine basinpar()
 
         ! parameters:
         if (mpp_is_master()) then
@@ -71,8 +67,8 @@ contains
             write(*,'(2x,a,f10.3,a)') 'free fall acceleration(grv)=',FreeFallAcc,'[m/s**2]'
         endif     
 
-        call envoke_grid_base_init_kernel(domain, grid_data)
-        call envoke_grid_geo_init_kernel(domain, grid_data)
+        call envoke_grid_base_init_kernel()
+        call envoke_grid_geo_init_kernel()
 
 endsubroutine basinpar
 

@@ -50,11 +50,11 @@ program model
     ! Allocate data
     call ocean_data%init(domain_data)
     call grid_data%init(domain_data)
-    call output_init_buffers(domain_data)
+    call output_init_buffers()
 
     ! Init data (read/set)
-    call init_grid_data(domain_data, grid_global_data, grid_data)
-    call init_ocean_data(domain_data, grid_data, ocean_data)
+    call init_grid_data()
+    call init_ocean_data()
 
     call time_manager_def(local_num_step)
     if (mpp_is_master()) then
@@ -70,10 +70,7 @@ program model
 
     if (is_local_print_step(local_num_step) > 0) then
         if (mpp_is_master()) print *, "Output initial local data..."
-        call local_output(domain_data, &
-                          grid_data,   &
-                          ocean_data,  &
-                          1,  &
+        call local_output(1,  &
                           year_loc,  &
                           mon_loc,  &
                           day_loc,  &
@@ -95,7 +92,7 @@ program model
         if (mpp_is_master_thread())  call start_timer(t_local)
 
         ! Computing one step of ocean dynamics
-        call expl_shallow_water(tau, domain_data, grid_data, ocean_data)
+        call expl_shallow_water(tau)
         
         if (mpp_is_master_thread()) then
             call end_timer(t_local)
@@ -112,17 +109,14 @@ program model
             if (is_local_print_step(local_num_step) > 0) then
                 call time_manager_update_nrec(local_num_step)
                 
-                call local_output(domain_data, &
-                                grid_data,   &
-                                ocean_data,  &
-                                nrec_loc + 1,  &
-                                year_loc,  &
-                                mon_loc,  & 
-                                day_loc,  &
-                                hour_loc,  &
-                                min_loc,  &
-                        loc_data_tstep,  &
-                                yr_type  )
+                call local_output(nrec_loc + 1,  &
+                                  year_loc,  &
+                                  mon_loc,  & 
+                                  day_loc,  &
+                                  hour_loc,  &
+                                  min_loc,  &
+                                  loc_data_tstep,  &
+                                  yr_type  )
 
                 call time_manager_print(local_num_step)
             endif
@@ -138,7 +132,7 @@ program model
     call ocean_data%clear(domain_data)
     call grid_data%clear(domain_data)
     call grid_global_data%clear()
-    call output_clear_buffers(domain_data)
+    call output_clear_buffers()
 
     ! Clear sync data
     call mpp_sync_finalize(domain_data)

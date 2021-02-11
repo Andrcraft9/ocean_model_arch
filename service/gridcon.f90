@@ -2,8 +2,6 @@ module gridcon_module
     ! Grid consruction module
 
     use mpp_module
-    use decomposition_module, only: domain_type
-    use grid_module, only: grid_type, grid_global_type
     use mpp_sync_module, only: sync
     use grid_interface_module, only: envoke_lu_init_kernel, envoke_lu_lv_init_kernel
     use errors_module, only: abort_model
@@ -18,17 +16,13 @@ module gridcon_module
 
 contains
 
-    subroutine gridcon(domain, grid_global_data, grid_data)
+    subroutine gridcon()
         ! Grid consruction module by temperature mask.
         ! subroutin for construction pass boundary, velosity and bottom masks
         ! using temperature mask in diogin standart
 
-        type(domain_type), intent(in) :: domain
-        type(grid_global_type), intent(in) :: grid_global_data
-        type(grid_type), intent(inout) :: grid_data
-
         ! conversion integer diogin mask to real model mask
-        call envoke_lu_init_kernel(domain, grid_data, grid_global_data)
+        call envoke_lu_init_kernel()
 
         ! forming mask for depth grid points
         ! forming luh from lu, which have land neibours in luh.
@@ -41,7 +35,7 @@ contains
           write(*,*) 'LCU and LCV (do not include boundary) and LLU and LLV (include boundary)'
         endif
 
-        call envoke_lu_lv_init_kernel(domain, grid_data)
+        call envoke_lu_lv_init_kernel()
         
     end subroutine gridcon
 
