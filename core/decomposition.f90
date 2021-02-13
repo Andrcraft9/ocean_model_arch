@@ -41,6 +41,7 @@ module decomposition_module
         ! Local area
         integer :: bcount ! Number of data blocks at each process
         integer :: bcount_inner, bcount_boundary ! bcount_inner + bcount_boundary = bcount.
+        integer :: tot_weight ! Total sum of block weights for curennt proc
 
         integer, pointer :: bnx_start(:), bnx_end(:) ! Significant point area in blocks (x direction)
         integer, pointer :: bny_start(:), bny_end(:) ! Significant point area in blocks (y direction)
@@ -69,6 +70,7 @@ module decomposition_module
         integer :: nz
     contains
         procedure, public :: init_from_config
+        procedure, public :: init_from_config_and_mpp_compute_power
         procedure, public :: init
         procedure, public :: clear
         
@@ -447,18 +449,19 @@ contains
         end associate
     end subroutine
 
-    subroutine create_hilbert_curve_decomposition(this, bglob_weight, land_blocks)
+    subroutine create_hilbert_curve_decomposition(this, bglob_weight, land_blocks, compute_powers)
         
         use hilbert_curve_module
 
         class(domain_type), intent(in) :: this
-        real(wp8), intent(in) :: bglob_weight(:, :)
+        real(wp8), allocatable, intent(in) :: bglob_weight(:, :)
         integer, intent(in) :: land_blocks
+        real(wp8), allocatable, intent(in) :: compute_powers(:)
 
         integer :: k, i, ierr
         integer :: hilbert_index, hilbert_coord_x, hilbert_coord_y
-        integer :: ks, sea_blocks
-        real(wp8) :: weight, tot_weight, mean_weight, last_weight
+        integer :: sea_blocks
+        real(wp8) :: curr_weights_sum, tot_weight, curr_mean_weight, weights_sum
 
         hilbert_index = int(log(real(this%bnx))/ log(2.0))
         ierr = 0
@@ -475,17 +478,17 @@ contains
         if (mpp_is_master()) print *, 'DD INFO: Hilbert curve index:', hilbert_index
 
         tot_weight = sum(bglob_weight)
-        mean_weight = tot_weight / mpp_count
+        curr_mean_weight = tot_weight * compute_powers(1) / sum(compute_powers(1 : mpp_count))
         sea_blocks = this%bnx * this%bny - land_blocks
 
         if (debug_level >= 1) then
-            if (mpp_is_master()) print *, 'DD INFO: Total blocks weigth:', tot_weight, "Mean blocks weigth:", mean_weight
+            if (mpp_is_master()) print *, 'DD INFO: Total blocks weigth:', tot_weight, "Mean blocks weigth (for first rank only):", curr_mean_weight
         endif
         call mpi_barrier(mpp_cart_comm, ierr)
 
-        weight = 0.0d0
-        last_weight = 0.0d0
-        i = 0; ks = 0
+        curr_weights_sum = 0.0d0
+        weights_sum = 0.0d0
+        i = 0;
         do k = 1, this%bnx * this%bny
             call hilbert_d2xy(hilbert_index, k-1, hilbert_coord_x, hilbert_coord_y)
             hilbert_coord_x = hilbert_coord_x + 1; hilbert_coord_y = hilbert_coord_y + 1
@@ -494,33 +497,34 @@ contains
             if (bglob_weight(hilbert_coord_x, hilbert_coord_y) == 0.0d0) then
                 this%bglob_proc(hilbert_coord_x, hilbert_coord_y) = -1
                 cycle
-            else
-                ks = ks + 1
             endif
 
-            weight = weight + bglob_weight(hilbert_coord_x, hilbert_coord_y)
+            ! W_k = Sum(w_j), j=s,k, s - first block index for i proc, W_k - local sum of weights for current proc
+            curr_weights_sum = curr_weights_sum + bglob_weight(hilbert_coord_x, hilbert_coord_y)
 
-            !if (sea_blocks - ks >= mpp_count - i - 1) then
-                if (weight + (weight - bglob_weight(hilbert_coord_x, hilbert_coord_y)) > 2.0*mean_weight) then
-                    ! Recompute mean value
-                    mean_weight = (tot_weight - last_weight) / (mpp_count - i - 1)
-                    ! Go to next proc
-                    i = i + 1
-                    weight = bglob_weight(hilbert_coord_x, hilbert_coord_y)
-                    if (i > mpp_count - 1) then
-                        i = mpp_count - 1
-                        !if (rank == 0 .and. parallel_dbg < 2) print *, 'Warning! Last procs ...'
-                        if (mpp_is_master()) print *, 'DD INFO: for block', k, 'Warning! Last procs ...'
-                    endif
+            ! W_k + W_{k-1} > 2 W_mean
+            if (curr_weights_sum + (curr_weights_sum - bglob_weight(hilbert_coord_x, hilbert_coord_y)) > 2.0*curr_mean_weight) then
+                ! Go to next proc
+                i = i + 1
+                ! Recompute mean weight for next proc
+                curr_mean_weight = (tot_weight - weights_sum) * compute_powers(i + 1) / sum(compute_powers(i + 1 : mpp_count))
+                ! Reset weights sum for next proc
+                curr_weights_sum = bglob_weight(hilbert_coord_x, hilbert_coord_y)
+
+                if (i > mpp_count - 1) then
+                    i = mpp_count - 1
+                    if (mpp_is_master()) print *, 'DD INFO: ERROR: Hilbert LB: start with block k all blocks assigned to last proc: k=', k
                 endif
-            !else
-            !    i = i + 1
-            !    weight = bglob_weight(hilbert_coord_x, hilbert_coord_y)
-            !endif
+            endif
 
             this%bglob_proc(hilbert_coord_x, hilbert_coord_y) = i
-            last_weight = last_weight + bglob_weight(hilbert_coord_x, hilbert_coord_y)
+            ! Total sum of assegned block weights
+            weights_sum = weights_sum + bglob_weight(hilbert_coord_x, hilbert_coord_y)
         enddo
+        
+        if (i /= mpp_count - 1) then
+            if (mpp_is_master()) print *, 'DD INFO: ERROR: Hilbert LB: assigned procs is not equal to proc count: last assigned rank, mpp_count', i, mpp_count
+        endif
 
         if (debug_level >= 7) then
             call parallel_int_output(this%bglob_proc, 1, this%bnx, 1, this%bny, 'bglob_proc from load-balanced hilbert curve decomposition')
@@ -719,7 +723,7 @@ contains
 
     end subroutine
 
-    subroutine init(this, bppnx, bppny, mod_create, lbasins)
+    subroutine init(this, bppnx, bppny, mod_create, lbasins, compute_powers)
         use config_basinpar_module, only: nx, ny, nz
 
         ! Initialization of each domain
@@ -727,9 +731,11 @@ contains
         integer, intent(in) :: bppnx, bppny
         integer, intent(in) :: mod_create
         integer, allocatable, intent(in) :: lbasins(:,:) 
+        real(wp8), allocatable, intent(in) :: compute_powers(:)
 
         real(wp8), allocatable :: bglob_weight(:, :)
         real(wp8) :: bweight, max_bweight
+        real(wp8) :: btime, max_btime
 
         integer, allocatable :: glob_bnx_start(:, :), glob_bnx_end(:, :),  &
                                 glob_bny_start(:, :), glob_bny_end(:, :)
@@ -796,7 +802,7 @@ contains
                 call this%create_uniform_decomposition(bglob_weight)
             elseif (mod_create == 1) then
                 if (mpp_is_master()) print *, "DD INFO: Hilber Curve blocks decomposition!..."
-                call this%create_hilbert_curve_decomposition(bglob_weight, land_blocks)
+                call this%create_hilbert_curve_decomposition(bglob_weight, land_blocks, compute_powers)
             else
                 if (mpp_is_master()) print *, "DD INFO: Unknown mode!"
                 call abort_model("Unknown decomposition mode!")
@@ -819,7 +825,7 @@ contains
                 call mpi_barrier(mpp_cart_comm, ierr)
             endif
 
-            ! Compute blocks per proc
+            ! Compute weight of blocks on current proc, compute block count
             bcount = 0; bweight = 0.0d0
             do m = 1, bnx
                 do n = 1, bny
@@ -829,10 +835,15 @@ contains
                     endif
                 enddo
             enddo
+            ! Set total weihts of current proc
+            this%tot_weight = bweight
+            ! Compute time for blocks on current proc
+            btime = bweight / compute_powers(mpp_rank + 1)
             call mpi_allreduce(bcount, total_blocks, 1, mpi_integer, mpi_sum, mpp_cart_comm, ierr)
             call mpi_allreduce(bweight, max_bweight, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
             call mpi_allreduce(bcount, bcount_max, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
             call mpi_allreduce(bcount, bcount_min, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
+            call mpi_allreduce(btime, max_btime, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
 
             ierr = 0
             if (bcount <= 0) ierr = 1
@@ -840,7 +851,8 @@ contains
 
             ! Print information about blocks
             if (mpp_is_master()) print *, 'DD INFO: Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count)),  &
-                                          'max blocks per proc:', bcount_max, 'min blocks per proc:', bcount_min
+                                          'max blocks per proc:', bcount_max, 'min blocks per proc:', bcount_min,  &
+                                          'LB with compute powers: ', max_btime / (sum(bglob_weight) / sum(compute_powers(1 : mpp_count)))
             call mpi_barrier(mpp_cart_comm, ierr)
 
             call this%create_local_block_numearation(glob_bnx_start, glob_bnx_end, glob_bny_start, glob_bny_end,  & 
@@ -1065,9 +1077,27 @@ contains
         use config_parallel_module, only: bppnx, bppny, mod_decomposition
 
         class(domain_type), intent(inout) :: this
-        integer, allocatable, intent(in) :: lbasins(:,:) 
+        integer, allocatable, intent(in) :: lbasins(:,:)
 
-        call this%init(bppnx, bppny, mod_decomposition, lbasins)
+        real(wp8), allocatable :: compute_power(:)
+
+        ! Create uniform compute powers of procs
+        allocate(compute_power(mpp_count))
+        compute_power = 1.0d0
+
+        call this%init(bppnx, bppny, mod_decomposition, lbasins, compute_power)
+
+        deallocate(compute_power)
+    end subroutine
+
+    subroutine init_from_config_and_mpp_compute_power(this, lbasins, compute_power)
+        use config_parallel_module, only: bppnx, bppny, mod_decomposition
+
+        class(domain_type), intent(inout) :: this
+        integer, allocatable, intent(in) :: lbasins(:,:)
+        real(wp8), allocatable, intent(in) :: compute_power(:)
+
+        call this%init(bppnx, bppny, mod_decomposition, lbasins, compute_power)
     end subroutine
 
 end module decomposition_module

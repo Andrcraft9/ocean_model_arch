@@ -3,7 +3,7 @@ program model
     use mpp_module
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar, load_config_basinpar_from_file
-    use config_parallel_module, only: load_config_parallel_from_file_and_cmd
+    use config_parallel_module, only: load_config_parallel_from_file_and_cmd, dlb_balance_steps, dlb_model_steps
     use config_sw_module, only: load_config_sw
     use time_manager_module, only: num_step, num_step_max, tau,  &
                                    init_time_manager, time_manager_def, time_manager_print, is_local_print_step,  &
@@ -17,6 +17,7 @@ program model
     !use ocean_interface_module, only: envoke_div_velocity
     use output_module, only: local_output, output_init_buffers, output_clear_buffers
     use shallow_water_module, only: expl_shallow_water
+    use preprocess_module, only: dynamic_load_balance
     use errors_module
 
     implicit none
@@ -41,20 +42,35 @@ program model
     call grid_global_data%init()
     call read_global_mask(grid_global_data)
 
-    ! Make decomposition
-    call domain_data%init_from_config(grid_global_data%mask)
+    ! Make decomposition and allocate data
+    if (dlb_balance_steps == 0 .or. dlb_model_steps == 0) then
+        call domain_data%init_from_config(grid_global_data%mask)
 
-    ! Init sync buffers and patterns
-    call mpp_sync_init(domain_data)
-
-    ! Allocate data
-    call ocean_data%init(domain_data)
-    call grid_data%init(domain_data)
+        ! Init sync buffers and patterns
+        call mpp_sync_init(domain_data)
+        
+        ! Allocate data
+        call ocean_data%init(domain_data)
+        call grid_data%init(domain_data)
+        
+        ! Init data (read/set)
+        call init_grid_data()
+        call init_ocean_data()
+    else
+        ! Try to choose optimal decomposition
+        if (mpp_is_master())  then
+            print *, "MODEL: Start Dynamic Load Balance"
+            call start_timer(t_local)
+        endif
+        call dynamic_load_balance(tau, dlb_balance_steps, dlb_model_steps)
+        if (mpp_is_master()) then
+            call end_timer(t_local)
+            mpp_time_load_balance =  t_local
+            print *, "MODEL: Dynamic Load Balance Time: ", mpp_time_load_balance
+        endif
+    endif
+    ! Init other buffers
     call output_init_buffers()
-
-    ! Init data (read/set)
-    call init_grid_data()
-    call init_ocean_data()
 
     call time_manager_def(local_num_step)
     if (mpp_is_master()) then
@@ -69,7 +85,7 @@ program model
     call mpp_sync_output()
 
     if (is_local_print_step(local_num_step) > 0) then
-        if (mpp_is_master()) print *, "Output initial local data..."
+        if (mpp_is_master()) print *, "MODEL: Output initial local data..."
         call local_output(1,  &
                           year_loc,  &
                           mon_loc,  &

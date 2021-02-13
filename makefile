@@ -15,8 +15,8 @@ FCINTEL_FAST = -O3
 
 ################# USER SECTION BEGIN ##########################################
 ### Default compiler (GCC or Intel / Debug or Production):
-#FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
-FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
+FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
+#FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 
@@ -105,7 +105,8 @@ SERVICE = \
 CONTROL = \
 	control/init_data.f90 \
 	control/output.f90 \
-	control/shallow_water/shallow_water.f90
+	control/shallow_water/shallow_water.f90 \
+	control/preprocess.f90
 
 ## main and clean targets
 model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90)

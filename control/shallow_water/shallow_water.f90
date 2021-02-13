@@ -14,6 +14,7 @@ module shallow_water_module
     private
 
     public :: expl_shallow_water
+    public :: shallow_water_kernels_compute_probe
 
 contains
 
@@ -87,4 +88,66 @@ contains
 
     endsubroutine expl_shallow_water
 
+    subroutine shallow_water_kernels_compute_probe(tau)
+        real(wp8), intent(in) :: tau
+
+        procedure(envoke_empty_kernel), pointer :: sub_kernel
+        procedure(envoke_empty_sync), pointer :: sub_sync
+
+        ! Compute probe without syncs
+        sub_sync  => envoke_empty_sync
+        
+        ! Below - Body of expl_shallow_water
+        ! But it can be just call kernels from sw
+        ! We need just to measure time or compute some metrics for kernels
+
+        !computing ssh
+        sub_kernel => envoke_sw_update_ssh_kernel
+        call envoke(sub_kernel, sub_sync, tau)
+
+        if (full_free_surface>0) then
+            sub_kernel => envoke_hh_update_kernel
+            call envoke(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        !computing advective and lateral-viscous terms for 2d-velocity
+        if (trans_terms > 0) then
+            sub_kernel => envoke_uv_trans_vort_kernel
+            call envoke(sub_kernel, sub_sync, 0.0d0)
+
+            sub_kernel => envoke_uv_trans_kernel
+            call envoke(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        if (ksw_lat > 0) then
+            sub_kernel => envoke_stress_components_kernel
+            call envoke(sub_kernel, sub_sync, 0.0d0)
+
+            sub_kernel => envoke_uv_diff2_kernel
+            call envoke(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        sub_kernel => envoke_sw_update_uv_kernel
+        call envoke(sub_kernel, sub_sync, tau)
+
+        !shifting time indices
+        sub_kernel => envoke_sw_next_step_kernel
+        call envoke(sub_kernel, sub_sync, time_smooth)
+
+        if(full_free_surface>0) then
+            sub_kernel => envoke_hh_shift_kernel
+            call envoke(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        if(full_free_surface>0) then
+            !initialize depth for external mode
+            sub_kernel => envoke_hh_init_kernel
+            call envoke(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        ! Check error
+        sub_kernel => envoke_check_ssh_err_kernel
+        call envoke(sub_kernel, sub_sync, 0.0d0)
+
+    endsubroutine shallow_water_kernels_compute_probe
 endmodule

@@ -15,6 +15,8 @@ module config_parallel_module
     integer :: parallel_dbg
     integer :: parallel_mod
     character(128) :: file_output
+    integer :: dlb_balance_steps
+    integer :: dlb_model_steps
     
 contains
 
@@ -37,6 +39,8 @@ contains
         read(comments(5),*) parallel_dbg
         read(comments(6),*) parallel_mod
         call get_first_lexeme(comments(7), file_output)
+        read(comments(8),*) dlb_balance_steps
+        read(comments(9),*) dlb_model_steps
 
         if (command_argument_count() > 2) then
             call get_command_argument(1, arg)
@@ -57,6 +61,8 @@ contains
             print *, '(ignore this) parallel_dbg=', parallel_dbg
             print *, '(ignore this) parallel_mod=', parallel_mod
             print *, '(ignore this) output file: ', file_output
+            print *, 'Balance steps for DLB: ', dlb_balance_steps
+            print *, 'Model steps for DLB  : ', dlb_model_steps
         endif
     
         call mpp_sync_output()

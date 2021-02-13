@@ -26,11 +26,13 @@ module mpp_module
     public :: mpp_is_master, mpp_is_master_thread, mpp_is_master_process
     public :: start_timer, end_timer
     public :: mpp_init
+    public :: mpp_reset
     public :: mpp_finalize
 
     ! Timers for master thread
     real(wp8) :: mpp_time_model_step, mpp_time_sync, mpp_time_sync_inner, mpp_time_sync_boundary, mpp_time_sync_intermediate
     real(wp8) :: mpp_time_sync_pack_mpi, mpp_time_sync_unpack_mpi, mpp_time_sync_isend_irecv, mpp_time_sync_wait
+    real(wp8) :: mpp_time_load_balance
     integer :: mpp_max_count_sync_send_recv, mpp_min_count_sync_send_recv
     real(wp8), allocatable :: mpp_time_kernels(:)
     integer, allocatable :: mpp_calls_kernels(:)
@@ -115,6 +117,13 @@ contains
         call mpi_barrier(mpp_cart_comm, ierr)
 
         ! Timers
+        call mpp_reset()
+
+        call mpp_sync_output()
+    end subroutine
+
+    subroutine mpp_reset()
+        ! Rest Timers
         mpp_time_model_step = 0.0d0
         mpp_time_sync = 0.0d0
         mpp_time_sync_inner = 0.0d0
@@ -126,20 +135,17 @@ contains
         mpp_time_sync_isend_irecv = 0.0d0
         mpp_time_sync_wait = 0.0d0
 
+        mpp_time_load_balance = 0.0d0
+
         mpp_max_count_sync_send_recv = 0
         mpp_min_count_sync_send_recv = 0
 
 #ifdef _MPP_KERNEL_TIMER_ON_
-        allocate(mpp_time_kernels(max_kernels))
-        allocate(mpp_calls_kernels(max_kernels))
         mpp_time_kernels = 0.0d0
         mpp_calls_kernels = 0
 
-        allocate(mpp_time_kernels_threads(0 : _OMP_MAX_THREADS_ - 1, max_kernels))
         mpp_time_kernels_threads = 0
 #endif
-
-        call mpp_sync_output()
     end subroutine
 
     subroutine mpp_finalize()
@@ -189,6 +195,8 @@ contains
         call mpi_allreduce(mpp_time_sync_wait, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_time_sync_wait, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
         if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time sync wait (max and min): ", maxtime_sync, mintime_sync
+
+        if (mpp_rank == 0) write(*,'(a50, F12.2)') "Time load balance: ", mpp_time_load_balance
 
         call mpi_allreduce(mpp_max_count_sync_send_recv, maxcount, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_max_count_sync_send_recv, mincount, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
