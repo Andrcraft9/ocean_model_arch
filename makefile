@@ -13,12 +13,20 @@ FCINTEL_DEBUG = -g -O -check all -traceback
 FCGCC_FAST = -Ofast
 FCINTEL_FAST = -O3
 
+### PGI, GPU, CUDA
+FCPGI = -mp -cpp -dM -cuda -gpu=cc60 -I./ -Imacros/
+FCPGI_DEBUG = -g -C -gopt -Mneginfo=all
+FCPGI_FAST = -fast
+PROF_CUDA = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/cuda/bin/nvprof
+
 ################# USER SECTION BEGIN ##########################################
 ### Default compiler (GCC or Intel / Debug or Production):
 FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
 #FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
+FCD_GPU = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_DEBUG)
+#FCD_GPU = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_FAST)
 
 ### Profiler compiler:
 FCPROF = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh $(FCGCC) $(FCGCC_FAST)
@@ -90,7 +98,8 @@ PHYSICS = \
 	kernel/shallow_water/vel_ssh.f90 \
 	kernel/shallow_water/mixing.f90 \
 	kernel/service/grid_parameters.f90 \
-	kernel/service/grid_kernels.f90
+	kernel/service/grid_kernels.f90 \
+	gpu/kernel/depth_gpu.f90
 
 # Parallel System Layer
 INTERFACE = \
@@ -136,6 +145,9 @@ pack_trace:
 	tau2slog2 tau.trc tau.edf -o LOG_TAU.slog2
 	rm *.trc
 	rm *.edf
+
+gpu_model:
+	$(FCD_GPU) -c shared/kind.f90 configs/sw.f90 shared/constants.f90 gpu/kernel/depth_gpu.f90 gpu/kernel/mixing_gpu.f90 gpu/kernel/vel_ssh_gpu.f90
 
 ## .o -> .mod of the modules it uses
 #main.o: one.mod

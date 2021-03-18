@@ -18,6 +18,7 @@
 #define _MPP_BLOCK_MODE_
 #define _OMP_MAX_THREADS_ 128
 #define _MPP_MAX_SIMUL_SYNCS_ 1
+#define _GPU_MODE_ 0
 
 !-----------------------------------------------------------------------------!
 ! System Defines:
