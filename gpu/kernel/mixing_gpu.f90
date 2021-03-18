@@ -1,4 +1,7 @@
-module mixing_module
+#include "macros/mpp_macros.fi"
+#ifdef _GPU_MODE_
+
+module mixing_gpu_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
   
@@ -6,16 +9,14 @@ module mixing_module
     save
     public
 
-#include "macros/mpp_macros.fi"
-
 contains
 
 !====================================================================================
-subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
-                                    lu, luu, dx, dy, dxt, dyt, dxh, dyh, dxb, dyb, u, v, str_t, str_s, nlev)
+attributes(global) subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                                       lu, luu, dx, dy, dxt, dyt, dxh, dyh, dxb, dyb, u, v, str_t, str_s, nlev)
 
-    integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
-    integer, intent(in) :: nlev
+    integer, intent(in), value :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+    integer, intent(in), value :: nlev
     
     real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                              luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
@@ -28,16 +29,18 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, 
                              dyh(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
                              dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
                              dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
-     real(wp8), intent(in) :: u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),    &
+    real(wp8), intent(in) :: u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),    &
                               v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
-     real(wp8), intent(inout) :: str_t(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),    &
-                                 str_s(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
+    real(wp8), intent(inout) :: str_t(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),    &
+                                str_s(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
      
-     integer :: m, n, k
+    integer, value :: m, n, k
     
-     do n=ny_start, ny_end
-       do m=nx_start, nx_end
-    
+    ! do n=ny_start, ny_end
+    ! do m=nx_start, nx_end
+    m = (blockIdx%x-1)*blockDim%x + threadIdx%x + (nx_start) - 1
+    n = (blockIdx%y-1)*blockDim%y + threadIdx%y + (ny_start) - 1
+    if (m <= nx_end .and. n <= ny_end) then
         if(lu(m,n)>0.5) then
          do k=1,nlev 
           str_t(m,n,k)=dy(m,n)/dx(m,n)*(u(m,n,k)/dyh(m,n)-u(m-1,n,k)/dyh(m-1,n))     &
@@ -51,10 +54,9 @@ subroutine stress_components_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, 
                       +dyb(m,n)/dxb(m,n)*(v(m+1,n,k)/dyt(m+1,n)-v(m,n,k)/dyt(m,n))    
          enddo
         endif
-    
-       enddo
-     enddo
-    
-    endsubroutine
+    endif
+endsubroutine
 
-end
+endmodule mixing_gpu_module
+
+#endif

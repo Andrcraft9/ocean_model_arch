@@ -1,77 +1,32 @@
-module velssh_sw_module
+#include "macros/mpp_macros.fi"
+#ifdef _GPU_MODE_
+
+module velssh_sw_gpu_module
 
   use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
-  use constants_module, only: FreeFallAcc, dPi
 
   implicit none
   save
   public
 
-#include "macros/mpp_macros.fi"
+  real(wp4), constant :: FreeFallAcc
+  real(wp8), constant :: dPi
 
 contains
 
+subroutine load_constant_mem()
+  use constants_module, only: FreeFallAcc_host => FreeFallAcc, dPi_host => dPi
 
-subroutine gaussian_elimination_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2, lu, ssh, sigma, nx0, ny0)
-
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
-
-  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
-  real(wp8), intent(inout) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
-
-  real(wp8), intent(in) ::sigma
-  integer, intent(in) :: nx0, ny0
-
-  integer :: m, n, ierr
-  real(wp8) :: dx, dy
-
-  do n = ny_start, ny_end
-    do m = nx_start, nx_end
-        if (lu(m,n)>0.5) then
-          dx = real((m - nx0), kind=wp8) / (nx0*0.25d0)
-          dy = real((n - ny0), kind=wp8) / (ny0*0.25d0)
-          ssh(m, n) = (1.0 / (dsqrt(2*dPi) * sigma)) * dexp( -( (dx*dx + dy*dy) / (2*sigma*sigma )) )
-        endif
-    enddo
-  enddo
-
+  FreeFallAcc = FreeFallAcc_host
+  dPi = dPi_host
 end subroutine
 
-subroutine check_ssh_err_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
-                                lu, ssh, name)
-  use mpp_module
-  use errors_module, only: abort_model
-  
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+attributes(global) subroutine sw_update_ssh_kernel_gpu(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                                       tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp, ubrtr, vbrtr)
 
-  real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
-  real(wp8), intent(in) :: ssh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
-  character(*), intent(in) :: name
-  integer :: m, n, ierr
+  integer, intent(in), value :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
-  do n = ny_start, ny_end
-      do m = nx_start, nx_end
-          if (lu(m,n)>0.5) then
-              if (ssh(m,n)<10000.0d0 .and. ssh(m,n)>-10000.0d0) then
-                continue
-              else
-                  write(*,*) mpp_rank, 'ERROR!!! In the point m=', m, 'n=', n, name, '=', ssh(m,n)
-                  !write(*,*) rank, 'ERR: Block k=', k, 'In the point m=', m, 'n=', n, 'ssh=', ssh(k)%vals(m,n),   &
-                  !    'step: ', num_step, 'lon: ', geo_lon_t(k)%vals(m, n), 'lat: ', geo_lat_t(k)%vals(m, n)
-
-                  call abort_model('SIGFPRE predict error')
-              endif
-          endif
-      enddo
-  enddo
-end subroutine
-
-subroutine sw_update_ssh_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
-                                tau, lu, dx, dy, dxh, dyh, hhu, hhv, sshn, sshp, ubrtr, vbrtr)
-
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
-
-  real(wp8), intent(in) :: tau
+  real(wp8), intent(in), value :: tau
 
   real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
@@ -89,35 +44,35 @@ subroutine sw_update_ssh_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
                            ubrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
                            vbrtr(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
   
-  integer :: m, n
+  integer, value :: m, n
 
-  do n=ny_start,ny_end
-    do m=nx_start,nx_end
-
+  ! do n=ny_start,ny_end
+  ! do m=nx_start,nx_end
+  m = (blockIdx%x-1)*blockDim%x + threadIdx%x + (nx_start) - 1
+  n = (blockIdx%y-1)*blockDim%y + threadIdx%y + (ny_start) - 1
+  if (m <= nx_end .and. n <= ny_end) then
         if(lu(m,n)>0.5) then
             sshn(m,n) = sshp(m,n) + 2.0d0*tau*(  &
             - ( ubrtr(m,n)*hhu(m,n)*dyh(m,n) - ubrtr(m-1,n)*hhu(m-1,n)*dyh(m-1,n)             &
               + vbrtr(m,n)*hhv(m,n)*dxh(m,n) - vbrtr(m,n-1)*hhv(m,n-1)*dxh(m,n-1) )/(dx(m,n)*dy(m,n))  )
         endif
-
-    enddo
-  enddo
+  endif
 
 end subroutine
 
-subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
-                        tau, lcu, lcv,  &
-                        dxt, dyt, dxh, dyh, dxb, dyb,  &
-                        hhu, hhun, hhup,  &
-                        hhv, hhvn, hhvp,  &
-                        hhh, ssh,  &
-                        ubrtr, ubrtrn, ubrtrp, vbrtr, vbrtrn, vbrtrp,  &
-                        rdis, rlh_s,  &
-                        RHSx, RHSy, RHSx_adv, RHSy_adv, RHSx_dif, RHSy_dif)
+attributes(global) subroutine sw_update_uv_kernel_gpu(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                                      tau, lcu, lcv,  &
+                                                      dxt, dyt, dxh, dyh, dxb, dyb,  &
+                                                      hhu, hhun, hhup,  &
+                                                      hhv, hhvn, hhvp,  &
+                                                      hhh, ssh,  &
+                                                      ubrtr, ubrtrn, ubrtrp, vbrtr, vbrtrn, vbrtrp,  &
+                                                      rdis, rlh_s,  &
+                                                      RHSx, RHSy, RHSx_adv, RHSy_adv, RHSx_dif, RHSy_dif)
 
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+  integer, intent(in), value :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
-  real(wp8), intent(in) :: tau
+  real(wp8), intent(in), value :: tau
   
   real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                            lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
@@ -157,11 +112,15 @@ subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
                           RHSx_dif(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
                           RHSy_dif(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
 
-  integer :: m, n
-  real(wp8) :: bp, bp0, slx, sly, grx, gry
+  integer, value :: m, n
 
-  do n=ny_start,ny_end
-    do m=nx_start,nx_end
+  real(wp8), value :: bp, bp0, slx, sly, grx, gry
+
+  ! do n=ny_start,ny_end
+  ! do m=nx_start,nx_end
+  m = (blockIdx%x-1)*blockDim%x + threadIdx%x + (nx_start) - 1
+  n = (blockIdx%y-1)*blockDim%y + threadIdx%y + (ny_start) - 1
+  if (m <= nx_end .and. n <= ny_end) then
         !zonal flux
         if(lcu(m,n)>0.5) then
             bp  = hhun(m,n)*dxt(m,n)*dyh(m,n)/2.0d0/tau
@@ -189,21 +148,20 @@ subroutine sw_update_uv(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
 
             vbrtrn(m,n) = (vbrtrp(m,n)*bp0 + gry )/(bp)
         endif
-    enddo
-  enddo
+  endif
 
 end subroutine
 
-subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
-                        time_smooth,  &
-                        lu, lcu, lcv,  &
-                        ssh, sshn, sshp,  &
-                        ubrtr, ubrtrn, ubrtrp,  &
-                        vbrtr, vbrtrn, vbrtrp)
+attributes(global) subroutine sw_next_step_kernel_gpu(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                                      time_smooth,  &
+                                                      lu, lcu, lcv,  &
+                                                      ssh, sshn, sshp,  &
+                                                      ubrtr, ubrtrn, ubrtrp,  &
+                                                      vbrtr, vbrtrn, vbrtrp)
 
-  integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+  integer, intent(in), value :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
-  real(wp8), intent(in) :: time_smooth
+  real(wp8), intent(in), value :: time_smooth
 
   real(wp4), intent(in) :: lu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
                            lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
@@ -221,11 +179,13 @@ subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
                               vbrtrn(bnd_x1:bnd_x2,bnd_y1:bnd_y2),  &
                               vbrtrp(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
 
-  integer :: m, n
+  integer, value :: m, n
 
-  do n=ny_start-1,ny_end+1
-    do m=nx_start-1,nx_end+1
-
+  ! do n=ny_start-1,ny_end+1
+  ! do m=nx_start-1,nx_end+1
+  m = (blockIdx%x-1)*blockDim%x + threadIdx%x + (nx_start - 1) - 1
+  n = (blockIdx%y-1)*blockDim%y + threadIdx%y + (ny_start - 1) - 1
+  if (m <= nx_end + 1 .and. n <= ny_end + 1) then
         if(lu(m,n)>0.5) then
             sshp(m,n) = ssh(m,n)+time_smooth*(sshn(m,n)-2.0d0*ssh(m,n)+sshp(m,n))/2.0d0
             ssh(m,n) = sshn(m,n)
@@ -238,19 +198,17 @@ subroutine sw_next_step(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_
             vbrtrp(m,n) = vbrtr(m,n) + time_smooth*(vbrtrn(m,n)-2.0d0*vbrtr(m,n)+vbrtrp(m,n))/2.0d0
             vbrtr(m,n) = vbrtrn(m,n)
         endif
-
-    enddo
-  enddo
+  endif
 
 end subroutine
 
-subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
-                                luu,                 &
-                                dxt, dyt, dxb, dyb,  &
-                                u, v, vort,          &
-                                nlev)
+attributes(global) subroutine uv_trans_vort_kernel_gpu(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                                       luu,                 &
+                                                       dxt, dyt, dxb, dyb,  &
+                                                       u, v, vort,          &
+                                                       nlev)
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+ integer, intent(in), value :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
  real(wp4), intent(in) :: luu(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
@@ -259,15 +217,19 @@ subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
                           dxb(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
                           dyb(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
 
- integer, intent(in) :: nlev
+ integer, intent(in), value :: nlev
  real(wp8), intent(inout) :: vort(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
  real(wp8), intent(in) :: u(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev),        & !Transporting zonal velocity
                           v(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)           !Transporting meridional velocity
 
- integer :: m, n, k
+ integer, value :: m, n, k
 
- do n=ny_start, ny_end
-   do m=nx_start, nx_end
+  ! do n=ny_start, ny_end
+  ! do m=nx_start, nx_end
+  m = (blockIdx%x-1)*blockDim%x + threadIdx%x + (nx_start) - 1
+  n = (blockIdx%y-1)*blockDim%y + threadIdx%y + (ny_start) - 1
+  if (m <= nx_end .and. n <= ny_end) then
+
     if(luu(m,n)>0.5) then
      do k=1,nlev
       vort(m,n,k)= (v(m+1,n,k)*dyt(m+1,n)-v(m,n,k)*dyt(m,n))     &
@@ -275,21 +237,20 @@ subroutine uv_trans_vort_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_
                   -((v(m+1,n,k)-v(m,n,k))*dyb(m,n)-(u(m,n+1,k)-u(m,n,k))*dxb(m,n))
      enddo
     endif
-   enddo
- enddo
+  endif
 
-end subroutine uv_trans_vort_kernel
+end subroutine
 
-subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
-                           lcu, lcv, luu,   &
-                           dxh, dyh,        &
-                           u, v, vort,      &
-                           hq, hu, hv, hh,  &
-                           RHSx, RHSy, nlev)
+attributes(global) subroutine uv_trans_kernel_gpu(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                                  lcu, lcv, luu,   &
+                                                  dxh, dyh,        &
+                                                  u, v, vort,      &
+                                                  hq, hu, hv, hh,  &
+                                                  RHSx, RHSy, nlev)
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
+ integer, intent(in), value :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
- integer, intent(in) :: nlev
+ integer, intent(in), value :: nlev
 
  real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),   &
                           lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  & 
@@ -311,16 +272,18 @@ subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
 
  real(wp8), intent(in) :: vort(bnd_x1:bnd_x2,bnd_y1:bnd_y2,nlev)
 
- real(wp8) :: fx_p, fx_m, fy_p, fy_m   !fluxes through cell edges
+ real(wp8), value :: fx_p, fx_m, fy_p, fy_m   !fluxes through cell edges
 
- integer :: m, n, k
+ integer, value :: m, n, k
 
-  do n=ny_start,ny_end
-    do m=nx_start,nx_end
-
-!zonal velocity
+ 
+  ! do n=ny_start,ny_end
+  ! do m=nx_start,nx_end
+  m = (blockIdx%x-1)*blockDim%x + threadIdx%x + (nx_start) - 1
+  n = (blockIdx%y-1)*blockDim%y + threadIdx%y + (ny_start) - 1
+  if (m <= nx_end .and. n <= ny_end) then
+      !zonal velocity
       if(lcu(m,n)>0.5) then
-
         do k=1,nlev
 
          fx_p=(u(m  ,n  ,k)*dyh(m,n)*hu(m,n) + u(m+1,n  ,k)*dyh(m+1,n)*hu(m+1,n))/2.0d0   &
@@ -340,12 +303,10 @@ subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
             +   vort(m,n-1,k)*hh(m,n-1)*(v(m+1,n-1,k)+v(m,n-1,k))  )/4.0d0
 
         end do
-
       end if
 
-!meridional velocity
+      !meridional velocity
       if(lcv(m,n)>0.5) then
-
         do k=1,nlev
 
          fy_p=(v(m  ,n  ,k)*dxh(m,n)*hv(m,n) + v(m  ,n+1,k)*dxh(m,n+1)*hv(m,n+1))/2.0d0    &
@@ -364,24 +325,21 @@ subroutine uv_trans_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
              - ( vort(m  ,n,k)*hh(m  ,n)*(u(m  ,n+1,k)+u(m  ,n,k))               &
              +   vort(m-1,n,k)*hh(m-1,n)*(u(m-1,n+1,k)+u(m-1,n,k))  )/4.0d0
         end do
-
       end if
+  endif
 
-    end do
-  end do
+end subroutine
 
-endsubroutine uv_trans_kernel
+attributes(global) subroutine uv_diff2_kernel_gpu(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
+                                                  lcu, lcv,                              &
+                                                  dx, dy, dxt, dyt, dxh, dyh, dxb, dyb,  &
+                                                  mu, str_t, str_s,                      &
+                                                  hq, hu, hv, hh,                        &
+                                                  RHSx, RHSy, nlev)
 
-subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
-                           lcu, lcv,                              &
-                           dx, dy, dxt, dyt, dxh, dyh, dxb, dyb,  &
-                           mu, str_t, str_s,                      &
-                           hq, hu, hv, hh,                        &
-                           RHSx, RHSy, nlev)
+ integer, intent(in), value :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
 
- integer, intent(in) :: nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2
-
- integer, intent(in) :: nlev
+ integer, intent(in), value :: nlev
 
  real(wp4), intent(in) :: lcu(bnd_x1:bnd_x2, bnd_y1:bnd_y2),  &
                           lcv(bnd_x1:bnd_x2, bnd_y1:bnd_y2)
@@ -408,15 +366,16 @@ subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
                           hv(bnd_x1:bnd_x2,bnd_y1:bnd_y2),      &
                           hh(bnd_x1:bnd_x2,bnd_y1:bnd_y2)
 
- real(wp8) :: muh_p, muh_m
- integer :: m, n, k
+ real(wp8), value :: muh_p, muh_m
+ integer, value :: m, n, k
 
-  do n=ny_start,ny_end
-    do m=nx_start,nx_end
-
-!zonal velocity
+  ! do n=ny_start,ny_end
+  ! do m=nx_start,nx_end
+  m = (blockIdx%x-1)*blockDim%x + threadIdx%x + (nx_start) - 1
+  n = (blockIdx%y-1)*blockDim%y + threadIdx%y + (ny_start) - 1
+  if (m <= nx_end .and. n <= ny_end) then
+      !zonal velocity
       if(lcu(m,n)>0.5) then
-
         do k=1,nlev
 
          muh_p=(mu(m,n,k)+mu(m+1,n,k)+mu(m,n+1,k)+mu(m+1,n+1,k))/4.0d0
@@ -427,12 +386,10 @@ subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
                    + (dxb(m,n  )**2*muh_p*hh(m,n  )*str_s(m,n  ,k)                   &
                      -dxb(m,n-1)**2*muh_m*hh(m,n-1)*str_s(m,n-1,k) )/dxt(m,n)
         end do
-
       end if
 
-!meridional velocity
+      !meridional velocity
       if(lcv(m,n)>0.5) then
-
         do k=1,nlev
 
          muh_p=(mu(m,n,k)+mu(m+1,n,k)+mu(m,n+1,k)+mu(m+1,n+1,k))/4.0d0
@@ -443,12 +400,11 @@ subroutine uv_diff2_kernel(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, b
                     + (dyb(m  ,n)**2*muh_p*hh(m  ,n)*str_s(m  ,n,k)                    &
                       -dyb(m-1,n)**2*muh_m*hh(m-1,n)*str_s(m-1,n,k) ) /dyt(m,n)
         end do
-
       end if
+  endif
 
-    end do
-  end do
+endsubroutine
 
-endsubroutine uv_diff2_kernel
+endmodule velssh_sw_gpu_module
 
-endmodule velssh_sw_module
+#endif
