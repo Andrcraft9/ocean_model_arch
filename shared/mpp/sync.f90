@@ -21,7 +21,7 @@ module mpp_sync_module
     private
 
     type, public :: sync_parameters_type
-        integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate; 3 -- all
+        integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate; 3 - all
     end type sync_parameters_type
 
     interface sync_test

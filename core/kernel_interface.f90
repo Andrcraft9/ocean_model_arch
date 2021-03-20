@@ -13,7 +13,6 @@ module kernel_interface_module
     public
 
     type, public :: kernel_parameters_type
-        integer :: kernel_mode
         real(wp8) :: param_real8
     end type kernel_parameters_type
 
@@ -49,8 +48,7 @@ contains
         sync_parameters_boundary%sync_mode = 1
         sync_parameters_intermediate%sync_mode = 2
         sync_parameters_all%sync_mode = 3
-
-        kernel_parameters%kernel_mode = 0
+        
         kernel_parameters%param_real8 = param
 
 #ifdef _MPP_NO_PARALLEL_MODE_
