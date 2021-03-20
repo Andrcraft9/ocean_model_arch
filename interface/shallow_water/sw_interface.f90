@@ -41,7 +41,7 @@ contains
 !-----------------------------------------------------------------------------!
     subroutine envoke_hh_init_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: param
 
         call hh_init_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                             domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
@@ -74,7 +74,8 @@ contains
                             grid_data   %hhq_rest  %block(k)%field)
     end subroutine
 
-    subroutine envoke_hh_init_sync(sync_parameters)
+    subroutine envoke_hh_init_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
 
         call hybrid_sync(sync_parameters, 1, domain, grid_data%hhu)
@@ -91,7 +92,7 @@ contains
 !-----------------------------------------------------------------------------!
     subroutine envoke_check_ssh_err_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: param
 
         call check_ssh_err_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                   domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
@@ -100,15 +101,15 @@ contains
                                   'ssh')
     end subroutine
 
-    subroutine envoke_check_ssh_err_sync(sync_parameters)
+    subroutine envoke_check_ssh_err_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-
     end subroutine
 
 !-----------------------------------------------------------------------------!
     subroutine envoke_stress_components_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: param
 
         ! Interface only for 2D call
         integer, parameter :: nlev = 1
@@ -132,7 +133,8 @@ contains
                                       nlev)
     end subroutine
 
-    subroutine envoke_stress_components_sync(sync_parameters)
+    subroutine envoke_stress_components_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
 
         call hybrid_sync(sync_parameters, 1, domain, ocean_data%str_t)
@@ -142,7 +144,7 @@ contains
 !-----------------------------------------------------------------------------!
     subroutine envoke_hh_update_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: param
 
         call hh_update_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                               domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
@@ -166,7 +168,8 @@ contains
                               grid_data   %hhq_rest  %block(k)%field)
     end subroutine
 
-    subroutine envoke_hh_update_sync(sync_parameters)
+    subroutine envoke_hh_update_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
 
         call hybrid_sync(sync_parameters, 1, domain, grid_data%hhu_n)
@@ -177,7 +180,7 @@ contains
 !-----------------------------------------------------------------------------!
     subroutine envoke_hh_shift_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: param
 
         call hh_shift_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                              domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
@@ -199,15 +202,15 @@ contains
                              grid_data  %hhh_n  %block(k)%field)
     end subroutine
 
-    subroutine envoke_hh_shift_sync(sync_parameters)
+    subroutine envoke_hh_shift_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-
     end subroutine
 
 !-----------------------------------------------------------------------------!
     subroutine envoke_uv_trans_vort_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: param
 
         ! Interface only for 2D call
         integer, parameter :: nlev = 1
@@ -225,7 +228,8 @@ contains
                                   nlev)
     end subroutine
 
-    subroutine envoke_uv_trans_vort_sync(sync_parameters)
+    subroutine envoke_uv_trans_vort_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
 
         call hybrid_sync(sync_parameters, 1, domain, ocean_data%vort)
@@ -234,7 +238,7 @@ contains
 !-----------------------------------------------------------------------------!
     subroutine envoke_uv_trans_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: param
         
         ! Interface only for 2D call
         integer, parameter :: nlev = 1
@@ -258,15 +262,15 @@ contains
                              nlev)
     end subroutine
 
-    subroutine envoke_uv_trans_sync(sync_parameters)
+    subroutine envoke_uv_trans_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-
     end subroutine
 
 !-----------------------------------------------------------------------------!
     subroutine envoke_uv_diff2_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: param
         
         ! Interface only for 2D call
         integer, parameter :: nlev = 1
@@ -295,15 +299,18 @@ contains
                                  nlev)
     end subroutine
 
-    subroutine envoke_uv_diff2_sync(sync_parameters)
+    subroutine envoke_uv_diff2_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_sw_update_ssh_kernel(k, tau)
+    subroutine envoke_sw_update_ssh_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: tau
+        type(kernel_parameters_type), intent(in) :: param
+
+        real(wp8) :: tau
+        tau = param%param_real8
 
         call sw_update_ssh_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                   domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
@@ -321,16 +328,20 @@ contains
                                   ocean_data %vbrtr  %block(k)%field)
     end subroutine
 
-    subroutine envoke_sw_update_ssh_sync(sync_parameters)
+    subroutine envoke_sw_update_ssh_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
 
         call hybrid_sync(sync_parameters, 1, domain, ocean_data%sshn)
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_sw_update_uv_kernel(k, tau)
+    subroutine envoke_sw_update_uv_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: tau
+        type(kernel_parameters_type), intent(in) :: param
+
+        real(wp8) :: tau
+        tau = param%param_real8
 
         call sw_update_uv(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                           domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
@@ -367,7 +378,8 @@ contains
                           ocean_data %RHSy_dif  %block(k)%field)
     end subroutine
 
-    subroutine envoke_sw_update_uv_sync(sync_parameters)
+    subroutine envoke_sw_update_uv_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
 
         call hybrid_sync(sync_parameters, 1, domain, ocean_data%vbrtrn)
@@ -375,9 +387,12 @@ contains
     end subroutine
 
 !-----------------------------------------------------------------------------!
-    subroutine envoke_sw_next_step_kernel(k, time_smooth)
+    subroutine envoke_sw_next_step_kernel(k, param)
         integer, intent(in) :: k
-        real(wp8), intent(in) :: time_smooth
+        type(kernel_parameters_type), intent(in) :: param
+
+        real(wp8) :: time_smooth
+        time_smooth = param%param_real8
 
         call sw_next_step(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                           domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
@@ -396,9 +411,9 @@ contains
                           ocean_data %vbrtrp  %block(k)%field)
     end subroutine
 
-    subroutine envoke_sw_next_step_sync(sync_parameters)
+    subroutine envoke_sw_next_step_sync(k, sync_parameters)
+        integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-
     end subroutine
 
 !-----------------------------------------------------------------------------!
