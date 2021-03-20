@@ -19,9 +19,9 @@
 #define _OMP_MAX_THREADS_ 128
 #define _MPP_MAX_SIMUL_SYNCS_ 1
 
-#define _GPU_MODE_ 0
-#define _GPU_BLOCK_X_ 32
-#define _GPU_BLOCK_Y_ 32
+!#define _GPU_MODE_ 0
+!#define _GPU_BLOCK_X_ 32
+!#define _GPU_BLOCK_Y_ 32
 
 
 !-----------------------------------------------------------------------------!
