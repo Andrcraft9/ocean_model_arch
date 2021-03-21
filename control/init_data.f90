@@ -1,5 +1,7 @@
-module init_data_module
 #include "macros/kernel_macros.fi"
+#include "macros/mpp_macros.fi"
+
+module init_data_module
     ! Initialize data in model
 
     use mpp_module
@@ -19,6 +21,7 @@ module init_data_module
 
     public :: init_ocean_data
     public :: init_grid_data
+    public :: init_device_data
 
 contains
 
@@ -103,5 +106,21 @@ contains
         call mpp_sync_output()
 
     end subroutine init_grid_data
+
+    subroutine init_device_data
+#ifdef _GPU_MODE_
+        use depth_gpu_module, only: depth_load_constant_mem
+        use velssh_sw_gpu_module, only: velssh_sw_load_constant_mem
+
+        ! Sync init data between host and device
+        call grid_data%sync_host_device(domain, .true.)
+        call ocean_data%sync_host_device(domain, .true.)
+
+        ! Prepare constant id device memory
+        call depth_load_constant_mem
+        call velssh_sw_load_constant_mem
+#endif
+        return
+    end subroutine init_device_data
 
 end module init_data_module

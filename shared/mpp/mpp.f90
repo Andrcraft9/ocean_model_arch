@@ -37,7 +37,8 @@ module mpp_module
     real(wp8) :: mpp_time_model_step, mpp_time_sync, mpp_time_sync_inner, mpp_time_sync_boundary, mpp_time_sync_intermediate
     real(wp8) :: mpp_time_sync_pack_mpi, mpp_time_sync_unpack_mpi, mpp_time_sync_isend_irecv, mpp_time_sync_wait
     real(wp8) :: mpp_time_load_balance
-    real(wp4) :: mpp_device_time_model_step
+    ! Devcie timers
+    real(wp4) :: mpp_device_time_model_step, mpp_device_init_data
 
     integer :: mpp_max_count_sync_send_recv, mpp_min_count_sync_send_recv
     real(wp8), allocatable :: mpp_time_kernels(:)
@@ -202,6 +203,7 @@ contains
         mpp_time_load_balance = 0.0d0
 
         mpp_device_time_model_step = 0.0
+        mpp_device_init_data = 0.0
 
         mpp_max_count_sync_send_recv = 0
         mpp_min_count_sync_send_recv = 0
@@ -267,6 +269,7 @@ contains
 
         if (mpp_rank == 0) write(*,'(a50, F12.2)') "Time load balance: ", mpp_time_load_balance
 
+        if (mpp_rank == 0) write(*,'(a50, F12.2)') "Time device init data: ", mpp_device_init_data
         if (mpp_rank == 0) write(*,'(a50, F12.2)') "Time device model step: ", mpp_device_time_model_step
 
         call mpi_allreduce(mpp_max_count_sync_send_recv, maxcount, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)

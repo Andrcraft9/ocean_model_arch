@@ -15,7 +15,7 @@ program model
     use grid_module, only: grid_global_data, grid_data
     use ocean_module, only: ocean_data
     use io_module, only: read_global_mask
-    use init_data_module, only: init_grid_data, init_ocean_data
+    use init_data_module, only: init_grid_data, init_ocean_data, init_device_data
     !use ocean_interface_module, only: envoke_div_velocity
     use output_module, only: local_output, output_init_buffers, output_clear_buffers
     use shallow_water_module, only: expl_shallow_water
@@ -72,6 +72,16 @@ program model
     endif
     ! Init other buffers
     call output_init_buffers()
+
+    ! Device init data
+    if (mpp_is_master_thread()) then
+        call start_device_timer()
+    endif
+    call init_device_data
+    if (mpp_is_master_thread()) then
+        call end_device_timer(dev_local)
+        mpp_device_init_data = mpp_device_init_data + dev_local
+    endif
 
     call time_manager_def(local_num_step)
     if (mpp_is_master()) then
