@@ -13,11 +13,16 @@
 !   #define _MPP_HYBRID_BLOCK_MODE_
 !       OMP loops for inner blocks and boundary blocks, overlap computation with communication, hide boundary blocks sync
 !-----------------------------------------------------------------------------!
+! Debug defines:
+!   #define _DBG_MEM_PROFILE_
+!       print total memory allocations
 
 #define _MPP_SORTED_BLOCKS_
 #define _MPP_BLOCK_MODE_
 #define _OMP_MAX_THREADS_ 128
 #define _MPP_MAX_SIMUL_SYNCS_ 1
+
+#define _DBG_MEM_PROFILE_
 
 #define _GPU_MODE_ 0
 #define _GPU_BLOCK_X_ 32

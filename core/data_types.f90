@@ -5,6 +5,7 @@ module data_types_module
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use decomposition_module, only: domain_type
+    use mpp_module, only: mpp_total_memory_allocations
 #ifdef _GPU_MODE_
     use cudafor
 #endif
@@ -330,6 +331,20 @@ contains
             this%block(k)%field_device = 0.0
         enddo
 #endif
+
+#ifdef _DBG_MEM_PROFILE_
+        do k = 1, domain%bcount
+            mpp_total_memory_allocations = mpp_total_memory_allocations + sizeof(this%block(k)%field)
+        enddo
+        print *, ""
+        print *, "----------------------------------------------"
+        print *, "DBG: ALLOC: 2D wp4: TOTAL CURRNT MEMORY  (B): ", mpp_total_memory_allocations
+        print *, "DBG: ALLOC: 2D wp4: TOTAL CURRNT MEMORY (KB): ", mpp_total_memory_allocations / 1024.0
+        print *, "DBG: ALLOC: 2D wp4: TOTAL CURRNT MEMORY (MB): ", mpp_total_memory_allocations / 1024.0 / 1024.0
+        print *, "DBG: ALLOC: 2D wp4: TOTAL CURRNT MEMORY (GB): ", mpp_total_memory_allocations / 1024.0 / 1024.0 / 1024.0
+        print *, "----------------------------------------------"
+        print *, ""
+#endif
     end subroutine
 
     subroutine clear_data2D_real4(this, domain)
@@ -467,6 +482,20 @@ contains
             allocate(this%block(k)%field_device(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             this%block(k)%field_device = 0.0d0
         enddo
+#endif
+
+#ifdef _DBG_MEM_PROFILE_
+        do k = 1, domain%bcount
+            mpp_total_memory_allocations = mpp_total_memory_allocations + sizeof(this%block(k)%field)
+        enddo
+        print *, ""
+        print *, "----------------------------------------------"
+        print *, "DBG: ALLOC: 2D wp8: TOTAL CURRNT MEMORY  (B): ", mpp_total_memory_allocations
+        print *, "DBG: ALLOC: 2D wp8: TOTAL CURRNT MEMORY (KB): ", mpp_total_memory_allocations / 1024.0
+        print *, "DBG: ALLOC: 2D wp8: TOTAL CURRNT MEMORY (MB): ", mpp_total_memory_allocations / 1024.0 / 1024.0
+        print *, "DBG: ALLOC: 2D wp8: TOTAL CURRNT MEMORY (GB): ", mpp_total_memory_allocations / 1024.0 / 1024.0 / 1024.0
+        print *, "----------------------------------------------"
+        print *, ""
 #endif
     end subroutine
 
@@ -663,6 +692,20 @@ contains
             this%block(k)%field_device = 0.0
         enddo
 #endif
+
+#ifdef _DBG_MEM_PROFILE_
+        do k = 1, domain%bcount
+            mpp_total_memory_allocations = mpp_total_memory_allocations + sizeof(this%block(k)%field)
+        enddo
+        print *, ""
+        print *, "----------------------------------------------"
+        print *, "DBG: ALLOC: 3D wp4: TOTAL CURRNT MEMORY  (B): ", mpp_total_memory_allocations
+        print *, "DBG: ALLOC: 3D wp4: TOTAL CURRNT MEMORY (KB): ", mpp_total_memory_allocations / 1024.0
+        print *, "DBG: ALLOC: 3D wp4: TOTAL CURRNT MEMORY (MB): ", mpp_total_memory_allocations / 1024.0 / 1024.0
+        print *, "DBG: ALLOC: 3D wp4: TOTAL CURRNT MEMORY (GB): ", mpp_total_memory_allocations / 1024.0 / 1024.0 / 1024.0
+        print *, "----------------------------------------------"
+        print *, ""
+#endif
     end subroutine
 
     subroutine clear_data3D_real4(this, domain)
@@ -708,6 +751,20 @@ contains
             allocate(this%block(k)%field_device(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
             this%block(k)%field_device = 0.0d0
         enddo
+#endif
+
+#ifdef _DBG_MEM_PROFILE_
+        do k = 1, domain%bcount
+            mpp_total_memory_allocations = mpp_total_memory_allocations + sizeof(this%block(k)%field)
+        enddo
+        print *, ""
+        print *, "----------------------------------------------"
+        print *, "DBG: ALLOC: 3D wp8: TOTAL CURRNT MEMORY  (B): ", mpp_total_memory_allocations
+        print *, "DBG: ALLOC: 3D wp8: TOTAL CURRNT MEMORY (KB): ", mpp_total_memory_allocations / 1024.0
+        print *, "DBG: ALLOC: 3D wp8: TOTAL CURRNT MEMORY (MB): ", mpp_total_memory_allocations / 1024.0 / 1024.0
+        print *, "DBG: ALLOC: 3D wp8: TOTAL CURRNT MEMORY (GB): ", mpp_total_memory_allocations / 1024.0 / 1024.0 / 1024.0
+        print *, "----------------------------------------------"
+        print *, ""
 #endif
     end subroutine
 
