@@ -1,3 +1,7 @@
+### Pls export TAU and Nvidia HPC libs
+###
+###
+
 ## no implicit rules
 .SUFFIXES: 
 
@@ -17,20 +21,24 @@ FCINTEL_FAST = -O3
 FCPGI = -mp -cpp -dM -cuda -gpu=cc60 -I./ -Imacros/
 FCPGI_DEBUG = -g -C -gopt -Mneginfo=all
 FCPGI_FAST = -fast
-PROF_CUDA = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/cuda/bin/nvprof
+PROF_CUDA = nvprof
+# PROF_CUDA = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/cuda/bin/nvprof
 
 ################# USER SECTION BEGIN ##########################################
 ### Default compiler (GCC or Intel / Debug or Production):
-FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
+#FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
 #FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
-FCD_GPU = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_DEBUG)
-#FCD_GPU = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_FAST)
+### GPU compilers
+FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_DEBUG)
+#FCD = nvfortran $(FCPGI) $(FCPGI_DEBUG)
+# FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_FAST)
 
 ### Profiler compiler:
-FCPROF = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh $(FCGCC) $(FCGCC_FAST)
-#FCPROF = /data4t/chaplygin/lib/tau-2.28/x86_64/bin/tau_f90.sh $(FCINTEL) $(FCINTEL_FAST)
+FCPROF = tau_f90.sh $(FCGCC) $(FCGCC_FAST)
+# FCPROF = /home/andr/lib/tau-2.29/x86_64/bin/tau_f90.sh $(FCGCC) $(FCGCC_FAST)
+# FCPROF = /data4t/chaplygin/lib/tau-2.28/x86_64/bin/tau_f90.sh $(FCINTEL) $(FCINTEL_FAST)
 
 ######## TAU GUIDE ########
 # Need to:
@@ -98,8 +106,7 @@ PHYSICS = \
 	kernel/shallow_water/vel_ssh.f90 \
 	kernel/shallow_water/mixing.f90 \
 	kernel/service/grid_parameters.f90 \
-	kernel/service/grid_kernels.f90 \
-	gpu/kernel/depth_gpu.f90
+	kernel/service/grid_kernels.f90
 
 # Parallel System Layer
 INTERFACE = \
@@ -117,8 +124,15 @@ CONTROL = \
 	control/shallow_water/shallow_water.f90 \
 	control/preprocess.f90
 
+GPU = \
+	gpu/core/kernel_interface_gpu.f90 \
+	gpu/kernel/depth_gpu.f90 \
+	gpu/kernel/mixing_gpu.f90 \
+	gpu/kernel/vel_ssh_gpu.f90 \
+	gpu/interface/sw_interface_gpu.f90
+
 ## main and clean targets
-model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90)
+model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) $(GPU) model.f90)
 	$(FCD) -o $@ $+
 
 .PHONY: clean
@@ -134,7 +148,7 @@ clean:
 
 # Profiler TAU
 profiler:
-	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS) $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) model.f90 
+	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS) $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) $(GPU) model.f90 
 
 pack_profiler:
 	paraprof --pack LOG_TAU.ppk
@@ -146,8 +160,8 @@ pack_trace:
 	rm *.trc
 	rm *.edf
 
-gpu_model:
-	$(FCD_GPU) -c shared/kind.f90 configs/sw.f90 shared/constants.f90 gpu/kernel/depth_gpu.f90 gpu/kernel/mixing_gpu.f90 gpu/kernel/vel_ssh_gpu.f90
+run_nv_mpi:
+	/opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpirun -n 1 model
 
 ## .o -> .mod of the modules it uses
 #main.o: one.mod

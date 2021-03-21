@@ -1,18 +1,21 @@
+#include "macros/mpp_macros.fi"
+
 module mpp_module
     ! MPI massively parallel processing library
 
-    !use mpi
+    use mpi
     use kernel_runtime_module
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use system_module, only: lrecl, lmpirecl, undef
+#ifdef _GPU_MODE_
+    use cudafor
+#endif
 
     implicit none
     save
     public
 
-#include "macros/mpp_macros.fi"
-
-    include 'mpif.h'
+!    include 'mpif.h'
     include "omp_lib.h"
 
     integer, public :: mpp_rank, mpp_count
@@ -46,6 +49,10 @@ contains
         integer :: ierr, req, provided, tmp
         integer :: rank_cart
         character(len=mpi_max_library_version_string) :: version
+#ifdef _GPU_MODE_
+        type (cudaDeviceProp) :: prop_device
+        integer :: nDevices = 0, idev
+#endif
 
         mpp_period = (/.true., .true./)
         mpp_size = (/0,0/)
@@ -105,6 +112,44 @@ contains
             print *, "MPP INFO: Version 2.0, only NO_PARALLEL, BLOCK mode:"
             print *, "MPP INFO: Single OMP PARALLEL, OMP for pack/unpack MPI buffers, nowait loops, one global sync at mpi_waitall"
             print *, "MPP INFO: dont use SIMUL syncs"
+
+#ifdef _GPU_MODE_
+            ! CUDA INFO
+            ! Number of CUDA-capable devices
+            print *, "MPP INFO: GPU MODE"
+            print *, "MPP INFO: GPU INFO:"
+            ierr = cudaGetDeviceCount(nDevices)
+            if (nDevices == 0) then
+                write(*,"(/,'No CUDA devices found',/)")
+                stop
+            else if (nDevices == 1) then
+                write(*,"(/,'One CUDA device found',/)")
+            else 
+                write(*,"(/,i0,' CUDA devices found',/)") nDevices
+            end if
+            ! Loop over devices
+            do idev = 0, nDevices-1
+                write(*,"('Device Number: ',i0)") idev
+                ierr = cudaGetDeviceProperties(prop_device, idev)
+                if (ierr .eq. 0) then
+                    write(*,"('  GetDeviceProperties for device ',i0,': Passed')") idev
+                else
+                    write(*,"('  GetDeviceProperties for device ',i0,': Failed')") idev
+                endif
+                ! General device info
+                write(*,"('  Device Name: ',a)") trim(prop_device%name)
+                write(*,"('  Compute Capability: ',i0,'.',i0)") prop_device%major, prop_device%minor
+                write(*,"('  Number of Multiprocessors: ',i0)") prop_device%multiProcessorCount
+                write(*,"('  Max Threads per Multiprocessor: ',i0)") prop_device%maxThreadsPerMultiprocessor
+                write(*,"('  Global Memory (GB): ',f9.3,/)") prop_device%totalGlobalMem/1024.0**3
+                ! Execution Configuration
+                write(*,"('  Execution Configuration Limits')")
+                write(*,"('    Max Grid Dims: ',2(i0,' x '),i0)") prop_device%maxGridSize
+                write(*,"('    Max Block Dims: ',2(i0,' x '),i0)") prop_device%maxThreadsDim
+                write(*,"('    Max Threads per Block: ',i0,/)") prop_device%maxThreadsPerBlock
+                write(*,"('    Device Overlap: ',i0,/)") prop_device%deviceOverlap
+            enddo
+#endif
             print *, "------------------------------------------------------------"
         endif
         call mpi_barrier(mpp_cart_comm, ierr)
