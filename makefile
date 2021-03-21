@@ -118,12 +118,6 @@ SERVICE = \
 	service/gridcon.f90 \
 	service/basinpar_construction.f90
 
-CONTROL = \
-	control/init_data.f90 \
-	control/output.f90 \
-	control/shallow_water/shallow_water.f90 \
-	control/preprocess.f90
-
 GPU = \
 	gpu/core/kernel_interface_gpu.f90 \
 	gpu/kernel/depth_gpu.f90 \
@@ -131,8 +125,14 @@ GPU = \
 	gpu/kernel/vel_ssh_gpu.f90 \
 	gpu/interface/sw_interface_gpu.f90
 
+CONTROL = \
+	control/init_data.f90 \
+	control/output.f90 \
+	control/shallow_water/shallow_water.f90 \
+	control/preprocess.f90
+
 ## main and clean targets
-model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) $(GPU) model.f90)
+model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(GPU) $(CONTROL) model.f90)
 	$(FCD) -o $@ $+
 
 .PHONY: clean
@@ -148,7 +148,7 @@ clean:
 
 # Profiler TAU
 profiler:
-	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS) $(PHYSICS) $(INTERFACE) $(SERVICE) $(CONTROL) $(GPU) model.f90 
+	 $(FCPROF) -o model $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS) $(PHYSICS) $(INTERFACE) $(SERVICE) $(GPU) $(CONTROL) model.f90 
 
 pack_profiler:
 	paraprof --pack LOG_TAU.ppk

@@ -28,7 +28,7 @@ module mpp_module
     public :: mpp_sync_output
     public :: mpp_is_master, mpp_is_master_thread, mpp_is_master_process
     public :: start_timer, end_timer
-    public :: start_device_timer, end_device_time
+    public :: start_device_timer, end_device_timer
     public :: mpp_init
     public :: mpp_reset
     public :: mpp_finalize
@@ -45,6 +45,13 @@ module mpp_module
 
     ! Timers for threads
     real(wp8), allocatable :: mpp_time_kernels_threads(:, :)
+
+    ! Memory profiling
+    real(wp8) :: mpp_total_memory_allocations
+
+#ifdef _GPU_MODE_
+    type (cudaEvent), public :: device_start_event, device_stop_event
+#endif
 contains
 
     subroutine mpp_init()
@@ -167,6 +174,9 @@ contains
 
         ! Timers
         call mpp_reset()
+
+        ! Memory profile
+        mpp_total_memory_allocations = 0.0d0
 
 #ifdef _GPU_MODE_
         istat = cudaEventCreate(device_start_event)

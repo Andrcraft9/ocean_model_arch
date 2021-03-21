@@ -108,7 +108,7 @@ program model
     do while(local_num_step < num_step_max)
         if (mpp_is_master_thread()) then
             call start_timer(t_local)
-            call start_device_timer(dev_local)
+            call start_device_timer()
         endif
 
         ! Computing one step of ocean dynamics
