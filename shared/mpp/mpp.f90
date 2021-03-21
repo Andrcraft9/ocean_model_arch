@@ -28,6 +28,7 @@ module mpp_module
     public :: mpp_sync_output
     public :: mpp_is_master, mpp_is_master_thread, mpp_is_master_process
     public :: start_timer, end_timer
+    public :: start_device_timer, end_device_time
     public :: mpp_init
     public :: mpp_reset
     public :: mpp_finalize
@@ -36,6 +37,8 @@ module mpp_module
     real(wp8) :: mpp_time_model_step, mpp_time_sync, mpp_time_sync_inner, mpp_time_sync_boundary, mpp_time_sync_intermediate
     real(wp8) :: mpp_time_sync_pack_mpi, mpp_time_sync_unpack_mpi, mpp_time_sync_isend_irecv, mpp_time_sync_wait
     real(wp8) :: mpp_time_load_balance
+    real(wp4) :: mpp_device_time_model_step
+
     integer :: mpp_max_count_sync_send_recv, mpp_min_count_sync_send_recv
     real(wp8), allocatable :: mpp_time_kernels(:)
     integer, allocatable :: mpp_calls_kernels(:)
@@ -52,6 +55,7 @@ contains
 #ifdef _GPU_MODE_
         type (cudaDeviceProp) :: prop_device
         integer :: nDevices = 0, idev
+        integer :: istat
 #endif
 
         mpp_period = (/.true., .true./)
@@ -164,6 +168,11 @@ contains
         ! Timers
         call mpp_reset()
 
+#ifdef _GPU_MODE_
+        istat = cudaEventCreate(device_start_event)
+        istat = cudaEventCreate(device_stop_event)
+#endif
+
         call mpp_sync_output()
     end subroutine
 
@@ -181,6 +190,8 @@ contains
         mpp_time_sync_wait = 0.0d0
 
         mpp_time_load_balance = 0.0d0
+
+        mpp_device_time_model_step = 0.0
 
         mpp_max_count_sync_send_recv = 0
         mpp_min_count_sync_send_recv = 0
@@ -201,6 +212,9 @@ contains
         real(wp8) :: maxtime_kernel_threads(0 : _OMP_MAX_THREADS_ - 1), mintime_kernel_threads(0 : _OMP_MAX_THREADS_ - 1)
         integer :: maxcount, mincount
         character(80) :: kernel_name
+#ifdef _GPU_MODE_
+        integer :: istat
+#endif
 
         if (mpp_is_master()) then
             write(*,'(a50)') 'Times for master thread:'
@@ -242,6 +256,8 @@ contains
         if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time sync wait (max and min): ", maxtime_sync, mintime_sync
 
         if (mpp_rank == 0) write(*,'(a50, F12.2)') "Time load balance: ", mpp_time_load_balance
+
+        if (mpp_rank == 0) write(*,'(a50, F12.2)') "Time device model step: ", mpp_device_time_model_step
 
         call mpi_allreduce(mpp_max_count_sync_send_recv, maxcount, 1, mpi_integer, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_max_count_sync_send_recv, mincount, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
@@ -296,6 +312,11 @@ contains
         call deallocate(mpp_time_kernels_threads)
 #endif
 
+#ifdef _GPU_MODE_
+        istat = cudaEventDestroy(device_start_event)
+        istat = cudaEventDestroy(device_stop_event)
+#endif
+
         call mpi_finalize(ierr)
     end subroutine
 
@@ -309,6 +330,25 @@ contains
         real(wp8), intent(inout) :: time
         time = mpi_wtime() - time
         return
+    end subroutine
+
+    subroutine start_device_timer()
+        integer :: istat
+#ifdef _GPU_MODE_
+        istat = cudaEventRecord(device_start_event, 0)
+#endif
+    end subroutine
+
+    subroutine end_device_timer(time)
+        real(wp4), intent(inout) :: time
+        integer :: istat
+        time = 0.0
+#ifdef _GPU_MODE_
+        istat = cudaEventRecord(device_stop_event, 0)
+        istat = cudaEventSynchronize(device_stop_event)
+        istat = cudaEventElapsedTime(time, device_start_event, device_stop_event)
+        time = time * 0.001 ! ms to sec
+#endif
     end subroutine
 
     function mpp_get_thread() result(t)

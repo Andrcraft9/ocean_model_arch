@@ -1,3 +1,6 @@
+#include "macros/mpp_macros.fi"
+#include "macros/kernel_macros.fi"
+
 module mpp_sync_module
     ! Sync data of different types, depends on domain
 
@@ -12,16 +15,18 @@ module mpp_sync_module
     use decomposition_module, only: domain_type, get_boundary_points_of_block, get_halo_points_of_block,             &
                                     get_inverse_dir, get_rank_of_block, get_loc_num_of_block, fill_direction_array,  &
                                     is_block_on_current_proc, is_inner_block
-
-#include "macros/mpp_macros.fi"
-#include "macros/kernel_macros.fi"
+#ifdef _GPU_MODE_
+    use cudafor
+#endif
 
     implicit none
     save
     private
 
     type, public :: sync_parameters_type
-        integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate; 3 - all
+        integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate; 3 - all, 5 - sync between device and host
+        integer :: sync_device_host ! Check it only sync_mode is 5.
+                                    ! 0 - dev to host (sync), 1 - host to dev (sync), 2 - dev to host (async), 3 - host to dev (async)
     end type sync_parameters_type
 
     interface sync_test
@@ -247,14 +252,32 @@ contains
 
 !------------------------------------------------------------------------------
 ! Generic subroutines, hybrid:
-        subroutine syncborder_data2D_hybrid_real8(sync_parameters, sync_tag, domain, data2d)
+        subroutine syncborder_data2D_hybrid_real8(k, sync_parameters, sync_tag, domain, data2d)
             implicit none
+            integer, intent(in) :: k
             type(sync_parameters_type), intent(in) :: sync_parameters
             integer, intent(in) :: sync_tag
             type(data2D_real8_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
             if (sync_tag < 1) call abort_model("Sync Error: Invalid sync tag")
+
+            if (sync_parameters%sync_mode == 5) then
+                if (k < 1) call abort_model("Sync Error: Invalid block number for sync betweeb host and device")
+                select case(sync_parameters%sync_device_host)
+                    case(0)
+                        call sync_device_to_host_data2D_real8(k, domain, data2d, .false.)
+                    case(1)
+                        call sync_host_to_device_data2D_real8(k, domain, data2d, .false.)
+                    case(2)
+                        call sync_device_to_host_data2D_real8(k, domain, data2d, .true.)
+                    case(3)
+                        call sync_host_to_device_data2D_real8(k, domain, data2d, .true.)
+                    case default
+                        call abort_model("Sync Error: Unknown sync between device and host")
+                end select
+                return
+            endif
 
             select case(sync_parameters%sync_mode)
                 case(0)
@@ -270,14 +293,32 @@ contains
             end select
         end subroutine
 
-        subroutine syncborder_data2D_hybrid_real4(sync_parameters, sync_tag, domain, data2d)
+        subroutine syncborder_data2D_hybrid_real4(k, sync_parameters, sync_tag, domain, data2d)
             implicit none
+            integer, intent(in) :: k
             type(sync_parameters_type), intent(in) :: sync_parameters
             integer, intent(in) :: sync_tag
             type(data2D_real4_type), intent(inout) :: data2d
             type(domain_type), intent(in) :: domain
 
             if (sync_tag < 1) call abort_model("Sync Error: Invalid sync tag")
+
+            if (sync_parameters%sync_mode == 5) then
+                if (k < 1) call abort_model("Sync Error: Invalid block number for sync betweeb host and device")
+                select case(sync_parameters%sync_device_host)
+                    case(0)
+                        call sync_device_to_host_data2D_real4(k, domain, data2d, .false.)
+                    case(1)
+                        call sync_host_to_device_data2D_real4(k, domain, data2d, .false.)
+                    case(2)
+                        call sync_device_to_host_data2D_real4(k, domain, data2d, .true.)
+                    case(3)
+                        call sync_host_to_device_data2D_real4(k, domain, data2d, .true.)
+                    case default
+                        call abort_model("Sync Error: Unknown sync between device and host")
+                end select
+                return
+            endif
 
             select case(sync_parameters%sync_mode)
                 case(0)
@@ -291,6 +332,56 @@ contains
                 case default
                     call abort_model("Sync Error: Unknown sync mode")
             end select
+        end subroutine
+
+!------------------------------------------------------------------------------
+! Generic subroutines, sync between host and device:
+        subroutine sync_device_to_host_data2D_real8(k, domain, data2d, is_async)
+            implicit none
+            integer, intent(in) :: k
+            type(domain_type), intent(in) :: domain
+            type(data2D_real8_type), intent(inout) :: data2d
+            logical, intent(in) :: is_async
+
+#ifdef _GPU_MODE_
+            data2d%block(k)%field = data2d%block(k)%field_device
+#endif
+        end subroutine
+
+        subroutine sync_host_to_device_data2D_real8(k, domain, data2d, is_async)
+            implicit none
+            integer, intent(in) :: k
+            type(domain_type), intent(in) :: domain
+            type(data2D_real8_type), intent(inout) :: data2d
+            logical, intent(in) :: is_async
+
+#ifdef _GPU_MODE_
+            data2d%block(k)%field_device = data2d%block(k)%field
+#endif
+        end subroutine
+
+        subroutine sync_device_to_host_data2D_real4(k, domain, data2d, is_async)
+            implicit none
+            integer, intent(in) :: k
+            type(domain_type), intent(in) :: domain
+            type(data2D_real4_type), intent(inout) :: data2d
+            logical, intent(in) :: is_async
+
+#ifdef _GPU_MODE_
+            data2d%block(k)%field = data2d%block(k)%field_device
+#endif
+        end subroutine
+
+        subroutine sync_host_to_device_data2D_real4(k, domain, data2d, is_async)
+            implicit none
+            integer, intent(in) :: k
+            type(domain_type), intent(in) :: domain
+            type(data2D_real4_type), intent(inout) :: data2d
+            logical, intent(in) :: is_async
+
+#ifdef _GPU_MODE_
+            data2d%block(k)%field_device = data2d%block(k)%field
+#endif
         end subroutine
 
 !------------------------------------------------------------------------------

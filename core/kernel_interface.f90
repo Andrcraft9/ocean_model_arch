@@ -48,7 +48,7 @@ contains
         sync_parameters_boundary%sync_mode = 1
         sync_parameters_intermediate%sync_mode = 2
         sync_parameters_all%sync_mode = 3
-        
+
         kernel_parameters%param_real8 = param
 
 #ifdef _MPP_NO_PARALLEL_MODE_
@@ -86,6 +86,30 @@ contains
         call sub_sync(-1, sync_parameters_intermediate)
 
 #endif
+
+    end subroutine
+
+    subroutine envoke_device(sub_kernel, sub_sync, param)
+        procedure(envoke_empty_kernel), pointer :: sub_kernel
+        procedure(envoke_empty_sync), pointer :: sub_sync
+        real(wp8), intent(in) :: param
+        
+        integer :: k
+        type(sync_parameters_type) :: sync_params_htod, sync_params_dtoh
+        type(kernel_parameters_type) :: kernel_parameters
+
+        kernel_parameters%param_real8 = param
+
+        sync_params_dtoh%sync_mode = 5
+        sync_params_dtoh%sync_device_host = 0
+        sync_params_htod%sync_mode = 5
+        sync_params_htod%sync_device_host = 1
+
+        do k = 1, domain%bcount
+            call sub_sync(k, sync_params_htod)
+            call sub_kernel(k, kernel_parameters)
+            call sub_sync(k, sync_params_dtoh)
+        enddo
 
     end subroutine
 

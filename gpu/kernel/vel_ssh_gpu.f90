@@ -14,7 +14,7 @@ module velssh_sw_gpu_module
 
 contains
 
-subroutine load_constant_mem()
+subroutine velssh_sw_load_constant_mem()
   use constants_module, only: FreeFallAcc_host => FreeFallAcc, dPi_host => dPi
 
   FreeFallAcc = FreeFallAcc_host

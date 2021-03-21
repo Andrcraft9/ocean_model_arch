@@ -1,3 +1,5 @@
+#include "macros/mpp_macros.fi"
+
 program model
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module
@@ -22,9 +24,8 @@ program model
 
     implicit none
 
-#include "macros/mpp_macros.fi"
-
     real(wp8) :: t_local
+    real(wp4) :: dev_local
     integer(wp8) :: local_num_step
 
     call mpp_init()
@@ -105,14 +106,19 @@ program model
 
     ! Solver
     do while(local_num_step < num_step_max)
-        if (mpp_is_master_thread())  call start_timer(t_local)
+        if (mpp_is_master_thread()) then
+            call start_timer(t_local)
+            call start_device_timer(dev_local)
+        endif
 
         ! Computing one step of ocean dynamics
         call expl_shallow_water(tau)
         
         if (mpp_is_master_thread()) then
             call end_timer(t_local)
+            call end_device_timer(dev_local)
             mpp_time_model_step = mpp_time_model_step + t_local
+            mpp_device_time_model_step = mpp_device_time_model_step + dev_local
         endif
 
         ! Next time step

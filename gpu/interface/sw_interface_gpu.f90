@@ -81,15 +81,15 @@ contains
     subroutine envoke_hh_init_sync_gpu(k, sync_parameters)
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-        call hybrid_sync(sync_parameters, 1, domain, grid_data%hhu)
-        call hybrid_sync(sync_parameters, 2, domain, grid_data%hhu_p)
-        call hybrid_sync(sync_parameters, 3, domain, grid_data%hhu_n)
-        call hybrid_sync(sync_parameters, 4, domain, grid_data%hhv)
-        call hybrid_sync(sync_parameters, 5, domain, grid_data%hhv_p)
-        call hybrid_sync(sync_parameters, 6, domain, grid_data%hhv_n)
-        call hybrid_sync(sync_parameters, 7, domain, grid_data%hhh)
-        call hybrid_sync(sync_parameters, 8, domain, grid_data%hhh_p)
-        call hybrid_sync(sync_parameters, 9, domain, grid_data%hhh_n)
+        call hybrid_sync(k, sync_parameters, 1, domain, grid_data%hhu)
+        call hybrid_sync(k, sync_parameters, 2, domain, grid_data%hhu_p)
+        call hybrid_sync(k, sync_parameters, 3, domain, grid_data%hhu_n)
+        call hybrid_sync(k, sync_parameters, 4, domain, grid_data%hhv)
+        call hybrid_sync(k, sync_parameters, 5, domain, grid_data%hhv_p)
+        call hybrid_sync(k, sync_parameters, 6, domain, grid_data%hhv_n)
+        call hybrid_sync(k, sync_parameters, 7, domain, grid_data%hhh)
+        call hybrid_sync(k, sync_parameters, 8, domain, grid_data%hhh_p)
+        call hybrid_sync(k, sync_parameters, 9, domain, grid_data%hhh_n)
     end subroutine
 
 !-----------------------------------------------------------------------------!
@@ -130,8 +130,8 @@ contains
     subroutine envoke_stress_components_sync_gpu(k, sync_parameters)
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-        call hybrid_sync(sync_parameters, 1, domain, ocean_data%str_t)
-        call hybrid_sync(sync_parameters, 2, domain, ocean_data%str_s)
+        call hybrid_sync(k, sync_parameters, 1, domain, ocean_data%str_t)
+        call hybrid_sync(k, sync_parameters, 2, domain, ocean_data%str_s)
     end subroutine
 
 !-----------------------------------------------------------------------------!
@@ -172,9 +172,9 @@ contains
     subroutine envoke_hh_update_sync_gpu(k, sync_parameters)
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-        call hybrid_sync(sync_parameters, 1, domain, grid_data%hhu_n)
-        call hybrid_sync(sync_parameters, 2, domain, grid_data%hhv_n)
-        call hybrid_sync(sync_parameters, 3, domain, grid_data%hhh_n)
+        call hybrid_sync(k, sync_parameters, 1, domain, grid_data%hhu_n)
+        call hybrid_sync(k, sync_parameters, 2, domain, grid_data%hhv_n)
+        call hybrid_sync(k, sync_parameters, 3, domain, grid_data%hhh_n)
     end subroutine
 
 !-----------------------------------------------------------------------------!
@@ -247,7 +247,7 @@ contains
     subroutine envoke_uv_trans_vort_sync_gpu(k, sync_parameters)
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-        call hybrid_sync(sync_parameters, 1, domain, ocean_data%vort)
+        call hybrid_sync(k, sync_parameters, 1, domain, ocean_data%vort)
     end subroutine
 
 !-----------------------------------------------------------------------------!
@@ -370,7 +370,7 @@ contains
     subroutine envoke_sw_update_ssh_sync_gpu(k, sync_parameters)
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-        call hybrid_sync(sync_parameters, 1, domain, ocean_data%sshn)
+        call hybrid_sync(k, sync_parameters, 1, domain, ocean_data%sshn)
     end subroutine
 
 !-----------------------------------------------------------------------------!
@@ -427,8 +427,8 @@ contains
     subroutine envoke_sw_update_uv_sync_gpu(k, sync_parameters)
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-        call hybrid_sync(sync_parameters, 1, domain, ocean_data%vbrtrn)
-        call hybrid_sync(sync_parameters, 2, domain, ocean_data%ubrtrn)
+        call hybrid_sync(k, sync_parameters, 1, domain, ocean_data%vbrtrn)
+        call hybrid_sync(k, sync_parameters, 2, domain, ocean_data%ubrtrn)
     end subroutine
 
 !-----------------------------------------------------------------------------!

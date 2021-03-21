@@ -15,7 +15,7 @@ module depth_gpu_module
 
 contains
 
-subroutine load_constant_mem()
+subroutine depth_load_constant_mem()
   use config_sw_module, only: full_free_surface_host => full_free_surface, time_smooth_host => time_smooth
 
   full_free_surface = full_free_surface_host
