@@ -1,3 +1,5 @@
+#include "macros/mpp_macros.fi"
+
 module ocean_module
     ! Ocean data
 
@@ -33,6 +35,9 @@ module ocean_module
     contains
         procedure, public  :: init
         procedure, public  :: clear
+#ifdef _GPU_MODE_
+        procedure, public  :: sync_host_device
+#endif
     end type ocean_type
 
 !------------------------------------------------------------------------------
@@ -108,5 +113,42 @@ contains
         call this%str_s%clear(domain) 
         call this%vort%clear(domain)
     end subroutine
+
+#ifdef _GPU_MODE_
+    subroutine sync_host_device(this, domain, is_htod)
+        ! Initialization of grid data
+        class(ocean_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        logical, intent(in) :: is_htod
+
+        call this%ssh%sync_host_device(domain, is_htod)
+        call this%pgrx%sync_host_device(domain, is_htod)
+        call this%pgry%sync_host_device(domain, is_htod)
+        call this%ubrtr%sync_host_device(domain, is_htod)
+        call this%vbrtr%sync_host_device(domain, is_htod)
+        call this%RHSx2d%sync_host_device(domain, is_htod)
+        call this%RHSy2d%sync_host_device(domain, is_htod)
+
+        call this%sshn%sync_host_device(domain, is_htod)
+        call this%sshp%sync_host_device(domain, is_htod)
+        call this%ubrtrn%sync_host_device(domain, is_htod)
+        call this%ubrtrp%sync_host_device(domain, is_htod)
+        call this%vbrtrn%sync_host_device(domain, is_htod)
+        call this%vbrtrp%sync_host_device(domain, is_htod)
+
+        call this%r_diss%sync_host_device(domain, is_htod)
+        
+        call this%RHSx%sync_host_device(domain, is_htod) 
+        call this%RHSy%sync_host_device(domain, is_htod) 
+        call this%RHSx_dif%sync_host_device(domain, is_htod) 
+        call this%RHSy_dif%sync_host_device(domain, is_htod) 
+        call this%RHSx_adv%sync_host_device(domain, is_htod) 
+        call this%RHSy_adv%sync_host_device(domain, is_htod)
+        call this%mu%sync_host_device(domain, is_htod) 
+        call this%str_t%sync_host_device(domain, is_htod) 
+        call this%str_s%sync_host_device(domain, is_htod) 
+        call this%vort%sync_host_device(domain, is_htod)
+    end subroutine
+#endif
 
 endmodule ocean_module

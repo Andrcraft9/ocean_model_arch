@@ -82,6 +82,9 @@ module grid_module
     contains
         procedure, public :: init => init_grid_type
         procedure, public :: clear => clear_grid_type
+#ifdef _GPU_MODE_
+        procedure, public  :: sync_host_device
+#endif
     end type grid_type
 
 !------------------------------------------------------------------------------
@@ -178,7 +181,6 @@ contains
         call this%hhq_p%init(domain)  ! Ocean depth on lu  (t-points) at pre-previous step
         call this%hhu_p%init(domain)  ! Ocean depth on lcu (u-points) at pre-previous step
         call this%hhv_p%init(domain)  ! Ocean depth on lcv (v-points) at pre-previous step
-        
 
     end subroutine
 
@@ -255,5 +257,80 @@ contains
         call this%hhv_p%clear(domain)  ! Ocean depth on lcv (v-points) at pre-previous step
 
     end subroutine
+
+#ifdef _GPU_MODE_
+    subroutine sync_host_device(this, domain, is_htod)
+        class(grid_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        logical, intent(in) :: is_htod
+        
+        call this%lu %sync_host_device(domain, is_htod)
+        call this%lu1%sync_host_device(domain, is_htod)
+        call this%luu%sync_host_device(domain, is_htod)
+        call this%luh%sync_host_device(domain, is_htod)
+        call this%lcu%sync_host_device(domain, is_htod)
+        call this%lcv%sync_host_device(domain, is_htod)
+        call this%llu%sync_host_device(domain, is_htod)
+        call this%llv%sync_host_device(domain, is_htod)
+
+        call this%hhh     %sync_host_device(domain, is_htod)
+        call this%hhh_n   %sync_host_device(domain, is_htod)
+        call this%hhq_rest%sync_host_device(domain, is_htod)
+        call this%hhu_rest%sync_host_device(domain, is_htod)
+        call this%hhv_rest%sync_host_device(domain, is_htod)
+        call this%hhq     %sync_host_device(domain, is_htod)
+        call this%hhq_n   %sync_host_device(domain, is_htod)
+        call this%hhts    %sync_host_device(domain, is_htod)
+        call this%hhts_n  %sync_host_device(domain, is_htod)
+        call this%hhu     %sync_host_device(domain, is_htod)
+        call this%hhu_n   %sync_host_device(domain, is_htod)
+        call this%hhv     %sync_host_device(domain, is_htod)
+        call this%hhv_n   %sync_host_device(domain, is_htod)
+        call this%rlh_s   %sync_host_device(domain, is_htod)
+        call this%rlh_sqh %sync_host_device(domain, is_htod)
+        call this%rlh_c   %sync_host_device(domain, is_htod)
+
+        call this%z  %sync_host_device(domain, is_htod)
+        call this%zw %sync_host_device(domain, is_htod)
+        call this%hzt%sync_host_device(domain, is_htod)
+        call this%dz %sync_host_device(domain, is_htod)
+
+        call this%dxt%sync_host_device(domain, is_htod)
+        call this%dyt%sync_host_device(domain, is_htod)
+        call this%dx %sync_host_device(domain, is_htod) 
+        call this%dy %sync_host_device(domain, is_htod) 
+        call this%dxh%sync_host_device(domain, is_htod)
+        call this%dyh%sync_host_device(domain, is_htod)
+        call this%dxb%sync_host_device(domain, is_htod)
+        call this%dyb%sync_host_device(domain, is_htod)
+
+        call this%sqt%sync_host_device(domain, is_htod)
+        call this%squ%sync_host_device(domain, is_htod)
+        call this%sqv%sync_host_device(domain, is_htod)
+        call this%sqh%sync_host_device(domain, is_htod)
+
+        call this%xt%sync_host_device(domain, is_htod)
+        call this%yt%sync_host_device(domain, is_htod)
+        call this%xu%sync_host_device(domain, is_htod)
+        call this%yv%sync_host_device(domain, is_htod)
+
+        call this%geo_lon_t%sync_host_device(domain, is_htod)
+        call this%geo_lat_t%sync_host_device(domain, is_htod)
+        call this%geo_lon_u%sync_host_device(domain, is_htod)
+        call this%geo_lat_u%sync_host_device(domain, is_htod)
+        call this%geo_lon_v%sync_host_device(domain, is_htod)
+        call this%geo_lat_v%sync_host_device(domain, is_htod)
+        call this%geo_lon_h%sync_host_device(domain, is_htod)
+        call this%geo_lat_h%sync_host_device(domain, is_htod)
+
+        call this%rotvec_coeff%sync_host_device(domain, is_htod)
+
+        call this%hhh_p%sync_host_device(domain, is_htod)
+        call this%hhq_p%sync_host_device(domain, is_htod)
+        call this%hhu_p%sync_host_device(domain, is_htod)
+        call this%hhv_p%sync_host_device(domain, is_htod)
+
+    end subroutine
+#endif
 
 end module grid_module
