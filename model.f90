@@ -30,6 +30,9 @@ program model
     real(wp8) :: t_local
     real(wp4) :: dev_local
     integer(wp8) :: local_num_step
+#ifdef _GPU_MODE_
+    integer :: istat
+#endif
 
     call mpp_init()
 
@@ -127,8 +130,8 @@ program model
         ! Computing one step of ocean dynamics
 #ifdef _GPU_MODE_
         call expl_shallow_water_gpu(tau)
+        istat = cudaDeviceSynchronize()
 #else
-        
         call expl_shallow_water(tau)
 #endif
         
