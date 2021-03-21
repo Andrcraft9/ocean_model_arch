@@ -94,6 +94,9 @@ module data_types_module
         procedure, public :: init => init_data1D_real4
         procedure, public :: init_from_domain => init_from_domain_data1D_real4
         procedure, public :: clear => clear_data1D_real4
+#ifdef _GPU_MODE_
+        procedure, public :: sync_host_device => sync_host_device_data1D_real4
+#endif
     end type data1D_real4_type
 
     type, public :: data1D_real8_type
@@ -102,6 +105,9 @@ module data_types_module
         procedure, public :: init => init_data1D_real8
         procedure, public :: init_from_domain => init_from_domain_data1D_real8
         procedure, public :: clear => clear_data1D_real8
+#ifdef _GPU_MODE_
+        procedure, public :: sync_host_device => sync_host_device_data1D_real8
+#endif
     end type data1D_real8_type
 
     ! 2D data
@@ -115,6 +121,9 @@ module data_types_module
         procedure, public :: fill => fill_data2D_real4
         ! debug
         procedure, public :: fill_debug => fill_debug_data2D_real4
+#ifdef _GPU_MODE_
+        procedure, public :: sync_host_device => sync_host_device_data2D_real4
+#endif
     end type data2D_real4_type
 
     type, public :: data2D_real8_type
@@ -128,6 +137,9 @@ module data_types_module
         ! debug
         procedure, public :: fill_debug => fill_debug_data2D_real8
         procedure, public :: init_nans => init_nans_data2D_real8
+#ifdef _GPU_MODE_
+        procedure, public :: sync_host_device => sync_host_device_data2D_real8
+#endif
     end type data2D_real8_type
 
     ! 3D data
@@ -136,6 +148,9 @@ module data_types_module
     contains
         procedure, public :: init => init_data3D_real4
         procedure, public :: clear => clear_data3D_real4
+#ifdef _GPU_MODE_
+        procedure, public :: sync_host_device => sync_host_device_data3D_real4
+#endif
     end type data3D_real4_type
 
     type, public :: data3D_real8_type
@@ -143,6 +158,9 @@ module data_types_module
     contains
         procedure, public :: init => init_data3D_real8
         procedure, public :: clear => clear_data3D_real8
+#ifdef _GPU_MODE_
+        procedure, public :: sync_host_device => sync_host_device_data3D_real8
+#endif
     end type data3D_real8_type
 
     !interface copy_data2D_real4
@@ -785,5 +803,99 @@ contains
         
         deallocate(this%block)
     end subroutine
+
+!------------------------------------------------------------------------------
+! Defines subs only for GPU version
+#ifdef _GPU_MODE_
+    subroutine sync_host_device_data1D_real4(this, domain, is_htod)
+        class(data1D_real4_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        logical, intent(in) :: is_htod
+        integer :: k
+
+        do k = 1, domain%bcount
+            if (is_htod) then
+                this%block(k)%field_device = this%block(k)%field
+            else
+                this%block(k)%field = this%block(k)%field_device
+            endif
+        enddo
+    end subroutine
+
+    subroutine sync_host_device_data1D_real8(this, domain, is_htod)
+        class(data1D_real8_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        logical, intent(in) :: is_htod
+        integer :: k
+
+        do k = 1, domain%bcount
+            if (is_htod) then
+                this%block(k)%field_device = this%block(k)%field
+            else
+                this%block(k)%field = this%block(k)%field_device
+            endif
+        enddo
+    end subroutine
+
+    subroutine sync_host_device_data2D_real4(this, domain, is_htod)
+        class(data2D_real4_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        logical, intent(in) :: is_htod
+        integer :: k
+
+        do k = 1, domain%bcount
+            if (is_htod) then
+                this%block(k)%field_device = this%block(k)%field
+            else
+                this%block(k)%field = this%block(k)%field_device
+            endif
+        enddo
+    end subroutine
+
+    subroutine sync_host_device_data2D_real8(this, domain, is_htod)
+        class(data2D_real8_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        logical, intent(in) :: is_htod
+        integer :: k
+
+        do k = 1, domain%bcount
+            if (is_htod) then
+                this%block(k)%field_device = this%block(k)%field
+            else
+                this%block(k)%field = this%block(k)%field_device
+            endif
+        enddo
+    end subroutine
+
+    subroutine sync_host_device_data3D_real4(this, domain, is_htod)
+        class(data3D_real4_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        logical, intent(in) :: is_htod
+        integer :: k
+
+        do k = 1, domain%bcount
+            if (is_htod) then
+                this%block(k)%field_device = this%block(k)%field
+            else
+                this%block(k)%field = this%block(k)%field_device
+            endif
+        enddo
+    end subroutine
+
+    subroutine sync_host_device_data3D_real8(this, domain, is_htod)
+        class(data3D_real8_type), intent(inout) :: this
+        type(domain_type), intent(in) :: domain
+        logical, intent(in) :: is_htod
+        integer :: k
+
+        do k = 1, domain%bcount
+            if (is_htod) then
+                this%block(k)%field_device = this%block(k)%field
+            else
+                this%block(k)%field = this%block(k)%field_device
+            endif
+        enddo
+    end subroutine
+#endif
 
 end module data_types_module
