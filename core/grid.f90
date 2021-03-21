@@ -1,3 +1,5 @@
+#include "macros/mpp_macros.fi"
+
 module grid_module
     ! Grid data
 
@@ -83,7 +85,7 @@ module grid_module
         procedure, public :: init => init_grid_type
         procedure, public :: clear => clear_grid_type
 #ifdef _GPU_MODE_
-        procedure, public  :: sync_host_device
+        procedure, public  :: sync_host_device => sync_host_device_grid_type
 #endif
     end type grid_type
 
@@ -259,7 +261,7 @@ contains
     end subroutine
 
 #ifdef _GPU_MODE_
-    subroutine sync_host_device(this, domain, is_htod)
+    subroutine sync_host_device_grid_type(this, domain, is_htod)
         class(grid_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_htod
