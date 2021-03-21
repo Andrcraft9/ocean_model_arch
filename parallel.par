@@ -5,5 +5,5 @@ none    : (igonre) File with decomposition (optional). Set bnx, bny, pnx, pny li
 0       : (ignore) debug parameter
 0       : (ignore) mode: 0 - default run, >0 - stop after decomposition
 none    : (ignore) output file
-3       : Balance Step for Dynamic Load Balancing
-5       : Model Steps for Dynamic Load Balancing
+0       : Balance Step for Dynamic Load Balancing
+0       : Model Steps for Dynamic Load Balancing

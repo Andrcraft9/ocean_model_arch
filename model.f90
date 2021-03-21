@@ -44,7 +44,7 @@ program model
     call read_global_mask(grid_global_data)
 
     ! Make decomposition and allocate data
-    if (dlb_balance_steps == 0 .or. dlb_model_steps == 0) then
+    if (dlb_balance_steps <= 0 .or. dlb_model_steps <= 0) then
         call domain_data%init_from_config(grid_global_data%mask)
 
         ! Init sync buffers and patterns
