@@ -1,3 +1,5 @@
+#include "macros/mpp_macros.fi"
+
 module shallow_water_module
     
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
@@ -11,10 +13,7 @@ module shallow_water_module
 
     implicit none
     save
-    private
-
-    public :: expl_shallow_water
-    public :: shallow_water_kernels_compute_probe
+    public
 
 contains
 
@@ -151,3 +150,100 @@ contains
 
     endsubroutine shallow_water_kernels_compute_probe
 endmodule
+
+#ifdef _GPU_MODE_
+
+module shallow_water_gpu_module
+    use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
+    use decomposition_module, only: domain_type, domain => domain_data
+    use ocean_module, only: ocean_type, ocean_data
+    use grid_module, only: grid_type, grid_data
+    use config_sw_module, only: full_free_surface, time_smooth, trans_terms, ksw_lat
+    use mpp_module
+    use kernel_interface_module
+    use shallow_water_interface_gpu_module
+
+    implicit none
+    save
+    public
+
+contains
+
+    subroutine expl_shallow_water_gpu(tau)
+
+        real(wp8), intent(in) :: tau
+
+        procedure(envoke_empty_kernel), pointer :: sub_kernel
+        procedure(envoke_empty_sync), pointer :: sub_sync
+
+        !computing ssh
+        sub_kernel => envoke_sw_update_ssh_kernel_gpu
+        sub_sync   => envoke_sw_update_ssh_sync_gpu
+        call envoke_device(sub_kernel, sub_sync, tau)
+
+        !print *, "hh"
+        if (full_free_surface>0) then
+            sub_kernel => envoke_hh_update_kernel_gpu
+            sub_sync   => envoke_hh_update_sync_gpu
+            call envoke_device(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        !computing advective and lateral-viscous terms for 2d-velocity
+        !print *, "trans"
+        if (trans_terms > 0) then
+            sub_kernel => envoke_uv_trans_vort_kernel_gpu
+            sub_sync   => envoke_uv_trans_vort_sync_gpu
+            call envoke_device(sub_kernel, sub_sync, 0.0d0)
+
+            sub_kernel => envoke_uv_trans_kernel_gpu
+            sub_sync   => envoke_uv_trans_sync_gpu
+            call envoke_device(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        !print *, "stress"
+        if (ksw_lat > 0) then
+            sub_kernel => envoke_stress_components_kernel_gpu
+            sub_sync   => envoke_stress_components_sync_gpu
+            call envoke_device(sub_kernel, sub_sync, 0.0d0)
+
+            sub_kernel => envoke_uv_diff2_kernel_gpu
+            sub_sync   => envoke_uv_diff2_sync_gpu
+            call envoke_device(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        !print *, "uv"
+        sub_kernel => envoke_sw_update_uv_kernel_gpu
+        sub_sync   => envoke_sw_update_uv_sync_gpu
+        call envoke_device(sub_kernel, sub_sync, tau)
+
+        !shifting time indices
+        !print *, "ssh upd"
+        sub_kernel => envoke_sw_next_step_kernel_gpu
+        sub_sync   => envoke_sw_next_step_sync_gpu
+        call envoke_device(sub_kernel, sub_sync, time_smooth)
+
+        !print *, "hh upd"
+        if(full_free_surface>0) then
+            sub_kernel => envoke_hh_shift_kernel_gpu
+            sub_sync   => envoke_hh_shift_sync_gpu
+            call envoke_device(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        !print *, "hh init"
+        if(full_free_surface>0) then
+            !initialize depth for external mode
+            sub_kernel => envoke_hh_init_kernel_gpu
+            sub_sync   => envoke_hh_init_sync_gpu
+            call envoke_device(sub_kernel, sub_sync, 0.0d0)
+        endif
+
+        ! Check error
+        !sub_kernel => envoke_check_ssh_err_kernel
+        !sub_sync   => envoke_check_ssh_err_sync
+        !call envoke(sub_kernel, sub_sync, 0.0d0)
+
+    endsubroutine expl_shallow_water_gpu
+
+endmodule
+
+#endif

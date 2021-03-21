@@ -32,6 +32,7 @@ PROF_CUDA = nvprof
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 ### GPU compilers
 FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_DEBUG)
+FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_FAST)
 #FCD = nvfortran $(FCPGI) $(FCPGI_DEBUG)
 # FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_FAST)
 
@@ -119,7 +120,6 @@ SERVICE = \
 	service/basinpar_construction.f90
 
 GPU = \
-	gpu/core/kernel_interface_gpu.f90 \
 	gpu/kernel/depth_gpu.f90 \
 	gpu/kernel/mixing_gpu.f90 \
 	gpu/kernel/vel_ssh_gpu.f90 \

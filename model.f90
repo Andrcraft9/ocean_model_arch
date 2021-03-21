@@ -21,6 +21,9 @@ program model
     use shallow_water_module, only: expl_shallow_water
     use preprocess_module, only: dynamic_load_balance
     use errors_module
+#ifdef _GPU_MODE_
+    use shallow_water_gpu_module, only: expl_shallow_water_gpu
+#endif
 
     implicit none
 
@@ -122,7 +125,12 @@ program model
         endif
 
         ! Computing one step of ocean dynamics
+#ifdef _GPU_MODE_
+        call expl_shallow_water_gpu(tau)
+#else
+        
         call expl_shallow_water(tau)
+#endif
         
         if (mpp_is_master_thread()) then
             call end_timer(t_local)
