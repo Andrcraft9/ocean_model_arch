@@ -85,6 +85,10 @@ module mpp_sync_module
                                               ! Block number: from 1 to bcount
                                               ! Boundary block number: from 1 to bcount_boundary
 
+#ifdef _GPU_MODE_
+    integer(kind=cuda_stream_kind), allocatable :: mpp_sync_cuda_streams(:)
+#endif
+
 !------------------------------------------------------------------------------
 
 contains
@@ -104,7 +108,7 @@ contains
     subroutine allocate_mpp_sync_buffers(domain)
         type(domain_type), intent(in) :: domain
 
-        integer :: k, kk, rank, ierr
+        integer :: k, kk, rank, ierr, istat
         integer :: sync_dir(8)
         integer :: k_dir(8)
         integer :: rank_dir(8)
@@ -201,11 +205,20 @@ contains
 
         sync_count_send_recv = 0
 
+#ifdef _GPU_MODE_
+        allocate(mpp_sync_cuda_streams(domain%bcount))
+        do k = 1, domain%bcount
+            istat = cudaStreamCreate(mpp_sync_cuda_streams(k))
+        enddo
+#endif
+
         call mpp_sync_output()
     end subroutine
 
     subroutine deallocate_mpp_sync_buffers(domain)
         type(domain_type), intent(in) :: domain
+        
+        integer :: k, istat
 
         deallocate(sync_requests, sync_statuses)
 
@@ -219,6 +232,13 @@ contains
         
         deallocate(sync_map_rank)
         deallocate(sync_map_bb)
+
+#ifdef _GPU_MODE_
+        do k = 1, domain%bcount
+            istat = cudaStreamDestroy(mpp_sync_cuda_streams(k))
+        enddo
+        deallocate(mpp_sync_cuda_streams)
+#endif
     end subroutine
 
 !------------------------------------------------------------------------------
@@ -343,8 +363,20 @@ contains
             type(data2D_real8_type), intent(inout) :: data2d
             logical, intent(in) :: is_async
 
+            integer :: istat
+
 #ifdef _GPU_MODE_
-            data2d%block(k)%field = data2d%block(k)%field_device
+            if (is_async) then
+                istat = cudaMemcpy2DAsync(data2d%block(k)%field(domain%bbnd_x1(k), domain%bbnd_y1(k)),  &
+                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                          data2d%block(k)%field_device(domain%bbnd_x1(k), domain%bbnd_y1(k)),  &
+                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                          domain%bbnd_y2(k) - domain%bbnd_y1(k) + 1,  &
+                                          stream=mpp_sync_cuda_streams(k))
+            else
+                data2d%block(k)%field = data2d%block(k)%field_device
+            endif
 #endif
         end subroutine
 
@@ -355,8 +387,20 @@ contains
             type(data2D_real8_type), intent(inout) :: data2d
             logical, intent(in) :: is_async
 
+            integer :: istat
+
 #ifdef _GPU_MODE_
-            data2d%block(k)%field_device = data2d%block(k)%field
+            if (is_async) then
+                istat = cudaMemcpy2DAsync(data2d%block(k)%field_device(domain%bbnd_x1(k), domain%bbnd_y1(k)),  &
+                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                          data2d%block(k)%field(domain%bbnd_x1(k), domain%bbnd_y1(k)),  &
+                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                          domain%bbnd_y2(k) - domain%bbnd_y1(k) + 1,  &
+                                          stream=mpp_sync_cuda_streams(k))
+            else
+                data2d%block(k)%field_device = data2d%block(k)%field
+            endif
 #endif
         end subroutine
 

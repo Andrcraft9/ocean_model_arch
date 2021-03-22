@@ -128,7 +128,7 @@ contains
 #ifdef _GPU_MODE_
             ! CUDA INFO
             ! Number of CUDA-capable devices
-            print *, "MPP INFO: GPU MODE"
+            print *, "MPP INFO: GPU MODE: Block X, Block Y: ", _GPU_BLOCK_X_, _GPU_BLOCK_Y_
             print *, "MPP INFO: GPU INFO:"
             ierr = cudaGetDeviceCount(nDevices)
             if (nDevices == 0) then
@@ -161,6 +161,10 @@ contains
                 write(*,"('    Max Threads per Block: ',i0,/)") prop_device%maxThreadsPerBlock
                 write(*,"('    Device Overlap: ',i0,/)") prop_device%deviceOverlap
             enddo
+#endif
+
+#ifdef _GPU_ASYNC_
+            print *, "MPP INFO: GPU ASYNC: yes"
 #endif
             print *, "------------------------------------------------------------"
         endif

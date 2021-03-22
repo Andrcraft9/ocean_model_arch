@@ -105,6 +105,11 @@ contains
         sync_params_htod%sync_mode = 5
         sync_params_htod%sync_device_host = 1
 
+#ifdef _GPU_ASYNC_
+        sync_params_dtoh%sync_device_host = 2
+        sync_params_htod%sync_device_host = 3
+#endif
+
         do k = 1, domain%bcount
             call sub_sync(k, sync_params_htod)
             call sub_kernel(k, kernel_parameters)

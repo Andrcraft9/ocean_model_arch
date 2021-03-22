@@ -24,9 +24,8 @@
 
 #define _DBG_MEM_PROFILE_
 
-#define _GPU_MODE_ 0
-#define _GPU_BLOCK_X_ 32
-#define _GPU_BLOCK_Y_ 32
+#define _GPU_MODE_
+#define _GPU_ASYNC_
 
 
 !-----------------------------------------------------------------------------!
@@ -34,6 +33,13 @@
 !-----------------------------------------------------------------------------!
 
 !-----------------------------------------------------------------------------!
+#ifdef _GPU_MODE_
+
+#define _GPU_BLOCK_X_ 32
+#define _GPU_BLOCK_Y_ 32
+
+#endif
+
 #ifdef _MPP_NO_PARALLEL_MODE_
 
 #define _OMP_BLOCKS_PARALLEL_BEGIN_ 
