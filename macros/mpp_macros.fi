@@ -36,8 +36,8 @@
 !-----------------------------------------------------------------------------!
 #ifdef _GPU_MODE_
 
-#define _GPU_BLOCK_X_ 32
-#define _GPU_BLOCK_Y_ 32
+#define _GPU_BLOCK_X_ 16
+#define _GPU_BLOCK_Y_ 16
 
 #endif
 
