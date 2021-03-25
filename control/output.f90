@@ -99,7 +99,6 @@ contains
 
         ! SSH
         ! writing SSH
-        call ocean_data%ssh%sync_host_device(domain, .false.)
         call bufwp4%copy_from_real8(domain, ocean_data%ssh)
 
         ierr = 0

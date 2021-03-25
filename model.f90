@@ -151,7 +151,10 @@ program model
             ! Output
             if (is_local_print_step(local_num_step) > 0) then
                 call time_manager_update_nrec(local_num_step)
-                
+              
+#ifdef _GPU_MODE_
+                call ocean_data%ssh%sync_host_device(domain_data, .false.)
+#endif
                 call local_output(nrec_loc + 1,  &
                                   year_loc,  &
                                   mon_loc,  & 
