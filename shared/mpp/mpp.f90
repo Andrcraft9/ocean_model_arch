@@ -166,6 +166,9 @@ contains
 #ifdef _GPU_ASYNC_
             print *, "MPP INFO: GPU ASYNC: yes"
 #endif
+#ifdef _GPU_FULL_
+            print *, "MPP INFO: GPU FULL: yes"
+#endif
             print *, "------------------------------------------------------------"
         endif
         call mpi_barrier(mpp_cart_comm, ierr)

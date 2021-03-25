@@ -25,7 +25,8 @@
 #define _DBG_MEM_PROFILE_
 
 #define _GPU_MODE_
-#define _GPU_ASYNC_
+#define _GPU_FULL_
+!#define _GPU_ASYNC_
 
 
 !-----------------------------------------------------------------------------!
