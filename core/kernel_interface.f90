@@ -99,6 +99,8 @@ contains
         type(sync_parameters_type) :: sync_parameters_all
         type(kernel_parameters_type) :: kernel_parameters
 
+#ifdef _GPU_MODE_
+
         kernel_parameters%param_real8 = param
 
         sync_params_dtoh%sync_mode = 5
@@ -129,6 +131,8 @@ contains
         do k = 1, domain%bcount
             call sub_sync(k, sync_params_htod)
         enddo
+#endif
+
 #endif
     end subroutine
 
