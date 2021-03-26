@@ -13,6 +13,7 @@ module mpp_sync_module
                                  data1D_real4_type, data1D_real8_type, data2D_real4_type, data2D_real8_type,      &
                                  data3D_real4_type, data3D_real8_type
     use decomposition_module, only: domain_type, get_boundary_points_of_block, get_halo_points_of_block,             &
+                                    get_halo_and_boundary_points_of_block, get_expanded_halo_points_of_block,        &
                                     get_inverse_dir, get_rank_of_block, get_loc_num_of_block, fill_direction_array,  &
                                     is_block_on_current_proc, is_inner_block
 #ifdef _GPU_MODE_
@@ -86,7 +87,7 @@ module mpp_sync_module
                                               ! Boundary block number: from 1 to bcount_boundary
 
 #ifdef _GPU_MODE_
-    integer(kind=cuda_stream_kind), allocatable :: mpp_sync_cuda_streams(:)
+    integer(kind=cuda_stream_kind), allocatable, public :: mpp_sync_cuda_streams(:)
 #endif
 
 !------------------------------------------------------------------------------
@@ -207,6 +208,11 @@ contains
 
 #ifdef _GPU_MODE_
         allocate(mpp_sync_cuda_streams(domain%bcount))
+        ! Set default CUDA stream
+        mpp_sync_cuda_streams = 0
+#endif
+
+#ifdef _GPU_ASYNC_
         do k = 1, domain%bcount
             istat = cudaStreamCreate(mpp_sync_cuda_streams(k))
         enddo
@@ -233,10 +239,13 @@ contains
         deallocate(sync_map_rank)
         deallocate(sync_map_bb)
 
-#ifdef _GPU_MODE_
+#ifdef _GPU_ASYNC_
         do k = 1, domain%bcount
             istat = cudaStreamDestroy(mpp_sync_cuda_streams(k))
         enddo
+#endif
+
+#ifdef _GPU_MODE_
         deallocate(mpp_sync_cuda_streams)
 #endif
     end subroutine
@@ -363,20 +372,36 @@ contains
             type(data2D_real8_type), intent(inout) :: data2d
             logical, intent(in) :: is_async
 
-            integer :: istat
-
 #ifdef _GPU_MODE_
-            if (is_async) then
-                istat = cudaMemcpy2DAsync(data2d%block(k)%field(domain%bbnd_x1(k), domain%bbnd_y1(k)),  &
-                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
-                                          data2d%block(k)%field_device(domain%bbnd_x1(k), domain%bbnd_y1(k)),  &
-                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
-                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
-                                          domain%bbnd_y2(k) - domain%bbnd_y1(k) + 1,  &
-                                          stream=mpp_sync_cuda_streams(k))
-            else
-                data2d%block(k)%field = data2d%block(k)%field_device
-            endif
+            integer :: kk, istat
+            integer :: nxs, nxe, nys, nye     ! Boundary points
+            integer :: sync_dir(4)
+
+            sync_dir(1) = _NXP_
+            sync_dir(2) = _NXM_
+            sync_dir(3) = _NYP_
+            sync_dir(4) = _NYM_
+
+            do kk = 1, 4
+                call get_halo_and_boundary_points_of_block(domain, k, sync_dir(kk), nxs,  nxe,  nys,  nye)
+                if (is_async) then
+                    istat = cudaMemcpy2DAsync(data2d%block(k)%field(nxs, nys),            &
+                                              domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                              data2d%block(k)%field_device(nxs, nys),     &
+                                              domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                              nxe - nxs + 1,  &
+                                              nye - nys + 1,  &
+                                              stream=mpp_sync_cuda_streams(k))
+                else
+                    !data2d%block(k)%field(nxs : nxe, nys : nye) = data2d%block(k)%field_device(nxs : nxe, nys : nye)
+                    istat = cudaMemcpy2D(data2d%block(k)%field(nxs, nys),            &
+                                         domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                         data2d%block(k)%field_device(nxs, nys),     &
+                                         domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                         nxe - nxs + 1,  &
+                                         nye - nys + 1)
+                endif
+            enddo
 #endif
         end subroutine
 
@@ -387,20 +412,36 @@ contains
             type(data2D_real8_type), intent(inout) :: data2d
             logical, intent(in) :: is_async
 
-            integer :: istat
-
 #ifdef _GPU_MODE_
-            if (is_async) then
-                istat = cudaMemcpy2DAsync(data2d%block(k)%field_device(domain%bbnd_x1(k), domain%bbnd_y1(k)),  &
-                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
-                                          data2d%block(k)%field(domain%bbnd_x1(k), domain%bbnd_y1(k)),  &
-                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
-                                          domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
-                                          domain%bbnd_y2(k) - domain%bbnd_y1(k) + 1,  &
-                                          stream=mpp_sync_cuda_streams(k))
-            else
-                data2d%block(k)%field_device = data2d%block(k)%field
-            endif
+            integer :: kk, istat
+            integer :: nxs, nxe, nys, nye     ! Boundary points
+            integer :: sync_dir(4)
+
+            sync_dir(1) = _NXP_
+            sync_dir(2) = _NXM_
+            sync_dir(3) = _NYP_
+            sync_dir(4) = _NYM_
+
+            do kk = 1, 4
+                call get_expanded_halo_points_of_block(domain, k, sync_dir(kk), nxs,  nxe,  nys,  nye)
+                if (is_async) then
+                    istat = cudaMemcpy2DAsync(data2d%block(k)%field_device(nxs, nys),     &
+                                              domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                              data2d%block(k)%field(nxs, nys),            &
+                                              domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                              nxe - nxs + 1,  &
+                                              nye - nys + 1,  &
+                                              stream=mpp_sync_cuda_streams(k))
+                else
+                    !data2d%block(k)%field_device(nxs : nxe, nys : nye) = data2d%block(k)%field(nxs : nxe, nys : nye)
+                    istat = cudaMemcpy2D(data2d%block(k)%field_device(nxs, nys),            &
+                                                domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                                data2d%block(k)%field(nxs, nys),            &
+                                                domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                                nxe - nxs + 1,  &
+                                                nye - nys + 1)
+                endif
+            enddo
 #endif
         end subroutine
 
@@ -412,7 +453,35 @@ contains
             logical, intent(in) :: is_async
 
 #ifdef _GPU_MODE_
-            data2d%block(k)%field = data2d%block(k)%field_device
+            integer :: kk, istat
+            integer :: nxs, nxe, nys, nye     ! Boundary points
+            integer :: sync_dir(4)
+
+            sync_dir(1) = _NXP_
+            sync_dir(2) = _NXM_
+            sync_dir(3) = _NYP_
+            sync_dir(4) = _NYM_
+
+            do kk = 1, 4
+                call get_halo_and_boundary_points_of_block(domain, k, sync_dir(kk), nxs,  nxe,  nys,  nye)
+                if (is_async) then
+                    istat = cudaMemcpy2DAsync(data2d%block(k)%field(nxs, nys),            &
+                                              domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                              data2d%block(k)%field_device(nxs, nys),     &
+                                              domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                              nxe - nxs + 1,  &
+                                              nye - nys + 1,  &
+                                              stream=mpp_sync_cuda_streams(k))
+                else
+                    !data2d%block(k)%field(nxs : nxe, nys : nye) = data2d%block(k)%field_device(nxs : nxe, nys : nye)
+                    istat = cudaMemcpy2D(data2d%block(k)%field(nxs, nys),            &
+                                         domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                         data2d%block(k)%field_device(nxs, nys),     &
+                                         domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                         nxe - nxs + 1,  &
+                                         nye - nys + 1)
+                endif
+            enddo
 #endif
         end subroutine
 
@@ -424,7 +493,35 @@ contains
             logical, intent(in) :: is_async
 
 #ifdef _GPU_MODE_
-            data2d%block(k)%field_device = data2d%block(k)%field
+            integer :: kk, istat
+            integer :: nxs, nxe, nys, nye     ! Boundary points
+            integer :: sync_dir(4)
+
+            sync_dir(1) = _NXP_
+            sync_dir(2) = _NXM_
+            sync_dir(3) = _NYP_
+            sync_dir(4) = _NYM_
+
+            do kk = 1, 4
+                call get_expanded_halo_points_of_block(domain, k, sync_dir(kk), nxs,  nxe,  nys,  nye)
+                if (is_async) then
+                    istat = cudaMemcpy2DAsync(data2d%block(k)%field_device(nxs, nys),     &
+                                              domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                              data2d%block(k)%field(nxs, nys),            &
+                                              domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                              nxe - nxs + 1,  &
+                                              nye - nys + 1,  &
+                                              stream=mpp_sync_cuda_streams(k))
+                else
+                    !data2d%block(k)%field_device(nxs : nxe, nys : nye) = data2d%block(k)%field(nxs : nxe, nys : nye)
+                    istat = cudaMemcpy2D(data2d%block(k)%field_device(nxs, nys),            &
+                                                domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                                data2d%block(k)%field(nxs, nys),            &
+                                                domain%bbnd_x2(k) - domain%bbnd_x1(k) + 1,  &
+                                                nxe - nxs + 1,  &
+                                                nye - nys + 1)
+                endif
+            enddo
 #endif
         end subroutine
 

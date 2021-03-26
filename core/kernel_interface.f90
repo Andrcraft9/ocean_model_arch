@@ -94,8 +94,9 @@ contains
         procedure(envoke_empty_sync), pointer :: sub_sync
         real(wp8), intent(in) :: param
         
-        integer :: k
+        integer :: k, istat
         type(sync_parameters_type) :: sync_params_htod, sync_params_dtoh
+        type(sync_parameters_type) :: sync_parameters_all
         type(kernel_parameters_type) :: kernel_parameters
 
         kernel_parameters%param_real8 = param
@@ -104,6 +105,8 @@ contains
         sync_params_dtoh%sync_device_host = 0
         sync_params_htod%sync_mode = 5
         sync_params_htod%sync_device_host = 1
+
+        sync_parameters_all%sync_mode = 3
 
 #ifdef _GPU_ASYNC_
         sync_params_dtoh%sync_device_host = 2
@@ -116,9 +119,15 @@ contains
         enddo
 #else
         do k = 1, domain%bcount
-            call sub_sync(k, sync_params_htod)
             call sub_kernel(k, kernel_parameters)
             call sub_sync(k, sync_params_dtoh)
+        enddo
+
+        istat = cudaDeviceSynchronize()
+        call sub_sync(-1, sync_parameters_all)
+
+        do k = 1, domain%bcount
+            call sub_sync(k, sync_params_htod)
         enddo
 #endif
     end subroutine

@@ -10,7 +10,7 @@ module shallow_water_interface_gpu_module
     use data_types_module, only: data2D_real8_type, data2D_real4_type
     use ocean_module, only: ocean_type, ocean_data
     use grid_module, only: grid_type, grid_data
-    use mpp_sync_module, only: hybrid_sync, sync, sync_parameters_type
+    use mpp_sync_module, only: hybrid_sync, sync, sync_parameters_type, mpp_sync_cuda_streams
     use mixing_gpu_module, only: stress_components_kernel_gpu
     use depth_gpu_module, only: hh_init_kernel_gpu, hh_update_kernel_gpu, hh_shift_kernel_gpu
     use velssh_sw_gpu_module, only: sw_update_ssh_kernel_gpu, sw_update_uv_kernel_gpu, sw_next_step_kernel_gpu, uv_trans_vort_kernel_gpu, uv_trans_kernel_gpu, uv_diff2_kernel_gpu
@@ -46,7 +46,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call hh_init_kernel_gpu<<<grid, tBlock>>>(    &
+        call hh_init_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                             domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                             domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                             grid_data   %lu        %block(k)%field_device,  &
@@ -107,7 +107,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call stress_components_kernel_gpu<<<grid, tBlock>>>(    &
+        call stress_components_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                                       domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                       domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                                       grid_data  %lu     %block(k)%field_device,  & 
@@ -146,7 +146,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call hh_update_kernel_gpu<<<grid, tBlock>>>(    &
+        call hh_update_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                               domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                               domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                               grid_data   %lu        %block(k)%field_device,  & 
@@ -189,7 +189,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call hh_shift_kernel_gpu<<<grid, tBlock>>>(    &
+        call hh_shift_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                              domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                              domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                              grid_data  %lu     %block(k)%field_device,  &
@@ -230,7 +230,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call uv_trans_vort_kernel_gpu<<<grid, tBlock>>>(    &
+        call uv_trans_vort_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                                   domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                   domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                                   grid_data  %luu   %block(k)%field_device,  &
@@ -265,7 +265,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call uv_trans_kernel_gpu<<<grid, tBlock>>>(    &
+        call uv_trans_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                              domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                              domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                              grid_data  %lcu   %block(k)%field_device,  &
@@ -305,7 +305,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
         
-            call uv_diff2_kernel_gpu<<<grid, tBlock>>>(    &
+            call uv_diff2_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                                  domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                  domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                                  grid_data  %lcu    %block(k)%field_device,  &
@@ -350,7 +350,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call sw_update_ssh_kernel_gpu<<<grid, tBlock>>>(    &
+        call sw_update_ssh_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                                   domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                   domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                                   tau,                                 &
@@ -388,7 +388,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call sw_update_uv_kernel_gpu<<<grid, tBlock>>>(    &
+        call sw_update_uv_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                           domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                           domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                           tau,                                    &
@@ -446,7 +446,7 @@ contains
                     ceiling(real( (domain%bny_end(k) + 1) - (domain%bny_start(k) - 1) + 1 ) / tBlock%y),  &
                     1)
 
-        call sw_next_step_kernel_gpu<<<grid, tBlock>>>(    &
+        call sw_next_step_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                           domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                           domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
                           time_smooth,                          &

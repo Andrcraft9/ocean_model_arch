@@ -83,6 +83,7 @@ module decomposition_module
 !------------------------------------------------------------------------------
 
     public :: get_boundary_points_of_block, get_halo_points_of_block
+    public :: get_expanded_halo_points_of_block, get_halo_and_boundary_points_of_block
     public :: get_inverse_dir, get_rank_of_block, get_loc_num_of_block, fill_direction_array
     public :: is_block_on_current_proc, is_inner_block
 
@@ -148,6 +149,80 @@ contains
 
             case default
                 call abort_model("Unknown direction in get_boundary_points_of_block")
+        end select
+        
+    end subroutine
+
+    subroutine get_halo_and_boundary_points_of_block(domain, k, dir, nx_start, nx_end, ny_start, ny_end)
+        type(domain_type), intent(in) :: domain
+        integer, intent(in) :: k, dir
+        integer, intent(out) :: nx_start, nx_end, ny_start, ny_end
+
+        select case(dir)
+            ! borders
+            case(_NXP_)
+                nx_start = domain%bnx_end(k)
+                nx_end   = domain%bnx_end(k)   + 1
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_end(k)   + 1
+
+            case(_NXM_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_start(k)
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_end(k)   + 1
+
+            case(_NYP_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_end(k)   + 1
+                ny_start = domain%bny_end(k)
+                ny_end   = domain%bny_end(k)   + 1
+
+            case(_NYM_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_end(k)   + 1
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_start(k)
+
+            case default
+                call abort_model("Unknown direction in get_boundary_points_of_block")
+        end select
+        
+    end subroutine
+
+    subroutine get_expanded_halo_points_of_block(domain, k, dir, nx_start, nx_end, ny_start, ny_end)
+        type(domain_type), intent(in) :: domain
+        integer, intent(in) :: k, dir
+        integer, intent(out) :: nx_start, nx_end, ny_start, ny_end
+
+        select case(dir)
+            ! borders
+            case(_NXP_)
+                nx_start = domain%bnx_end(k) + 1
+                nx_end   = domain%bnx_end(k) + 1
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_end(k)   + 1
+
+            case(_NXM_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_start(k) - 1
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_end(k)   + 1
+
+            case(_NYP_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_end(k)   + 1
+                ny_start = domain%bny_end(k) + 1
+                ny_end   = domain%bny_end(k) + 1
+
+            case(_NYM_)
+                nx_start = domain%bnx_start(k) - 1
+                nx_end   = domain%bnx_end(k)   + 1
+                ny_start = domain%bny_start(k) - 1
+                ny_end   = domain%bny_start(k) - 1
+
+            case default
+                call abort_model("Unknown direction in get_expanded_halo_points_of_block")
         end select
         
     end subroutine
