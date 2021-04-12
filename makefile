@@ -7,7 +7,7 @@
 
 # Definitions and Options:
 FCGCC = -fopenmp -cpp -dM -ffree-line-length-0 -I./ -Imacros/
-FCINTEL = -assume byterecl -openmp -fpp -allow nofpp_comments -I./ -Imacros/
+FCINTEL = -assume byterecl -qopenmp -fpp -allow nofpp_comments -I./ -Imacros/
 # Debug: (from book Introduction to Programming with Fortran)
 # ?: -fPIC -Warray-temporaries
 FCGCC_DEBUG = -g -O -fcheck=all -finit-real=nan  -fbacktrace -pedantic-errors -Wunderflow -ffpe-trap=zero,overflow,underflow
@@ -31,7 +31,7 @@ PROF_CUDA = nvprof
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 ### GPU compilers
-FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_DEBUG)
+#FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_DEBUG)
 FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_FAST)
 #FCD = nvfortran $(FCPGI) $(FCPGI_DEBUG)
 # FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_FAST)

@@ -26,6 +26,8 @@ integer :: rk                     ! Local index of buffers for rank, see sync_ma
 integer :: bbk                    ! Local index of boundary block
 integer :: val
 
+integer :: mmm, nnn
+
 real(wp8) :: t_local, t_global
 
 !$omp master
@@ -36,7 +38,7 @@ call start_timer(t_local)
 ! Prepare MPI buffers for each near rank
 !
 
-!$omp do private(k, kk, rk, buf_size, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye) schedule(static, 1)
+!$omp do private(mmm, nnn, k, kk, rk, buf_size, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye) schedule(static, 1)
 do k = 1, domain%bcount
     if (.not. domain%blocks_info(k)%is_inner) then
         sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
@@ -65,7 +67,13 @@ do k = 1, domain%bcount
 
                     ! Pack buffer
                     buf_size = (nxe - nxs + 1)*(nye - nys + 1)
-                    _SYNC_SEND_BUF_(sync_buf_pos(kk, bbk) + 1 : sync_buf_pos(kk, bbk) + buf_size , rk, sync_tag) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
+
+                    !_SYNC_SEND_BUF_(sync_buf_pos(kk, bbk) + 1 : sync_buf_pos(kk, bbk) + buf_size , rk, sync_tag) = reshape(data2d%block(k)%field(nxs : nxe, nys : nye), shape=(/buf_size/))
+                    do nnn = nys, nye
+                        do mmm = nxs, nxe
+                            _SYNC_SEND_BUF_(sync_buf_pos(kk, bbk) + 1 + ((mmm - nxs) + (nnn - nys) * (nxe - nxs + 1)), rk, sync_tag) = data2d%block(k)%field(mmm, nnn)
+                        enddo
+                    enddo
                 endif
             endif
         enddo
@@ -170,7 +178,7 @@ call start_timer(t_local)
 ! Update all halo points for ALL blocks.
 !
 
-!$omp do private(i, val, k, kk, rk, buf_size, k_dir, sync_dir, rank_dir, hnxs, hnxe, hnys, hnye, nxs, nxe, nys, nye) schedule(static, 1)
+!$omp do private(mmm, nnn, i, val, k, kk, rk, buf_size, k_dir, sync_dir, rank_dir, hnxs, hnxe, hnys, hnye, nxs, nxe, nys, nye) schedule(static, 1)
 do k = 1, domain%bcount
 
     sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
@@ -204,14 +212,26 @@ do k = 1, domain%bcount
                     call get_halo_points_of_block(domain, k, sync_dir(kk), hnxs, hnxe, hnys, hnye)
                     ! Unpack buffer
                     buf_size = (hnxe - hnxs + 1)*(hnye - hnys + 1)
-                    data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = reshape(_SYNC_RECV_BUF_(i + 1 : i + buf_size, rk, sync_tag), shape=(/hnxe - hnxs + 1, hnye - hnys + 1/))
+                    
+                    !data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = reshape(_SYNC_RECV_BUF_(i + 1 : i + buf_size, rk, sync_tag), shape=(/hnxe - hnxs + 1, hnye - hnys + 1/))
+                    do nnn = hnys, hnye
+                        do mmm = hnxs, hnxe
+                            data2d%block(k)%field(mmm, nnn) = _SYNC_RECV_BUF_(i + 1 + (mmm - hnxs) + (nnn - hnys) * (hnxe - hnxs + 1), rk, sync_tag)
+                        enddo
+                    enddo
                 else
                     ! Block to block copy for boundary blocks
                     !
 
                     call get_boundary_points_of_block(domain, k_dir(kk), get_inverse_dir(sync_dir(kk)), nxs, nxe, nys, nye)
                     call get_halo_points_of_block(domain, k, sync_dir(kk), hnxs, hnxe, hnys, hnye)
-                    data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = data2d%block(k_dir(kk))%field(nxs : nxe, nys : nye)
+                    
+                    !data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = data2d%block(k_dir(kk))%field(nxs : nxe, nys : nye)
+                    do nnn = hnys, hnye
+                        do mmm = hnxs, hnxe
+                            data2d%block(k)%field(mmm, nnn) =  data2d%block(k_dir(kk))%field(nxs + mmm - hnxs, nys + nnn - hnys)
+                        enddo
+                    enddo
                 endif
             endif
         enddo
@@ -223,7 +243,13 @@ do k = 1, domain%bcount
             !
             call get_boundary_points_of_block(domain, k_dir(kk), get_inverse_dir(sync_dir(kk)), nxs, nxe, nys, nye)
             call get_halo_points_of_block(domain, k, sync_dir(kk), hnxs, hnxe, hnys, hnye)
-            data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = data2d%block(k_dir(kk))%field(nxs : nxe, nys : nye)
+            
+            !data2d%block(k)%field(hnxs : hnxe, hnys : hnye) = data2d%block(k_dir(kk))%field(nxs : nxe, nys : nye)
+            do nnn = hnys, hnye
+                do mmm = hnxs, hnxe
+                    data2d%block(k)%field(mmm, nnn) = data2d%block(k_dir(kk))%field(nxs + mmm - hnxs, nys + nnn - hnys)
+                enddo
+            enddo
         enddo
     endif
 enddo
