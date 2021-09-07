@@ -16,6 +16,8 @@ module config_sw_module
 
     character(128) :: ssh_init_file_name
 
+    integer :: use_tracers
+
 contains
 
     subroutine load_config_sw
@@ -35,6 +37,8 @@ contains
         lvisc_2 = 1.0d+03
 
         ssh_init_file_name = 'slf.dat'
+
+        use_tracers = 0
         
     end subroutine
 
@@ -48,6 +52,8 @@ contains
         lvisc_2 = 1.0d+03
 
         ssh_init_file_name = 'none'
+
+        use_tracers = 1
         
     end subroutine
 

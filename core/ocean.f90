@@ -32,6 +32,12 @@ module ocean_module
 
         type(data2D_real8_type) :: RHSx, RHSy, RHSx_dif, RHSy_dif, RHSx_adv, RHSy_adv
         type(data2D_real8_type) :: mu, str_t, str_s, vort
+
+        ! Tracers
+        type(data2D_real8_type) :: ff1, ff1p, ff1n
+
+        ! Fluxes for computations
+        type(data2D_real8_type) :: flux_x, flux_y
     contains
         procedure, public  :: init
         procedure, public  :: clear
@@ -78,6 +84,13 @@ contains
         call this%str_t%init(domain) 
         call this%str_s%init(domain) 
         call this%vort%init(domain)
+
+        call this%ff1%init(domain)
+        call this%ff1p%init(domain)
+        call this%ff1n%init(domain)
+
+        call this%flux_x%init(domain)
+        call this%flux_y%init(domain)
     end subroutine
 
     subroutine clear(this, domain)
@@ -112,6 +125,13 @@ contains
         call this%str_t%clear(domain) 
         call this%str_s%clear(domain) 
         call this%vort%clear(domain)
+
+        call this%ff1%clear(domain)
+        call this%ff1p%clear(domain)
+        call this%ff1n%clear(domain)
+
+        call this%flux_x%clear(domain)
+        call this%flux_y%clear(domain)
     end subroutine
 
 #ifdef _GPU_MODE_
@@ -148,6 +168,13 @@ contains
         call this%str_t%sync_host_device(domain, is_htod) 
         call this%str_s%sync_host_device(domain, is_htod) 
         call this%vort%sync_host_device(domain, is_htod)
+
+        call this%ff1%sync_host_device(domain, is_htod)
+        call this%ff1p%sync_host_device(domain, is_htod)
+        call this%ff1n%sync_host_device(domain, is_htod)
+
+        call this%flux_x%sync_host_device(domain, is_htod)
+        call this%flux_y%sync_host_device(domain, is_htod)
     end subroutine
 #endif
 

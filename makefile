@@ -20,6 +20,7 @@ FCINTEL_FAST = -O3
 ### PGI, GPU, CUDA
 FCPGI = -mp -cpp -dM -cuda -gpu=cc60 -I./ -Imacros/
 FCPGI_DEBUG = -g -C -gopt -Mneginfo=all
+FCPGI_FAST = -fast -Minfo=all -Mnoopenmp -Mcache_align -Mprefetch -Mipa=inline,reshape
 FCPGI_FAST = -fast
 PROF_CUDA = nvprof
 # PROF_CUDA = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/cuda/bin/nvprof
@@ -27,12 +28,12 @@ PROF_CUDA = nvprof
 ################# USER SECTION BEGIN ##########################################
 ### Default compiler (GCC or Intel / Debug or Production):
 #FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
-#FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
+FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 ### GPU compilers
 #FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_DEBUG)
-FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_FAST)
+#FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_FAST)
 #FCD = nvfortran $(FCPGI) $(FCPGI_DEBUG)
 # FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_FAST)
 
@@ -107,12 +108,14 @@ PHYSICS = \
 	kernel/shallow_water/vel_ssh.f90 \
 	kernel/shallow_water/mixing.f90 \
 	kernel/service/grid_parameters.f90 \
-	kernel/service/grid_kernels.f90
+	kernel/service/grid_kernels.f90 \
+	kernel/tracer/leapfrog_tracer.f90
 
 # Parallel System Layer
 INTERFACE = \
 	interface/shallow_water/sw_interface.f90 \
-	interface/service/grid_interface.f90
+	interface/service/grid_interface.f90 \
+	interface/tracer/tracer_interface.f90
 
 # Algorithm Layer
 SERVICE = \
@@ -129,7 +132,8 @@ CONTROL = \
 	control/init_data.f90 \
 	control/output.f90 \
 	control/shallow_water/shallow_water.f90 \
-	control/preprocess.f90
+	control/preprocess.f90 \
+	control/tracer.f90
 
 ## main and clean targets
 model: $(subst .f90,.o, $(SHARED) $(LEGACY) $(CONFIGS) $(CORE) $(TOOLS)  $(PHYSICS) $(INTERFACE) $(SERVICE) $(GPU) $(CONTROL) model.f90)

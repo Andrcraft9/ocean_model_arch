@@ -71,6 +71,17 @@ contains
 
         ! init
         call ocean_data%mu%fill(domain, lvisc_2)
+        call ocean_data%mu%fill(domain, 0.0d0)
+
+        ! Tracers
+        if (mpp_is_master()) print *, "INIT: Tracers init as gaussian elimination."
+        call envoke_gaussian_elimination(ocean_data%ff1, 0.5d0, nx / 2, ny / 2)
+        call ocean_data%ff1n%copy_from(domain, ocean_data%ff1)
+        call ocean_data%ff1p%copy_from(domain, ocean_data%ff1)
+
+        ! Zero fluxes
+        call ocean_data%flux_x%fill(domain, 0.0d0)
+        call ocean_data%flux_y%fill(domain, 0.0d0)
 
         call mpp_sync_output()
 

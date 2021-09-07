@@ -19,6 +19,7 @@ program model
     !use ocean_interface_module, only: envoke_div_velocity
     use output_module, only: local_output, output_init_buffers, output_clear_buffers
     use shallow_water_module, only: expl_shallow_water
+    use tracer_control_module, only: expl_tracer
     use preprocess_module, only: dynamic_load_balance
     use errors_module
 #ifdef _GPU_MODE_
@@ -133,6 +134,7 @@ program model
         istat = cudaDeviceSynchronize()
 #else
         call expl_shallow_water(tau)
+        call expl_tracer(tau)
 #endif
         
         if (mpp_is_master_thread()) then
