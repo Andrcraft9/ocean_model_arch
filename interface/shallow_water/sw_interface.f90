@@ -308,12 +308,9 @@ contains
         integer, intent(in) :: k
         type(kernel_parameters_type), intent(in) :: param
 
-        real(wp8) :: tau
-        tau = param%param_real8
-
         call sw_update_ssh_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                   domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
-                                  tau,                                 &
+                                  param%tau,                           &
                                   grid_data  %lu     %block(k)%field,  & 
                                   grid_data  %dx     %block(k)%field,  & 
                                   grid_data  %dy     %block(k)%field,  & 
@@ -338,12 +335,9 @@ contains
         integer, intent(in) :: k
         type(kernel_parameters_type), intent(in) :: param
 
-        real(wp8) :: tau
-        tau = param%param_real8
-
         call sw_update_uv(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                           domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
-                          tau,                                    &
+                          param%tau,                              &
                           grid_data  %lcu       %block(k)%field,  &
                           grid_data  %lcv       %block(k)%field,  &
                           grid_data  %dxt       %block(k)%field,  &
@@ -388,12 +382,9 @@ contains
         integer, intent(in) :: k
         type(kernel_parameters_type), intent(in) :: param
 
-        real(wp8) :: time_smooth
-        time_smooth = param%param_real8
-
         call sw_next_step(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                           domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
-                          time_smooth,                          &
+                          param%time_smooth,                    &
                           grid_data  %lu      %block(k)%field,  &
                           grid_data  %lcu     %block(k)%field,  &
                           grid_data  %lcv     %block(k)%field,  &

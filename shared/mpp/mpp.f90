@@ -37,6 +37,7 @@ module mpp_module
     real(wp8) :: mpp_time_model_step, mpp_time_sync, mpp_time_sync_inner, mpp_time_sync_boundary, mpp_time_sync_intermediate
     real(wp8) :: mpp_time_sync_pack_mpi, mpp_time_sync_unpack_mpi, mpp_time_sync_isend_irecv, mpp_time_sync_wait
     real(wp8) :: mpp_time_load_balance
+    real(wp8) :: mpp_time_sw, mpp_time_tracers
     ! Devcie timers
     real(wp4) :: mpp_device_time_model_step, mpp_device_init_data
 
@@ -209,6 +210,9 @@ contains
 
         mpp_time_load_balance = 0.0d0
 
+        mpp_time_sw = 0.0d0
+        mpp_time_tracers = 0.0d0
+
         mpp_device_time_model_step = 0.0
         mpp_device_init_data = 0.0
 
@@ -243,6 +247,14 @@ contains
         call mpi_allreduce(mpp_time_model_step, maxtime_model_step, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_time_model_step, mintime_model_step, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
         if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time full of model step (max and min): ", maxtime_model_step, mintime_model_step
+
+        call mpi_allreduce(mpp_time_sw, maxtime_model_step, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_time_sw, mintime_model_step, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time shallow water step (max and min): ", maxtime_model_step, mintime_model_step
+
+        call mpi_allreduce(mpp_time_tracers, maxtime_model_step, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_time_tracers, mintime_model_step, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time tracers step (max and min): ", maxtime_model_step, mintime_model_step
         
         call mpi_allreduce(mpp_time_sync, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
         call mpi_allreduce(mpp_time_sync, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)

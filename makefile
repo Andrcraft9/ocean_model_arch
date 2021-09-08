@@ -27,8 +27,8 @@ PROF_CUDA = nvprof
 
 ################# USER SECTION BEGIN ##########################################
 ### Default compiler (GCC or Intel / Debug or Production):
-#FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
-FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
+FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
+#FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 ### GPU compilers
@@ -87,7 +87,8 @@ LEGACY = \
 CONFIGS = \
 	configs/basinpar.f90 \
 	configs/sw.f90 \
-	configs/parallel.f90
+	configs/parallel.f90 \
+	configs/cmd.f90
 
 CORE = \
 	core/math_tools.f90 \

@@ -4,9 +4,10 @@ program model
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use mpp_module
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
-    use config_basinpar_module, only: load_config_basinpar, load_config_basinpar_from_file
+    use config_basinpar_module, only: load_config_basinpar_from_file
     use config_parallel_module, only: load_config_parallel_from_file_and_cmd, dlb_balance_steps, dlb_model_steps
-    use config_sw_module, only: load_config_sw
+    use config_sw_module, only: load_config_sw_from_file
+    use config_cmd_module, only: overwrite_configs_by_cmd
     use time_manager_module, only: num_step, num_step_max, tau,  &
                                    init_time_manager, time_manager_def, time_manager_print, is_local_print_step,  &
                                    year_loc, mon_loc, day_loc, hour_loc, min_loc, nrec_loc,  &
@@ -28,7 +29,7 @@ program model
 
     implicit none
 
-    real(wp8) :: t_local
+    real(wp8) :: t_local, t_inner_local
     real(wp4) :: dev_local
     integer(wp8) :: local_num_step
 #ifdef _GPU_MODE_
@@ -39,8 +40,9 @@ program model
 
     ! Load all configs
     call load_config_basinpar_from_file('basin.par')
-    call load_config_sw()
+    call load_config_sw_from_file('sw.par')
     call load_config_parallel_from_file_and_cmd('parallel.par')
+    call overwrite_configs_by_cmd()
 
     ! Init Time Manager
     call init_time_manager('ocean_run.par')
@@ -123,20 +125,38 @@ program model
 
     ! Solver
     do while(local_num_step < num_step_max)
+        ! Computing one step of ocean dynamics
         if (mpp_is_master_thread()) then
             call start_timer(t_local)
             call start_device_timer()
         endif
 
-        ! Computing one step of ocean dynamics
+        ! Shallow water step
+        if (mpp_is_master_thread()) then
+            call start_timer(t_inner_local)
+        endif
 #ifdef _GPU_MODE_
         call expl_shallow_water_gpu(tau)
         istat = cudaDeviceSynchronize()
 #else
         call expl_shallow_water(tau)
-        call expl_tracer(tau)
 #endif
+        if (mpp_is_master_thread()) then
+            call end_timer(t_inner_local)
+            mpp_time_sw = mpp_time_sw + t_inner_local
+        endif
+
+        ! Tracers step
+        if (mpp_is_master_thread()) then
+            call start_timer(t_inner_local)
+        endif
+        call expl_tracer(tau)
+        if (mpp_is_master_thread()) then
+            call end_timer(t_inner_local)
+            mpp_time_tracers = mpp_time_tracers + t_inner_local
+        endif
         
+        ! End the one step of ocean dynamics
         if (mpp_is_master_thread()) then
             call end_timer(t_local)
             call end_device_timer(dev_local)

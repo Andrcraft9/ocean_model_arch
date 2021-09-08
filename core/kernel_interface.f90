@@ -13,7 +13,11 @@ module kernel_interface_module
     public
 
     type, public :: kernel_parameters_type
-        real(wp8) :: param_real8
+        real(wp8) :: tau
+        real(wp8) :: time_smooth
+        integer :: data_id
+    contains
+        procedure, public  :: clear => clear_kernel_parameters_type
     end type kernel_parameters_type
 
     ! Kernel timers for _MPP_KERNEL_TIMER_ON_
@@ -22,6 +26,12 @@ module kernel_interface_module
 
 contains
 
+    subroutine clear_kernel_parameters_type(this)
+        class(kernel_parameters_type), intent(inout) :: this
+        this%tau = 0.0d0
+        this%time_smooth = 0.0d0
+        this%data_id = 0
+    end subroutine
 !-----------------------------------------------------------------------------!
 !-------------------------- Interface subroutines ----------------------------!
 !-----------------------------------------------------------------------------!
@@ -35,21 +45,18 @@ contains
         type(sync_parameters_type), intent(in) :: sync_parameters
     end subroutine 
 
-    subroutine envoke(sub_kernel, sub_sync, param)
+    subroutine envoke(sub_kernel, sub_sync, kernel_parameters)
         procedure(envoke_empty_kernel), pointer :: sub_kernel
         procedure(envoke_empty_sync), pointer :: sub_sync
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: kernel_parameters
     
         integer :: k
         type(sync_parameters_type) :: sync_parameters_inner, sync_parameters_boundary, sync_parameters_intermediate, sync_parameters_all
-        type(kernel_parameters_type) :: kernel_parameters
 
-        sync_parameters_inner%sync_mode = 0
-        sync_parameters_boundary%sync_mode = 1
-        sync_parameters_intermediate%sync_mode = 2
-        sync_parameters_all%sync_mode = 3
-
-        kernel_parameters%param_real8 = param
+        sync_parameters_inner%sync_mode = 0;         sync_parameters_inner%data_id = kernel_parameters%data_id
+        sync_parameters_boundary%sync_mode = 1;      sync_parameters_boundary%data_id = kernel_parameters%data_id
+        sync_parameters_intermediate%sync_mode = 2;  sync_parameters_intermediate%data_id = kernel_parameters%data_id
+        sync_parameters_all%sync_mode = 3;           sync_parameters_all%data_id = kernel_parameters%data_id
 
 #ifdef _MPP_NO_PARALLEL_MODE_
 
@@ -89,26 +96,20 @@ contains
 
     end subroutine
 
-    subroutine envoke_device(sub_kernel, sub_sync, param)
+    subroutine envoke_device(sub_kernel, sub_sync, kernel_parameters)
         procedure(envoke_empty_kernel), pointer :: sub_kernel
         procedure(envoke_empty_sync), pointer :: sub_sync
-        real(wp8), intent(in) :: param
+        type(kernel_parameters_type), intent(in) :: kernel_parameters
         
         integer :: k, istat
         type(sync_parameters_type) :: sync_params_htod, sync_params_dtoh
         type(sync_parameters_type) :: sync_parameters_all
-        type(kernel_parameters_type) :: kernel_parameters
 
 #ifdef _GPU_MODE_
 
-        kernel_parameters%param_real8 = param
-
-        sync_params_dtoh%sync_mode = 5
-        sync_params_dtoh%sync_device_host = 0
-        sync_params_htod%sync_mode = 5
-        sync_params_htod%sync_device_host = 1
-
-        sync_parameters_all%sync_mode = 3
+        sync_params_dtoh%sync_mode = 5; sync_params_dtoh%sync_device_host = 0; sync_params_dtoh%data_id = kernel_parameters%data_id
+        sync_params_htod%sync_mode = 5; sync_params_htod%sync_device_host = 1; sync_params_htod%data_id = kernel_parameters%data_id
+        sync_parameters_all%sync_mode = 3; sync_parameters_all%data_id = kernel_parameters%data_id
 
 #ifdef _GPU_ASYNC_
         sync_params_dtoh%sync_device_host = 2

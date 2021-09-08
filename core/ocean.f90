@@ -5,6 +5,7 @@ module ocean_module
 
     use decomposition_module, only: domain_type
     use data_types_module, only: data2D_real8_type, data2D_real4_type
+    use config_sw_module, only: use_tracers, tracer_num
 
     implicit none
     save
@@ -34,7 +35,7 @@ module ocean_module
         type(data2D_real8_type) :: mu, str_t, str_s, vort
 
         ! Tracers
-        type(data2D_real8_type) :: ff1, ff1p, ff1n
+        type(data2D_real8_type), allocatable, dimension(:) :: ff1, ff1p, ff1n
 
         ! Fluxes for computations
         type(data2D_real8_type) :: flux_x, flux_y
@@ -56,6 +57,7 @@ contains
         ! Initialization of grid data
         class(ocean_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
+        integer :: k
 
         call this%ssh%init(domain)
         call this%pgrx%init(domain)
@@ -85,18 +87,25 @@ contains
         call this%str_s%init(domain) 
         call this%vort%init(domain)
 
-        call this%ff1%init(domain)
-        call this%ff1p%init(domain)
-        call this%ff1n%init(domain)
-
-        call this%flux_x%init(domain)
-        call this%flux_y%init(domain)
+        if (use_tracers > 0) then
+            allocate(this%ff1(tracer_num))
+            allocate(this%ff1p(tracer_num))
+            allocate(this%ff1n(tracer_num))
+            do k = 1, tracer_num
+                call this%ff1(k)%init(domain)
+                call this%ff1p(k)%init(domain)
+                call this%ff1n(k)%init(domain)
+            enddo
+            call this%flux_x%init(domain)
+            call this%flux_y%init(domain)
+        endif
     end subroutine
 
     subroutine clear(this, domain)
         ! Clear grid data
         class(ocean_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
+        integer :: k
 
         call this%ssh%clear(domain)
         call this%pgrx%clear(domain)
@@ -126,12 +135,18 @@ contains
         call this%str_s%clear(domain) 
         call this%vort%clear(domain)
 
-        call this%ff1%clear(domain)
-        call this%ff1p%clear(domain)
-        call this%ff1n%clear(domain)
-
-        call this%flux_x%clear(domain)
-        call this%flux_y%clear(domain)
+        if (use_tracers > 0) then
+            do k = 1, tracer_num
+                call this%ff1(k)%clear(domain)
+                call this%ff1p(k)%clear(domain)
+                call this%ff1n(k)%clear(domain)
+            enddo
+            deallocate(this%ff1)
+            deallocate(this%ff1p)
+            deallocate(this%ff1n)
+            call this%flux_x%clear(domain)
+            call this%flux_y%clear(domain)
+        endif
     end subroutine
 
 #ifdef _GPU_MODE_
@@ -140,6 +155,7 @@ contains
         class(ocean_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_htod
+        integer :: k
 
         call this%ssh%sync_host_device(domain, is_htod)
         call this%pgrx%sync_host_device(domain, is_htod)
@@ -169,12 +185,15 @@ contains
         call this%str_s%sync_host_device(domain, is_htod) 
         call this%vort%sync_host_device(domain, is_htod)
 
-        call this%ff1%sync_host_device(domain, is_htod)
-        call this%ff1p%sync_host_device(domain, is_htod)
-        call this%ff1n%sync_host_device(domain, is_htod)
-
-        call this%flux_x%sync_host_device(domain, is_htod)
-        call this%flux_y%sync_host_device(domain, is_htod)
+        if (use_tracers > 0) then
+            do k = 1, tracer_num
+                call this%ff1(k)%sync_host_device(domain, is_htod)
+                call this%ff1p(k)%sync_host_device(domain, is_htod)
+                call this%ff1n(k)%sync_host_device(domain, is_htod)
+            enddo
+            call this%flux_x%sync_host_device(domain, is_htod)
+            call this%flux_y%sync_host_device(domain, is_htod)
+        endif
     end subroutine
 #endif
 

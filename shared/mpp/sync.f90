@@ -28,6 +28,7 @@ module mpp_sync_module
         integer :: sync_mode ! 0 - inner; 1 - boundary; 2 - intermediate; 3 - all, 5 - sync between device and host
         integer :: sync_device_host ! Check it only sync_mode is 5.
                                     ! 0 - dev to host (sync), 1 - host to dev (sync), 2 - dev to host (async), 3 - host to dev (async)
+        integer :: data_id ! id of field to sync (temporary)
     end type sync_parameters_type
 
     interface sync_test

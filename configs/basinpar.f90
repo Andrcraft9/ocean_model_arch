@@ -93,12 +93,6 @@ contains
         call mpp_sync_output()
     end subroutine
 
-    subroutine load_config_basinpar()
-        
-        !call load_config_basinpar_as250m()
-        call load_config_basinpar_as250m_test()
-    end subroutine
-
     subroutine load_config_basinpar_bs4km()
         nx = 289
         ny = 163

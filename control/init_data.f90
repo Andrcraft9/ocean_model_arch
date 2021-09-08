@@ -12,6 +12,7 @@ module init_data_module
     use io_module, only: read_data
     use gridcon_module, only: gridcon
     use basinpar_module, only: basinpar
+    use config_sw_module, only: use_tracers, tracer_num
     use mpp_sync_module, only: sync, sync_test
     use errors_module, only: abort_model
 
@@ -34,6 +35,7 @@ contains
         type(data2D_real4_type) :: tmp_data
         procedure(envoke_empty_kernel), pointer :: sub_kernel
         procedure(envoke_empty_sync), pointer :: sub_sync
+        type(kernel_parameters_type) :: kernel_parameters
         integer :: k, ierr
 
         !debug
@@ -42,7 +44,7 @@ contains
         !return
 
         if (ssh_init_file_name .eq. 'none') then
-            if (mpp_is_master()) print *, "WARNING: SSH init file is none. Set gaussian elimination as init ssh level."
+            if (mpp_is_master()) print *, "INIT: WARNING: SSH init file is none. Set gaussian elimination as init ssh level."
             call envoke_gaussian_elimination(ocean_data%ssh, 1.0d0, nx / 2, ny / 2)
         else
             call tmp_data%init(domain)
@@ -55,9 +57,10 @@ contains
         call ocean_data%sshn%copy_from(domain, ocean_data%ssh)
         call ocean_data%sshp%copy_from(domain, ocean_data%ssh)
 
+        call kernel_parameters%clear()
         sub_kernel => envoke_hh_init_kernel
         sub_sync   => envoke_hh_init_sync
-        call envoke(sub_kernel, sub_sync, 0.0d0)
+        call envoke(sub_kernel, sub_sync, kernel_parameters)
 
         ! Zero velocity
         ! U
@@ -74,14 +77,17 @@ contains
         call ocean_data%mu%fill(domain, 0.0d0)
 
         ! Tracers
-        if (mpp_is_master()) print *, "INIT: Tracers init as gaussian elimination."
-        call envoke_gaussian_elimination(ocean_data%ff1, 0.5d0, nx / 2, ny / 2)
-        call ocean_data%ff1n%copy_from(domain, ocean_data%ff1)
-        call ocean_data%ff1p%copy_from(domain, ocean_data%ff1)
-
-        ! Zero fluxes
-        call ocean_data%flux_x%fill(domain, 0.0d0)
-        call ocean_data%flux_y%fill(domain, 0.0d0)
+        if (use_tracers > 0) then
+            if (mpp_is_master()) print *, "INIT: Tracers init as gaussian elimination. Tracers num ", tracer_num
+            do k = 1, tracer_num        
+                call envoke_gaussian_elimination(ocean_data%ff1(k), 0.5d0, nx / 2, ny / 2)
+                call ocean_data%ff1n(k)%copy_from(domain, ocean_data%ff1(k))
+                call ocean_data%ff1p(k)%copy_from(domain, ocean_data%ff1(k))
+            enddo
+            ! Zero fluxes
+            call ocean_data%flux_x%fill(domain, 0.0d0)
+            call ocean_data%flux_y%fill(domain, 0.0d0)
+        endif
 
         call mpp_sync_output()
 
@@ -104,7 +110,7 @@ contains
 
         ! Read bottom topograhy (real4 binary file)
         if (bottom_topography_file_name .eq. 'none') then
-            if (mpp_is_master()) print *, 'WARNING: Bottom topography is none. Set 100m as ocean depth.'
+            if (mpp_is_master()) print *, 'INIT: WARNING: Bottom topography is none. Set 100m as ocean depth.'
             call grid_data%hhq_rest%fill(domain, 100.0d0)
         else
             call tmp_data%init(domain)

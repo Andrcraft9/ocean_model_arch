@@ -340,10 +340,7 @@ contains
         integer, intent(in) :: k
         type(kernel_parameters_type), intent(in) :: param
 
-        real(wp8) :: tau
         type(dim3) :: tBlock, grid
-
-        tau = param%param_real8
 
         tBlock = dim3(_GPU_BLOCK_X_, _GPU_BLOCK_Y_, 1)
         grid = dim3(ceiling(real( (domain%bnx_end(k) + 1) - (domain%bnx_start(k) - 1) + 1 ) / tBlock%x),  &
@@ -353,7 +350,7 @@ contains
         call sw_update_ssh_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                                   domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                   domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
-                                  tau,                                 &
+                                  param%tau,                                  &
                                   grid_data  %lu     %block(k)%field_device,  & 
                                   grid_data  %dx     %block(k)%field_device,  & 
                                   grid_data  %dy     %block(k)%field_device,  & 
@@ -378,10 +375,7 @@ contains
         integer, intent(in) :: k
         type(kernel_parameters_type), intent(in) :: param
 
-        real(wp8) :: tau
         type(dim3) :: tBlock, grid
-
-        tau = param%param_real8
 
         tBlock = dim3(_GPU_BLOCK_X_, _GPU_BLOCK_Y_, 1)
         grid = dim3(ceiling(real( (domain%bnx_end(k) + 1) - (domain%bnx_start(k) - 1) + 1 ) / tBlock%x),  &
@@ -391,7 +385,7 @@ contains
         call sw_update_uv_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                           domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                           domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
-                          tau,                                    &
+                          param%tau,                                     &
                           grid_data  %lcu       %block(k)%field_device,  &
                           grid_data  %lcv       %block(k)%field_device,  &
                           grid_data  %dxt       %block(k)%field_device,  &
@@ -436,10 +430,7 @@ contains
         integer, intent(in) :: k
         type(kernel_parameters_type), intent(in) :: param
 
-        real(wp8) :: time_smooth
         type(dim3) :: tBlock, grid
-
-        time_smooth = param%param_real8
 
         tBlock = dim3(_GPU_BLOCK_X_, _GPU_BLOCK_Y_, 1)
         grid = dim3(ceiling(real( (domain%bnx_end(k) + 1) - (domain%bnx_start(k) - 1) + 1 ) / tBlock%x),  &
@@ -449,7 +440,7 @@ contains
         call sw_next_step_kernel_gpu<<<grid, tBlock, 0, mpp_sync_cuda_streams(k)>>>(    &
                           domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                           domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
-                          time_smooth,                          &
+                          param%time_smooth,                           &
                           grid_data  %lu      %block(k)%field_device,  &
                           grid_data  %lcu     %block(k)%field_device,  &
                           grid_data  %lcv     %block(k)%field_device,  &
