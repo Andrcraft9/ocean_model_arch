@@ -122,9 +122,10 @@ contains
             print *, "MPP INFO: MPP_HYBRID_BLOCK_MODE: yes"
 #endif
 
-            print *, "MPP INFO: Version 2.0, only NO_PARALLEL, BLOCK mode:"
+            print *, "MPP INFO: Version 3.0, only NO_PARALLEL, BLOCK mode:"
             print *, "MPP INFO: Single OMP PARALLEL, OMP for pack/unpack MPI buffers, nowait loops, one global sync at mpi_waitall"
             print *, "MPP INFO: dont use SIMUL syncs"
+            print *, "MPP INFO: Tracers added"
 
 #ifdef _GPU_MODE_
             ! CUDA INFO
