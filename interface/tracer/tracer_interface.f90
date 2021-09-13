@@ -9,9 +9,7 @@ module tracer_interface_module
     use grid_module, only: grid_type, grid_data
     use mpp_sync_module, only: hybrid_sync, sync, sync_parameters_type
     use tracer_module, only: tran_diff_fluxes_kernel, tran_diff_tracer_kernel, tracer_next_step_kernel
-    use errors_module, only: abort_model, check_error
 
-#include "macros/kernel_macros.fi"
 #include "macros/mpp_macros.fi"
 
     implicit none
@@ -90,6 +88,7 @@ subroutine envoke_tracer_next_step_kernel(k, param)
 
     call tracer_next_step_kernel(domain%bnx_start(k), domain%bnx_end(k), domain%bny_start(k), domain%bny_end(k),  &
                                  domain%bbnd_x1(k),   domain%bbnd_x2(k), domain%bbnd_y1(k),   domain%bbnd_y2(k),  &
+                                 param%time_smooth,              &
                                  grid_data %lu %block(k)%field,  &
                                  ocean_data%ff1n(param%data_id)%block(k)%field,  &
                                  ocean_data%ff1p(param%data_id)%block(k)%field,  &

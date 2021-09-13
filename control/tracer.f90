@@ -8,8 +8,20 @@ module tracer_control_module
     use grid_module, only: grid_type, grid_data
     use config_sw_module, only: use_tracers, tracer_num, time_smooth
     use mpp_module
-    use kernel_interface_module
-    use tracer_interface_module
+#ifdef _GPU_MODE_
+    use kernel_interface_module, only: envoke_empty_kernel, envoke_empty_sync, kernel_parameters_type, envoke => envoke_device
+    use tracer_interface_gpu_module, only: envoke_tran_diff_fluxes_kernel => envoke_tran_diff_fluxes_kernel_gpu,  &
+                                           envoke_tran_diff_fluxes_sync   => envoke_tran_diff_fluxes_sync_gpu,    &
+                                           envoke_tran_diff_tracer_kernel => envoke_tran_diff_tracer_kernel_gpu,  &
+                                           envoke_tran_diff_tracer_sync   => envoke_tran_diff_tracer_sync_gpu,    &
+                                           envoke_tracer_next_step_kernel => envoke_tracer_next_step_kernel_gpu,  &
+                                           envoke_tracer_next_step_sync   => envoke_tracer_next_step_sync_gpu
+#else
+    use kernel_interface_module, only: envoke_empty_kernel, envoke_empty_sync, kernel_parameters_type, envoke
+    use tracer_interface_module, only: envoke_tran_diff_fluxes_kernel, envoke_tran_diff_fluxes_sync,  &
+                                       envoke_tran_diff_tracer_kernel, envoke_tran_diff_tracer_sync,  &
+                                       envoke_tracer_next_step_kernel, envoke_tracer_next_step_sync
+#endif
 
     implicit none
     save

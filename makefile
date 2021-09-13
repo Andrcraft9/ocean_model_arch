@@ -27,13 +27,13 @@ PROF_CUDA = nvprof
 
 ################# USER SECTION BEGIN ##########################################
 ### Default compiler (GCC or Intel / Debug or Production):
-FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
+#FCD = mpif90 $(FCGCC) $(FCGCC_DEBUG)
 #FCD = mpif90 $(FCGCC) $(FCGCC_FAST)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_DEBUG)
 #FCD = mpiifort $(FCINTEL) $(FCINTEL_FAST)
 ### GPU compilers
 #FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_DEBUG)
-#FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_FAST)
+FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpif90 $(FCPGI) $(FCPGI_FAST)
 #FCD = nvfortran $(FCPGI) $(FCPGI_DEBUG)
 # FCD = /opt/nvidia/hpc_sdk/Linux_x86_64/2021/compilers/bin/nvfortran $(FCPGI) $(FCPGI_FAST)
 
@@ -127,7 +127,9 @@ GPU = \
 	gpu/kernel/depth_gpu.f90 \
 	gpu/kernel/mixing_gpu.f90 \
 	gpu/kernel/vel_ssh_gpu.f90 \
-	gpu/interface/sw_interface_gpu.f90
+	gpu/kernel/leapfrog_tracer_gpu.f90 \
+	gpu/interface/sw_interface_gpu.f90 \
+	gpu/interface/tracer_interface_gpu.f90
 
 CONTROL = \
 	control/init_data.f90 \

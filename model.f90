@@ -6,7 +6,7 @@ program model
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar_from_file
     use config_parallel_module, only: load_config_parallel_from_file_and_cmd, dlb_balance_steps, dlb_model_steps
-    use config_sw_module, only: load_config_sw_from_file
+    use config_sw_module, only: load_config_sw_from_file, tracer_num
     use config_cmd_module, only: overwrite_configs_by_cmd
     use time_manager_module, only: num_step, num_step_max, tau,  &
                                    init_time_manager, time_manager_def, time_manager_print, is_local_print_step,  &
@@ -19,12 +19,13 @@ program model
     use init_data_module, only: init_grid_data, init_ocean_data, init_device_data
     !use ocean_interface_module, only: envoke_div_velocity
     use output_module, only: local_output, output_init_buffers, output_clear_buffers
-    use shallow_water_module, only: expl_shallow_water
-    use tracer_control_module, only: expl_tracer
     use preprocess_module, only: dynamic_load_balance
     use errors_module
+    use tracer_control_module, only: expl_tracer
 #ifdef _GPU_MODE_
-    use shallow_water_gpu_module, only: expl_shallow_water_gpu
+    use shallow_water_gpu_module, only: expl_shallow_water => expl_shallow_water_gpu
+#else
+    use shallow_water_module, only: expl_shallow_water
 #endif
 
     implicit none
@@ -135,12 +136,7 @@ program model
         if (mpp_is_master_thread()) then
             call start_timer(t_inner_local)
         endif
-#ifdef _GPU_MODE_
-        call expl_shallow_water_gpu(tau)
-        istat = cudaDeviceSynchronize()
-#else
         call expl_shallow_water(tau)
-#endif
         if (mpp_is_master_thread()) then
             call end_timer(t_inner_local)
             mpp_time_sw = mpp_time_sw + t_inner_local
@@ -156,6 +152,9 @@ program model
             mpp_time_tracers = mpp_time_tracers + t_inner_local
         endif
         
+#ifdef _GPU_MODE_
+        istat = cudaDeviceSynchronize()
+#endif
         ! End the one step of ocean dynamics
         if (mpp_is_master_thread()) then
             call end_timer(t_local)
@@ -176,6 +175,7 @@ program model
               
 #ifdef _GPU_MODE_
                 call ocean_data%ssh%sync_host_device(domain_data, .false.)
+                call ocean_data%ff1(tracer_num)%sync_host_device(domain_data, .false.)
 #endif
                 call local_output(nrec_loc + 1,  &
                                   year_loc,  &
