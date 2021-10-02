@@ -3,6 +3,6 @@
 1       : Use ksw_lat
 0.5d0   : Time smooth
 1.0d+03 : lvisc_2
-1       : Use tracers
-3       : Amount of tracers
+0       : Use tracers
+1       : Amount of tracers
 none    : ssh_init_file_name
