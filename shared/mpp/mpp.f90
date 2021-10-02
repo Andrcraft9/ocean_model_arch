@@ -171,6 +171,9 @@ contains
 #ifdef _GPU_FULL_
             print *, "MPP INFO: GPU FULL: yes"
 #endif
+#ifdef _GPU_CPU_HETERO_
+            print *, "MPP INFO: GPU_CPU_HETERO: yes. CPU_GPU_RATIO is ", _CPU_GPU_RATIO_
+#endif
             print *, "------------------------------------------------------------"
         endif
         call mpi_barrier(mpp_cart_comm, ierr)

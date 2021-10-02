@@ -21,10 +21,17 @@ program model
     use output_module, only: local_output, output_init_buffers, output_clear_buffers
     use preprocess_module, only: dynamic_load_balance
     use errors_module
-    use tracer_control_module, only: expl_tracer
+    
 #ifdef _GPU_MODE_
-    use shallow_water_gpu_module, only: expl_shallow_water => expl_shallow_water_gpu
+#ifdef _GPU_CPU_HETERO_
+    use tracer_control_module, only: expl_tracer => expl_tracer_heterogeneous
+    use shallow_water_gpu_module, only: expl_shallow_water => expl_shallow_water_heterogeneous
 #else
+    use tracer_control_module, only: expl_tracer
+    use shallow_water_gpu_module, only: expl_shallow_water => expl_shallow_water_gpu
+#endif
+#else
+    use tracer_control_module, only: expl_tracer
     use shallow_water_module, only: expl_shallow_water
 #endif
 

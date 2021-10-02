@@ -137,6 +137,49 @@ contains
 #endif
     end subroutine
 
+    subroutine envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+        procedure(envoke_empty_kernel), pointer :: sub_kernel
+        procedure(envoke_empty_sync), pointer :: sub_sync
+        procedure(envoke_empty_kernel), pointer :: sub_kernel_gpu
+        procedure(envoke_empty_sync), pointer :: sub_sync_gpu
+        type(kernel_parameters_type), intent(in) :: kernel_parameters
+        
+        integer :: k, istat, cpu_count, gpu_count
+        type(sync_parameters_type) :: sync_params_htod, sync_params_dtoh
+        type(sync_parameters_type) :: sync_parameters_all
+
+#ifdef _GPU_MODE_
+
+        sync_params_dtoh%sync_mode = 5; sync_params_dtoh%sync_device_host = 0; sync_params_dtoh%data_id = kernel_parameters%data_id
+        sync_params_htod%sync_mode = 5; sync_params_htod%sync_device_host = 1; sync_params_htod%data_id = kernel_parameters%data_id
+        sync_parameters_all%sync_mode = 3; sync_parameters_all%data_id = kernel_parameters%data_id
+
+#ifdef _GPU_ASYNC_
+        sync_params_dtoh%sync_device_host = 2
+        sync_params_htod%sync_device_host = 3
+#endif
+
+        cpu_count = int(_CPU_GPU_RATIO_ * domain%bcount)
+        gpu_count = domain%bcount - cpu_count
+
+        do k = 1, gpu_count
+            call sub_kernel_gpu(k, kernel_parameters)
+            call sub_sync_gpu(k, sync_params_dtoh)
+        enddo
+        
+        do k = gpu_count + 1, domain%bcount
+            call sub_kernel(k, kernel_parameters)
+        enddo
+
+        istat = cudaDeviceSynchronize()
+        call sub_sync(-1, sync_parameters_all)
+
+        do k = 1, gpu_count
+            call sub_sync(k, sync_params_htod)
+        enddo
+
+#endif
+    end subroutine
 !-----------------------------------------------------------------------------!
 !-------------------------- Timers subroutines -------------------------------!
 !-----------------------------------------------------------------------------!

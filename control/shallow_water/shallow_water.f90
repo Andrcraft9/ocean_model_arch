@@ -250,6 +250,78 @@ contains
 
     endsubroutine expl_shallow_water_gpu
 
+    subroutine expl_shallow_water_heterogeneous(tau)
+        use shallow_water_interface_module
+
+        real(wp8), intent(in) :: tau
+
+        procedure(envoke_empty_kernel), pointer :: sub_kernel
+        procedure(envoke_empty_sync), pointer :: sub_sync
+        procedure(envoke_empty_kernel), pointer :: sub_kernel_gpu
+        procedure(envoke_empty_sync), pointer :: sub_sync_gpu
+        type(kernel_parameters_type) :: kernel_parameters
+
+        ! Set kernel parameters for shallow water kernels
+        call kernel_parameters%clear()
+        kernel_parameters%tau = tau
+        kernel_parameters%time_smooth = time_smooth
+
+        !computing ssh
+        sub_kernel => envoke_sw_update_ssh_kernel; sub_kernel_gpu => envoke_sw_update_ssh_kernel_gpu
+        sub_sync   => envoke_sw_update_ssh_sync;   sub_sync_gpu   => envoke_sw_update_ssh_sync_gpu
+        call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+
+        if (full_free_surface>0) then
+            sub_kernel => envoke_hh_update_kernel; sub_kernel_gpu => envoke_hh_update_kernel_gpu
+            sub_sync   => envoke_hh_update_sync;   sub_sync_gpu   => envoke_hh_update_sync_gpu
+            call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+        endif
+
+        !computing advective and lateral-viscous terms for 2d-velocity
+        if (trans_terms > 0) then
+            sub_kernel => envoke_uv_trans_vort_kernel; sub_kernel_gpu => envoke_uv_trans_vort_kernel_gpu
+            sub_sync   => envoke_uv_trans_vort_sync;   sub_sync_gpu   => envoke_uv_trans_vort_sync_gpu
+            call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+
+            sub_kernel => envoke_uv_trans_kernel; sub_kernel_gpu => envoke_uv_trans_kernel_gpu
+            sub_sync   => envoke_uv_trans_sync;   sub_sync_gpu   => envoke_uv_trans_sync_gpu
+            call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+        endif
+
+        if (ksw_lat > 0) then
+            sub_kernel => envoke_stress_components_kernel; sub_kernel_gpu => envoke_stress_components_kernel_gpu
+            sub_sync   => envoke_stress_components_sync;   sub_sync_gpu   => envoke_stress_components_sync_gpu
+            call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+
+            sub_kernel => envoke_uv_diff2_kernel; sub_kernel_gpu => envoke_uv_diff2_kernel_gpu
+            sub_sync   => envoke_uv_diff2_sync;   sub_sync_gpu   => envoke_uv_diff2_sync_gpu
+            call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+        endif
+
+        sub_kernel => envoke_sw_update_uv_kernel; sub_kernel_gpu => envoke_sw_update_uv_kernel_gpu
+        sub_sync   => envoke_sw_update_uv_sync;   sub_sync_gpu   => envoke_sw_update_uv_sync_gpu
+        call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+
+        !shifting time indices
+        sub_kernel => envoke_sw_next_step_kernel; sub_kernel_gpu => envoke_sw_next_step_kernel_gpu
+        sub_sync   => envoke_sw_next_step_sync;   sub_sync_gpu   => envoke_sw_next_step_sync_gpu
+        call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+
+        if(full_free_surface>0) then
+            sub_kernel => envoke_hh_shift_kernel; sub_kernel_gpu => envoke_hh_shift_kernel_gpu
+            sub_sync   => envoke_hh_shift_sync;   sub_sync_gpu   => envoke_hh_shift_sync_gpu
+            call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+        endif
+
+        if(full_free_surface>0) then
+            !initialize depth for external mode
+            sub_kernel => envoke_hh_init_kernel; sub_kernel_gpu => envoke_hh_init_kernel_gpu
+            sub_sync   => envoke_hh_init_sync;   sub_sync_gpu   => envoke_hh_init_sync_gpu
+            call envoke_heterogeneous(sub_kernel, sub_sync, sub_kernel_gpu, sub_sync_gpu, kernel_parameters)
+        endif
+
+    endsubroutine expl_shallow_water_heterogeneous
+
 endmodule
 
 #endif

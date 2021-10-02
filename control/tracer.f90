@@ -61,4 +61,10 @@ contains
         endif
     endsubroutine expl_tracer
 
+    subroutine expl_tracer_heterogeneous(tau)
+        real(wp8), intent(in) :: tau
+
+    endsubroutine expl_tracer_heterogeneous
+
+
 endmodule
