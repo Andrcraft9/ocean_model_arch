@@ -6,7 +6,7 @@ program model
     use mpp_sync_module, only: mpp_sync_init, mpp_sync_finalize
     use config_basinpar_module, only: load_config_basinpar_from_file
     use config_parallel_module, only: load_config_parallel_from_file_and_cmd, dlb_balance_steps, dlb_model_steps
-    use config_sw_module, only: load_config_sw_from_file, tracer_num
+    use config_sw_module, only: load_config_sw_from_file, use_tracers, tracer_num
     use config_cmd_module, only: overwrite_configs_by_cmd
     use time_manager_module, only: num_step, num_step_max, tau,  &
                                    init_time_manager, time_manager_def, time_manager_print, is_local_print_step,  &
@@ -175,7 +175,9 @@ program model
               
 #ifdef _GPU_MODE_
                 call ocean_data%ssh%sync_host_device(domain_data, .false.)
-                call ocean_data%ff1(tracer_num)%sync_host_device(domain_data, .false.)
+                if (use_tracers > 0) then
+                    call ocean_data%ff1(tracer_num)%sync_host_device(domain_data, .false.)
+                endif
 #endif
                 call local_output(nrec_loc + 1,  &
                                   year_loc,  &

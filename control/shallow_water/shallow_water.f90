@@ -199,7 +199,6 @@ contains
         sub_sync   => envoke_sw_update_ssh_sync_gpu
         call envoke_device(sub_kernel, sub_sync, kernel_parameters)
 
-        !print *, "hh"
         if (full_free_surface>0) then
             sub_kernel => envoke_hh_update_kernel_gpu
             sub_sync   => envoke_hh_update_sync_gpu
@@ -207,7 +206,6 @@ contains
         endif
 
         !computing advective and lateral-viscous terms for 2d-velocity
-        !print *, "trans"
         if (trans_terms > 0) then
             sub_kernel => envoke_uv_trans_vort_kernel_gpu
             sub_sync   => envoke_uv_trans_vort_sync_gpu
@@ -218,7 +216,6 @@ contains
             call envoke_device(sub_kernel, sub_sync, kernel_parameters)
         endif
 
-        !print *, "stress"
         if (ksw_lat > 0) then
             sub_kernel => envoke_stress_components_kernel_gpu
             sub_sync   => envoke_stress_components_sync_gpu
@@ -229,36 +226,27 @@ contains
             call envoke_device(sub_kernel, sub_sync, kernel_parameters)
         endif
 
-        !print *, "uv"
         sub_kernel => envoke_sw_update_uv_kernel_gpu
         sub_sync   => envoke_sw_update_uv_sync_gpu
         call envoke_device(sub_kernel, sub_sync, kernel_parameters)
 
         !shifting time indices
-        !print *, "ssh upd"
         sub_kernel => envoke_sw_next_step_kernel_gpu
         sub_sync   => envoke_sw_next_step_sync_gpu
         call envoke_device(sub_kernel, sub_sync, kernel_parameters)
 
-        !print *, "hh upd"
         if(full_free_surface>0) then
             sub_kernel => envoke_hh_shift_kernel_gpu
             sub_sync   => envoke_hh_shift_sync_gpu
             call envoke_device(sub_kernel, sub_sync, kernel_parameters)
         endif
 
-        !print *, "hh init"
         if(full_free_surface>0) then
             !initialize depth for external mode
             sub_kernel => envoke_hh_init_kernel_gpu
             sub_sync   => envoke_hh_init_sync_gpu
             call envoke_device(sub_kernel, sub_sync, kernel_parameters)
         endif
-
-        ! Check error
-        !sub_kernel => envoke_check_ssh_err_kernel
-        !sub_sync   => envoke_check_ssh_err_sync
-        !call envoke(sub_kernel, sub_sync, 0.0d0)
 
     endsubroutine expl_shallow_water_gpu
 
