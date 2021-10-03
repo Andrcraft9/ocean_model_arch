@@ -128,6 +128,7 @@ contains
 #ifdef _GPU_MODE_
         use depth_gpu_module, only: depth_load_constant_mem
         use velssh_sw_gpu_module, only: velssh_sw_load_constant_mem
+        use tracer_gpu_module, only: tracer_load_constant_mem
 
         ! Sync init data between host and device
         call grid_data%sync_host_device(domain, .true.)
@@ -136,6 +137,9 @@ contains
         ! Prepare constant id device memory
         call depth_load_constant_mem
         call velssh_sw_load_constant_mem
+        if (use_tracers) then
+            call tracer_load_constant_mem
+        endif
 #endif
         return
     end subroutine init_device_data

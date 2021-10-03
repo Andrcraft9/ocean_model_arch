@@ -17,7 +17,7 @@ contains
 subroutine tracer_load_constant_mem()
     use config_sw_module, only: time_smooth_host => time_smooth
     time_smooth = time_smooth_host
-  end subroutine
+end subroutine
 
 attributes(global) subroutine tran_diff_fluxes_kernel_gpu(nx_start, nx_end, ny_start, ny_end, bnd_x1, bnd_x2, bnd_y1, bnd_y2,  &
                                                           lcu, lcv,            &
