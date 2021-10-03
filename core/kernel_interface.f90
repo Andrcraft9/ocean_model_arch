@@ -121,17 +121,23 @@ contains
             call sub_kernel(k, kernel_parameters)
         enddo
 #else
+
+        !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
             call sub_kernel(k, kernel_parameters)
             call sub_sync(k, sync_params_dtoh)
         enddo
+        !$omp end do nowait
 
         istat = cudaDeviceSynchronize()
         call sub_sync(-1, sync_parameters_all)
 
+        !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
             call sub_sync(k, sync_params_htod)
         enddo
+        !$omp end do nowait
+
 #endif
 
 #endif
