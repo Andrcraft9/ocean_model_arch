@@ -159,9 +159,6 @@ program model
             mpp_time_tracers = mpp_time_tracers + t_inner_local
         endif
         
-#ifdef _GPU_MODE_
-        istat = cudaDeviceSynchronize()
-#endif
         ! End the one step of ocean dynamics
         if (mpp_is_master_thread()) then
             call end_timer(t_local)
@@ -198,9 +195,6 @@ program model
                 call time_manager_print(local_num_step)
             endif
         endif
-
-        !$omp barrier
-
     enddo
 
     !$omp end parallel
