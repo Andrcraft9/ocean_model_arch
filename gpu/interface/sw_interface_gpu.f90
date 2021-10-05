@@ -81,17 +81,15 @@ contains
     subroutine envoke_hh_init_sync_gpu(k, sync_parameters)
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
-        ! m-1, n-1 points are updated for this fields, m+1, n+1 points are unused later
-        ! Sync is required only for cyclize (periodic domains)
-        !call hybrid_sync(k, sync_parameters, 1, domain, grid_data%hhu)
-        !call hybrid_sync(k, sync_parameters, 2, domain, grid_data%hhu_p)
-        !call hybrid_sync(k, sync_parameters, 3, domain, grid_data%hhu_n)
-        !call hybrid_sync(k, sync_parameters, 4, domain, grid_data%hhv)
-        !call hybrid_sync(k, sync_parameters, 5, domain, grid_data%hhv_p)
-        !call hybrid_sync(k, sync_parameters, 6, domain, grid_data%hhv_n)
-        !call hybrid_sync(k, sync_parameters, 7, domain, grid_data%hhh)
-        !call hybrid_sync(k, sync_parameters, 8, domain, grid_data%hhh_p)
-        !call hybrid_sync(k, sync_parameters, 9, domain, grid_data%hhh_n)
+        call hybrid_sync(k, sync_parameters, 1, domain, grid_data%hhu)
+        call hybrid_sync(k, sync_parameters, 2, domain, grid_data%hhu_p)
+        call hybrid_sync(k, sync_parameters, 3, domain, grid_data%hhu_n)
+        call hybrid_sync(k, sync_parameters, 4, domain, grid_data%hhv)
+        call hybrid_sync(k, sync_parameters, 5, domain, grid_data%hhv_p)
+        call hybrid_sync(k, sync_parameters, 6, domain, grid_data%hhv_n)
+        call hybrid_sync(k, sync_parameters, 7, domain, grid_data%hhh)
+        call hybrid_sync(k, sync_parameters, 8, domain, grid_data%hhh_p)
+        call hybrid_sync(k, sync_parameters, 9, domain, grid_data%hhh_n)
     end subroutine
 
 !-----------------------------------------------------------------------------!
