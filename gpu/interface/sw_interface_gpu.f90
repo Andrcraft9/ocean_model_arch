@@ -82,14 +82,14 @@ contains
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
         call hybrid_sync(k, sync_parameters, 1, domain, grid_data%hhu)
-        call hybrid_sync(k, sync_parameters, 2, domain, grid_data%hhu_p)
-        call hybrid_sync(k, sync_parameters, 3, domain, grid_data%hhu_n)
-        call hybrid_sync(k, sync_parameters, 4, domain, grid_data%hhv)
-        call hybrid_sync(k, sync_parameters, 5, domain, grid_data%hhv_p)
-        call hybrid_sync(k, sync_parameters, 6, domain, grid_data%hhv_n)
-        call hybrid_sync(k, sync_parameters, 7, domain, grid_data%hhh)
-        call hybrid_sync(k, sync_parameters, 8, domain, grid_data%hhh_p)
-        call hybrid_sync(k, sync_parameters, 9, domain, grid_data%hhh_n)
+        call hybrid_sync(k, sync_parameters, 2, domain, grid_data%hhv)
+        call hybrid_sync(k, sync_parameters, 3, domain, grid_data%hhh)
+        !call hybrid_sync(k, sync_parameters, *, domain, grid_data%hhu_p) ! lazy update
+        !call hybrid_sync(k, sync_parameters, *, domain, grid_data%hhu_n) ! not necessary update
+        !call hybrid_sync(k, sync_parameters, *, domain, grid_data%hhv_p) ! lazy update
+        !call hybrid_sync(k, sync_parameters, *, domain, grid_data%hhv_n) ! not necessary update
+        !call hybrid_sync(k, sync_parameters, *, domain, grid_data%hhh_p) ! lazy update
+        !call hybrid_sync(k, sync_parameters, *, domain, grid_data%hhh_n) ! not necessary update
     end subroutine
 
 !-----------------------------------------------------------------------------!
@@ -288,6 +288,9 @@ contains
     subroutine envoke_uv_trans_sync_gpu(k, sync_parameters)
         integer, intent(in) :: k
         type(sync_parameters_type), intent(in) :: sync_parameters
+        call hybrid_sync(k, sync_parameters, 1, domain, grid_data%hhu_p) ! Lazy update to hide with kernel computational
+        call hybrid_sync(k, sync_parameters, 2, domain, grid_data%hhv_p) ! Lazy update to hide with kernel computational
+        call hybrid_sync(k, sync_parameters, 3, domain, grid_data%hhh_p) ! Lazy update to hide with kernel computational
     end subroutine
 
 !-----------------------------------------------------------------------------!
