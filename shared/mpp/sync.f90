@@ -215,7 +215,8 @@ contains
 
 #ifdef _GPU_ASYNC_
         do k = 1, domain%bcount
-            istat = cudaStreamCreate(mpp_sync_cuda_streams(k))
+            !istat = cudaStreamCreate(mpp_sync_cuda_streams(k))
+            istat = cudaStreamCreateWithPriority(mpp_sync_cuda_streams(k), cudaStreamNonBlocking, k)
         enddo
 #endif
 
