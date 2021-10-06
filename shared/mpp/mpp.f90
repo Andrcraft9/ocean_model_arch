@@ -65,6 +65,7 @@ contains
         type (cudaDeviceProp) :: prop_device
         integer :: nDevices = 0, idev
         integer :: istat
+        integer :: leastpriority = 0, greatestpriority = 0
 #endif
 
         mpp_period = (/.true., .true./)
@@ -167,6 +168,8 @@ contains
 
 #ifdef _GPU_ASYNC_
             print *, "MPP INFO: GPU ASYNC: yes"
+            istat = cudaDeviceGetStreamPriorityRange(leastpriority, greatestpriority)
+            print *, "MPP INFO: Stream Priority Range: ", greatestpriority, leastpriority
 #endif
 #ifdef _GPU_FULL_
             print *, "MPP INFO: GPU FULL: yes"

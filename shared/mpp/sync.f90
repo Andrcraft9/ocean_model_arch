@@ -119,6 +119,7 @@ contains
         integer :: bbk                        ! Local index of boundary block
         integer :: max_buf_size = 1, min_buf_size = huge(0)
         integer :: max_val, min_val
+        integer :: leastpriority = 0, greatestpriority = 0, priority
 
         ! MPI info
         allocate(sync_requests(_MPP_MAX_SIMUL_SYNCS_ * 2 * domain%amount_of_ranks_near),  &
@@ -214,9 +215,15 @@ contains
 #endif
 
 #ifdef _GPU_ASYNC_
+        istat = cudaDeviceGetStreamPriorityRange(leastpriority, greatestpriority)
+        priority = greatestpriority
         do k = 1, domain%bcount
             !istat = cudaStreamCreate(mpp_sync_cuda_streams(k))
-            istat = cudaStreamCreateWithPriority(mpp_sync_cuda_streams(k), cudaStreamDefault, k)
+            istat = cudaStreamCreateWithPriority(mpp_sync_cuda_streams(k), cudaStreamDefault, priority)
+            priority = priority + 1
+            if (priority > leastpriority) then
+                priority = leastpriority
+            endif
         enddo
 #endif
 
