@@ -218,12 +218,13 @@ contains
         istat = cudaDeviceGetStreamPriorityRange(leastpriority, greatestpriority)
         priority = greatestpriority
         do k = 1, domain%bcount
-            !istat = cudaStreamCreate(mpp_sync_cuda_streams(k))
-            istat = cudaStreamCreateWithPriority(mpp_sync_cuda_streams(k), cudaStreamDefault, priority)
-            priority = priority + 1
-            if (priority > leastpriority) then
-                priority = leastpriority
-            endif
+            ! dont use priority streams
+            !istat = cudaStreamCreateWithPriority(mpp_sync_cuda_streams(k), cudaStreamDefault, priority)
+            !priority = priority + 1
+            !if (priority > leastpriority) then
+            !    priority = leastpriority
+            !endif
+            istat = cudaStreamCreate(mpp_sync_cuda_streams(k))
         enddo
 #endif
 
