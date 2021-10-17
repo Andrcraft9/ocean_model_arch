@@ -38,7 +38,7 @@ call start_timer(t_local)
 ! Prepare MPI buffers for each near rank
 !
 
-!$omp do private(mmm, nnn, k, kk, rk, buf_size, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye) schedule(static, 1)
+!$omp do private(mmm, nnn, k, kk, rk, bbk, buf_size, sync_dir, rank_dir, k_dir, nxs, nxe, nys, nye) schedule(static, 1)
 do k = 1, domain%bcount
     if (.not. domain%blocks_info(k)%is_inner) then
         sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
@@ -85,12 +85,6 @@ enddo
 call end_timer(t_local)
 mpp_time_sync_pack_mpi = mpp_time_sync_pack_mpi + t_local
 !$omp end master
-
-! Global sync: sync timers
-!$omp master
-call mpi_barrier(mpp_cart_comm, ierr)
-!$omp end master
-!$omp barrier
 
 !$omp master
 
@@ -178,7 +172,7 @@ call start_timer(t_local)
 ! Update all halo points for ALL blocks.
 !
 
-!$omp do private(mmm, nnn, i, val, k, kk, rk, buf_size, k_dir, sync_dir, rank_dir, hnxs, hnxe, hnys, hnye, nxs, nxe, nys, nye) schedule(static, 1)
+!$omp do private(mmm, nnn, i, val, k, kk, rk, bbk, buf_size, k_dir, sync_dir, rank_dir, hnxs, hnxe, hnys, hnye, nxs, nxe, nys, nye) schedule(static, 1)
 do k = 1, domain%bcount
 
     sync_dir(1) = _NXP_; k_dir(1) = domain%blocks_info(k)%k_nxp; rank_dir(1) = domain%blocks_info(k)%rank_nxp
