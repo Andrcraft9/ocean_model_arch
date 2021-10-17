@@ -144,10 +144,25 @@ contains
             call sub_kernel(k, kernel_parameters)
         enddo
 #else
+        ! If has GPU_ASYNC, GPU_MULTI or no modificator
+        !
 
+        ! Global debug sync before kernel compute
+        !
 #ifdef _DBG_TIME_PROFILE_
+#ifdef _GPU_MULTI_
+        !$omp do private(k) schedule(static, 1)
+        do k = 1, domain%bcount
+            istat = cudaSetDevice(k-1)
+            istat = cudaDeviceSynchronize()
+        enddo
+        !$omp end do
+#else
         !$omp master
         istat = cudaDeviceSynchronize()
+        !$omp end master
+#endif
+        !$omp master
         call mpi_barrier(mpp_cart_comm, ierr)
         !$omp end master
         !$omp barrier
@@ -156,16 +171,34 @@ contains
         !$omp end master
 #endif
 
+        ! Kernel compute stage
+        !
         !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             call sub_kernel(k, kernel_parameters)
             call sub_sync(k, sync_params_dtoh)
         enddo
         !$omp end do nowait
 
+        ! Global debug sync after kernel compute
+        !
 #ifdef _DBG_TIME_PROFILE_
+#ifdef _GPU_MULTI_
+        !$omp do private(k) schedule(static, 1)
+        do k = 1, domain%bcount
+            istat = cudaSetDevice(k-1)
+            istat = cudaDeviceSynchronize()
+        enddo
+        !$omp end do
+#else
         !$omp master
         istat = cudaDeviceSynchronize()
+        !$omp end master
+#endif
+        !$omp master
         call mpi_barrier(mpp_cart_comm, ierr)
         !$omp end master
         !$omp barrier
@@ -175,16 +208,42 @@ contains
         !$omp end master
 #endif
 
+        ! Sync devices before global sync call stage
+        !
+#ifdef _GPU_MULTI_
+        !$omp do private(k) schedule(static, 1)
+        do k = 1, domain%bcount
+            istat = cudaSetDevice(k-1)
+            istat = cudaDeviceSynchronize()
+        enddo
+        !$omp end do
+#else
         !$omp master
         istat = cudaDeviceSynchronize()
         !$omp end master
         !$omp barrier
+#endif
 
+        ! Global sync call stage
+        !
         call sub_sync(-1, sync_parameters_all)
 
+        ! Global debug sync before host to device sync stage
+        !
 #ifdef _DBG_TIME_PROFILE_
+#ifdef _GPU_MULTI_
+        !$omp do private(k) schedule(static, 1)
+        do k = 1, domain%bcount
+            istat = cudaSetDevice(k-1)
+            istat = cudaDeviceSynchronize()
+        enddo
+        !$omp end do
+#else
         !$omp master
         istat = cudaDeviceSynchronize()
+        !$omp end master
+#endif
+        !$omp master
         call mpi_barrier(mpp_cart_comm, ierr)
         !$omp end master
         !$omp barrier
@@ -193,15 +252,33 @@ contains
         !$omp end master
 #endif
 
+        ! Host to device sync stage
+        !
         !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             call sub_sync(k, sync_params_htod)
         enddo
         !$omp end do nowait
 
+        ! Global debug sync after host to device sync stage
+        !
 #ifdef _DBG_TIME_PROFILE_
+#ifdef _GPU_MULTI_
+        !$omp do private(k) schedule(static, 1)
+        do k = 1, domain%bcount
+            istat = cudaSetDevice(k-1)
+            istat = cudaDeviceSynchronize()
+        enddo
+        !$omp end do
+#else
         !$omp master
         istat = cudaDeviceSynchronize()
+        !$omp end master
+#endif
+        !$omp master
         call mpi_barrier(mpp_cart_comm, ierr)
         !$omp end master
         !$omp barrier

@@ -182,6 +182,11 @@ contains
 #ifdef _GPU_CPU_HETERO_
             print *, "MPP INFO: GPU_CPU_HETERO: yes. CPU_GPU_RATIO is ", _CPU_GPU_RATIO_
 #endif
+
+#ifdef _GPU_MULTI_
+            print *, "MPP INFO: GPU MULTI: yes"
+            print *, "MPP INFO: GPU MULTI: Can be error, if blocks are not equal to ", nDevices
+#endif
             print *, "------------------------------------------------------------"
         endif
         call mpi_barrier(mpp_cart_comm, ierr)

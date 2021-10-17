@@ -1,7 +1,8 @@
 #include "macros/mpp_macros.fi"
 
 module data_types_module
-    ! Module description
+    ! Data wrapper used in ocean model control layer
+    ! Note: all data functions are supposed to call in NO PARALLEL OpenMP region
 
     use kind_module, only: wp8 => SHR_KIND_R8, wp4 => SHR_KIND_R4
     use decomposition_module, only: domain_type
@@ -181,7 +182,7 @@ contains
         class(data1D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: n_start, n_end
-        integer :: k
+        integer :: k, istat
 
         allocate(this%block(domain%bcount))
 
@@ -194,6 +195,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             allocate(this%block(k)%field_device(n_start : n_end))
             this%block(k)%field_device = 0.0
         enddo
@@ -204,7 +208,7 @@ contains
         class(data1D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_x_direction
-        integer :: k
+        integer :: k, istat
 
         allocate(this%block(domain%bcount))
 
@@ -221,6 +225,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             if (is_x_direction) then
                 allocate(this%block(k)%field_device(domain%bbnd_x1(k) : domain%bbnd_x2(k)))
             else
@@ -234,10 +241,13 @@ contains
     subroutine clear_data1D_real4(this, domain)
         class(data1D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k
+        integer :: k, istat
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             deallocate(this%block(k)%field_device)
         enddo
 #endif
@@ -254,7 +264,7 @@ contains
         class(data1D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: n_start, n_end
-        integer :: k
+        integer :: k, istat
 
         allocate(this%block(domain%bcount))
 
@@ -267,6 +277,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             allocate(this%block(k)%field_device(n_start : n_end))
             this%block(k)%field_device = 0.0d0
         enddo
@@ -277,7 +290,7 @@ contains
         class(data1D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_x_direction
-        integer :: k
+        integer :: k, istat
 
         allocate(this%block(domain%bcount))
 
@@ -294,6 +307,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             if (is_x_direction) then
                 allocate(this%block(k)%field_device(domain%bbnd_x1(k) : domain%bbnd_x2(k)))
             else
@@ -307,10 +323,13 @@ contains
     subroutine clear_data1D_real8(this, domain)
         class(data1D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k
+        integer :: k, istat
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             deallocate(this%block(k)%field_device)
         enddo
 #endif
@@ -328,7 +347,7 @@ contains
     subroutine init_data2D_real4(this, domain)
         class(data2D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         allocate(this%block(domain%bcount))
 
@@ -345,6 +364,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             allocate(this%block(k)%field_device(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             this%block(k)%field_device = 0.0
         enddo
@@ -368,10 +390,13 @@ contains
     subroutine clear_data2D_real4(this, domain)
         class(data2D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k
+        integer :: k, istat
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             deallocate(this%block(k)%field_device)
         enddo
 #endif
@@ -387,7 +412,7 @@ contains
         class(data2D_real4_type), intent(inout) :: this
         type(data2D_real4_type), intent(in) :: copy_data
         type(domain_type), intent(in) :: domain
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
@@ -402,6 +427,9 @@ contains
 #ifdef _GPU_MODE_
         ! Copy from host to device, because device to device may be unsupported
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = this%block(k)%field
         enddo
 #endif
@@ -411,7 +439,7 @@ contains
         class(data2D_real4_type), intent(inout) :: this
         type(data2D_real8_type), intent(in) :: copy_data
         type(domain_type), intent(in) :: domain
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
@@ -426,6 +454,9 @@ contains
 #ifdef _GPU_MODE_
         ! Copy from host to device, because device to device may be unsupported
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = this%block(k)%field
         enddo
 #endif
@@ -435,7 +466,7 @@ contains
         class(data2D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         real(wp4), intent(in) :: val
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
@@ -449,6 +480,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = val
         enddo
 #endif
@@ -457,7 +491,7 @@ contains
     subroutine fill_debug_data2D_real4(this, domain)
         class(data2D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
@@ -471,6 +505,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = real(k, wp4)
         enddo
 #endif
@@ -480,7 +517,7 @@ contains
     subroutine init_data2D_real8(this, domain)
         class(data2D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         allocate(this%block(domain%bcount))
 
@@ -497,6 +534,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             allocate(this%block(k)%field_device(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k)))
             this%block(k)%field_device = 0.0d0
         enddo
@@ -524,7 +564,7 @@ contains
 
         class(data2D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k
+        integer :: k, istat
 
         integer :: m, n
         real(wp8) :: val_nan
@@ -566,6 +606,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = val_nan
         enddo
 #endif
@@ -574,10 +617,13 @@ contains
     subroutine clear_data2D_real8(this, domain)
         class(data2D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k
+        integer :: k, istat
         
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             deallocate(this%block(k)%field_device)
         enddo
 #endif
@@ -593,7 +639,7 @@ contains
         class(data2D_real8_type), intent(inout) :: this
         type(data2D_real4_type), intent(in) :: copy_data
         type(domain_type), intent(in) :: domain
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
@@ -608,6 +654,9 @@ contains
 #ifdef _GPU_MODE_
         ! Copy from host to device, because device to device may be unsupported
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = this%block(k)%field
         enddo
 #endif
@@ -617,7 +666,7 @@ contains
         class(data2D_real8_type), intent(inout) :: this
         type(data2D_real8_type), intent(in) :: copy_data
         type(domain_type), intent(in) :: domain
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
@@ -632,6 +681,9 @@ contains
 #ifdef _GPU_MODE_
         ! Copy from host to device, because device to device may be unsupported
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = this%block(k)%field
         enddo
 #endif
@@ -641,7 +693,7 @@ contains
         class(data2D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         real(wp8), intent(in) :: val
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
@@ -655,6 +707,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = val
         enddo
 #endif
@@ -663,7 +718,7 @@ contains
     subroutine fill_debug_data2D_real8(this, domain)
         class(data2D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         _OMP_BLOCKS_PARALLEL_BEGIN_
         do k = 1, domain%bcount
@@ -677,6 +732,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             this%block(k)%field_device = real(k, wp8)
         enddo
 #endif
@@ -689,7 +747,7 @@ contains
         class(data3D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: nz_start, nz_end
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         allocate(this%block(domain%bcount))
 
@@ -706,6 +764,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             allocate(this%block(k)%field_device(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
             this%block(k)%field_device = 0.0
         enddo
@@ -729,10 +790,13 @@ contains
     subroutine clear_data3D_real4(this, domain)
         class(data3D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k
+        integer :: k, istat
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             deallocate(this%block(k)%field_device)
         enddo
 #endif
@@ -749,7 +813,7 @@ contains
         class(data3D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         integer, intent(in) :: nz_start, nz_end
-        integer :: k, m, n
+        integer :: k, m, n, istat
 
         allocate(this%block(domain%bcount))
         
@@ -766,6 +830,9 @@ contains
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             allocate(this%block(k)%field_device(domain%bbnd_x1(k) : domain%bbnd_x2(k), domain%bbnd_y1(k) : domain%bbnd_y2(k), nz_start : nz_end))
             this%block(k)%field_device = 0.0d0
         enddo
@@ -789,10 +856,13 @@ contains
     subroutine clear_data3D_real8(this, domain)
         class(data3D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
-        integer :: k
+        integer :: k, istat
 
 #ifdef _GPU_MODE_
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             deallocate(this%block(k)%field_device)
         enddo
 #endif
@@ -811,9 +881,12 @@ contains
         class(data1D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_htod
-        integer :: k
+        integer :: k, istat
 
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             if (is_htod) then
                 this%block(k)%field_device = this%block(k)%field
             else
@@ -826,9 +899,12 @@ contains
         class(data1D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_htod
-        integer :: k
+        integer :: k, istat
 
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             if (is_htod) then
                 this%block(k)%field_device = this%block(k)%field
             else
@@ -841,9 +917,12 @@ contains
         class(data2D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_htod
-        integer :: k
+        integer :: k, istat
 
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             if (is_htod) then
                 this%block(k)%field_device = this%block(k)%field
             else
@@ -856,9 +935,12 @@ contains
         class(data2D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_htod
-        integer :: k
+        integer :: k, istat
 
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             if (is_htod) then
                 this%block(k)%field_device = this%block(k)%field
             else
@@ -871,9 +953,12 @@ contains
         class(data3D_real4_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_htod
-        integer :: k
+        integer :: k, istat
 
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             if (is_htod) then
                 this%block(k)%field_device = this%block(k)%field
             else
@@ -886,9 +971,12 @@ contains
         class(data3D_real8_type), intent(inout) :: this
         type(domain_type), intent(in) :: domain
         logical, intent(in) :: is_htod
-        integer :: k
+        integer :: k, istat
 
         do k = 1, domain%bcount
+#ifdef _GPU_MULTI_
+            istat = cudaSetDevice(k-1)
+#endif
             if (is_htod) then
                 this%block(k)%field_device = this%block(k)%field
             else

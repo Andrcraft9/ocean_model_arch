@@ -30,6 +30,7 @@
 #define _GPU_MODE_
 !#define _GPU_FULL_
 !#define _GPU_ASYNC_
+#define _GPU_MULTI_
 
 !#define _GPU_CPU_HETERO_
 #define _CPU_GPU_RATIO_ 0.25
