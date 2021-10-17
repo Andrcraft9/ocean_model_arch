@@ -81,9 +81,7 @@ do k = 1, domain%bcount
 enddo
 !$omp end do nowait
 
-#ifdef _DBG_TIME_PROFILE_
 !$omp barrier
-#endif
 
 !$omp master
 call end_timer(t_local)
