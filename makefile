@@ -168,7 +168,11 @@ pack_trace:
 	rm *.edf
 
 run_nv_mpi:
-	/opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpirun -n 1 model
+	/opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpirun --bind-to none -n 1 ./model
+
+#--print-gpu-trace -o gpu.nvprof
+run_nv_prof:
+	/opt/nvidia/hpc_sdk/Linux_x86_64/21.2/comm_libs/mpi/bin/mpirun --bind-to none -n 1 nvprof  ./model
 
 ## .o -> .mod of the modules it uses
 #main.o: one.mod
