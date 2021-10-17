@@ -54,6 +54,11 @@ module mpp_module
 #ifdef _GPU_MODE_
     type (cudaEvent), public :: device_start_event, device_stop_event
 #endif
+
+#ifdef _DBG_TIME_PROFILE_
+    real(wp8) :: mpp_time_kernel_compute, mpp_time_htod_sync
+#endif
+
 contains
 
     subroutine mpp_init()
@@ -232,6 +237,11 @@ contains
 
         mpp_time_kernels_threads = 0
 #endif
+
+#ifdef _DBG_TIME_PROFILE_
+        mpp_time_kernel_compute = 0.0d0 
+        mpp_time_htod_sync = 0.0d0
+#endif
     end subroutine
 
     subroutine mpp_finalize()
@@ -306,6 +316,15 @@ contains
         call mpi_allreduce(mpp_min_count_sync_send_recv, mincount, 1, mpi_integer, mpi_min, mpp_cart_comm, ierr)
         if (mpp_rank == 0) write(*,'(a50, I12, I12)') "Min Count of simul sync send, recv (max and min): ", maxcount, mincount
 
+#ifdef _DBG_TIME_PROFILE_
+        if (mpp_rank == 0) write(*,'(a50)') "Debug time profile:"
+        call mpi_allreduce(mpp_time_kernel_compute, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_time_kernel_compute, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time kernel compute (max and min): ", maxtime_sync, mintime_sync
+        call mpi_allreduce(mpp_time_htod_sync, maxtime_sync, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
+        call mpi_allreduce(mpp_time_htod_sync, mintime_sync, 1, mpi_real8, mpi_min, mpp_cart_comm, ierr)
+        if (mpp_rank == 0) write(*,'(a50, F12.2, F12.2)') "Time htod sync (max and min): ", maxtime_sync, mintime_sync
+#endif
 
 #ifdef _MPP_KERNEL_TIMER_ON_
         do k = 1, max_kernels

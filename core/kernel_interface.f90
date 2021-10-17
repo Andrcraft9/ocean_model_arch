@@ -50,8 +50,9 @@ contains
         procedure(envoke_empty_sync), pointer :: sub_sync
         type(kernel_parameters_type), intent(in) :: kernel_parameters
     
-        integer :: k
+        integer :: k, ierr
         type(sync_parameters_type) :: sync_parameters_inner, sync_parameters_boundary, sync_parameters_intermediate, sync_parameters_all
+        real(wp8) :: t_local
 
         sync_parameters_inner%sync_mode = 0;         sync_parameters_inner%data_id = kernel_parameters%data_id
         sync_parameters_boundary%sync_mode = 1;      sync_parameters_boundary%data_id = kernel_parameters%data_id
@@ -70,11 +71,32 @@ contains
 
 #ifdef _MPP_BLOCK_MODE_
 
+#ifdef _DBG_TIME_PROFILE_
+        !$omp master
+        call mpi_barrier(mpp_cart_comm, ierr)
+        !$omp end master
+        !$omp barrier
+        !$omp master
+        call start_timer(t_local)
+        !$omp end master
+#endif
+
         !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
             call sub_kernel(k, kernel_parameters)
         enddo
         !$omp end do nowait
+
+#ifdef _DBG_TIME_PROFILE_
+        !$omp master
+        call mpi_barrier(mpp_cart_comm, ierr)
+        !$omp end master
+        !$omp barrier
+        !$omp master
+        call end_timer(t_local)
+        mpp_time_kernel_compute = mpp_time_kernel_compute + t_local
+        !$omp end master
+#endif
 
         call sub_sync(-1, sync_parameters_all)
 
@@ -101,9 +123,10 @@ contains
         procedure(envoke_empty_sync), pointer :: sub_sync
         type(kernel_parameters_type), intent(in) :: kernel_parameters
         
-        integer :: k, istat
+        integer :: k, istat, ierr
         type(sync_parameters_type) :: sync_params_htod, sync_params_dtoh
         type(sync_parameters_type) :: sync_parameters_all
+        real(wp8) :: t_local
 
 #ifdef _GPU_MODE_
 
@@ -122,6 +145,17 @@ contains
         enddo
 #else
 
+#ifdef _DBG_TIME_PROFILE_
+        !$omp master
+        istat = cudaDeviceSynchronize()
+        call mpi_barrier(mpp_cart_comm, ierr)
+        !$omp end master
+        !$omp barrier
+        !$omp master
+        call start_timer(t_local)
+        !$omp end master
+#endif
+
         !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
             call sub_kernel(k, kernel_parameters)
@@ -129,14 +163,53 @@ contains
         enddo
         !$omp end do nowait
 
+#ifdef _DBG_TIME_PROFILE_
+        !$omp master
         istat = cudaDeviceSynchronize()
+        call mpi_barrier(mpp_cart_comm, ierr)
+        !$omp end master
+        !$omp barrier
+        !$omp master
+        call end_timer(t_local)
+        mpp_time_kernel_compute = mpp_time_kernel_compute + t_local
+        !$omp end master
+#endif
+
+        !$omp master
+        istat = cudaDeviceSynchronize()
+        !$omp end master
+        !$omp barrier
+
         call sub_sync(-1, sync_parameters_all)
+
+#ifdef _DBG_TIME_PROFILE_
+        !$omp master
+        istat = cudaDeviceSynchronize()
+        call mpi_barrier(mpp_cart_comm, ierr)
+        !$omp end master
+        !$omp barrier
+        !$omp master
+        call start_timer(t_local)
+        !$omp end master
+#endif
 
         !$omp do private(k) schedule(static, 1)
         do k = 1, domain%bcount
             call sub_sync(k, sync_params_htod)
         enddo
         !$omp end do nowait
+
+#ifdef _DBG_TIME_PROFILE_
+        !$omp master
+        istat = cudaDeviceSynchronize()
+        call mpi_barrier(mpp_cart_comm, ierr)
+        !$omp end masterd
+        !$omp barrier
+        !$omp master
+        call end_timer(t_local)
+        mpp_time_htod_sync = mpp_time_htod_sync + t_local
+        !$omp end master
+#endif
 
 #endif
 

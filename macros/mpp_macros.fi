@@ -16,15 +16,18 @@
 ! Debug defines:
 !   #define _DBG_MEM_PROFILE_
 !       print total memory allocations
+!   #define _DBG_TIME_PROFILE_
+!       add global time syncs to code nad print additonal debug times
 
 #define _MPP_SORTED_BLOCKS_
 #define _MPP_BLOCK_MODE_
 #define _OMP_MAX_THREADS_ 128
 #define _MPP_MAX_SIMUL_SYNCS_ 1
 
-!#define _DBG_MEM_PROFILE_
+#define _DBG_MEM_PROFILE_
+#define _DBG_TIME_PROFILE_
 
-!#define _GPU_MODE_
+#define _GPU_MODE_
 !#define _GPU_FULL_
 !#define _GPU_ASYNC_
 
