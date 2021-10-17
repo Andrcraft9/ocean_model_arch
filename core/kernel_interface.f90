@@ -203,7 +203,7 @@ contains
         !$omp master
         istat = cudaDeviceSynchronize()
         call mpi_barrier(mpp_cart_comm, ierr)
-        !$omp end masterd
+        !$omp end master
         !$omp barrier
         !$omp master
         call end_timer(t_local)
