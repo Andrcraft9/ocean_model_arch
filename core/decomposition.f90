@@ -521,8 +521,9 @@ contains
             if (mpp_is_master()) print *, "DD INFO: Total land blocks:", land_blocks
 
             ierr = 0
-            if (bnx*bny - land_blocks < mpp_count) ierr = 1
-            call check_error(ierr,  'procs > computational-blocks... Error!')
+            if (bnx*bny - land_blocks < mpp_count) then
+                if (mpp_is_master()) print *, "DD INFO: procs > computational-blocks!"
+            endif
 
             deallocate(x_sizes, y_sizes, x_start, y_start)
         end associate
