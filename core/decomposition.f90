@@ -929,8 +929,10 @@ contains
             call mpi_allreduce(btime, max_btime, 1, mpi_real8, mpi_max, mpp_cart_comm, ierr)
 
             ierr = 0
-            if (bcount <= 0) ierr = 1
-            call check_error(ierr, 'Proc with only land-blocks... Error!')
+            if (bcount <= 0) then
+                print *, "DD INFO: rank: ", rank, "with only land-blocks!"
+                bcount = 0;
+            endif
 
             ! Print information about blocks
             if (mpp_is_master()) print *, 'DD INFO: Total blocks:', total_blocks, 'LB: ', max_bweight / (sum(bglob_weight) / real(mpp_count)),  &
