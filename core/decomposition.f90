@@ -622,6 +622,12 @@ contains
                   bny => this%bny,  &
                   bgproc => this%bglob_proc)
     
+            ! Check bnx and bny
+            ierr = 0
+            if (mod(bnx, mpp_size(1)) /= 0) ierr = 1
+            if (mod(bny, mpp_size(2)) /= 0) ierr = 1
+            call check_error(ierr, 'Error in bny or bnx! mod(bnx, p_size(1)) or mod(bny, p_size(2)) not equal 0 !')
+
             loc_bnx = bnx / mpp_size(1)
             loc_bny = bny / mpp_size(2)
             !bcount = loc_bnx*loc_bny
@@ -858,12 +864,6 @@ contains
             if (mpp_is_master()) print *, 'DD INFO: bnx, bny and Total blocks:', bnx, bny, bnx * bny
             if (mpp_is_master()) print *, 'DD INFO: pnx, pny and procs:', mpp_size(1), mpp_size(2), mpp_count
             call mpi_barrier(mpp_cart_comm, ierr)
-
-            ! Check bnx and bny
-            ierr = 0
-            if (mod(bnx, mpp_size(1)) /= 0) ierr = 1
-            if (mod(bny, mpp_size(2)) /= 0) ierr = 1
-            call check_error(ierr, 'Error in bny or bnx! mod(bnx, p_size(1)) or mod(bny, p_size(2)) not equal 0 !')
 
             allocate(bglob_weight(bnx, bny))
             allocate(glob_bnx_start(bnx, bny), glob_bnx_end(bnx, bny), glob_bny_start(bnx, bny), glob_bny_end(bnx, bny))
