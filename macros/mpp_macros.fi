@@ -24,13 +24,13 @@
 #define _OMP_MAX_THREADS_ 128
 #define _MPP_MAX_SIMUL_SYNCS_ 1
 
-#define _DBG_MEM_PROFILE_
-#define _DBG_TIME_PROFILE_
+!#define _DBG_MEM_PROFILE_
+!#define _DBG_TIME_PROFILE_
 
-#define _GPU_MODE_
+!#define _GPU_MODE_
 !#define _GPU_FULL_
 !#define _GPU_ASYNC_
-#define _GPU_MULTI_
+!#define _GPU_MULTI_
 
 !-----------------------------------------------------------------------------!
 ! Load balancing control
