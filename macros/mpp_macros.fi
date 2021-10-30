@@ -34,8 +34,8 @@
 
 !-----------------------------------------------------------------------------!
 ! Load balancing control
-#define _DD_IGNORE_MPI_DECOMPOSITION_
-#define _DD_BINARY_BLOCK_WEIGHTS_
+#define _DD_MANUAL_BLOCK_GRID_
+!#define _DD_BINARY_BLOCK_WEIGHTS_
 
 !-----------------------------------------------------------------------------!
 ! Hetero

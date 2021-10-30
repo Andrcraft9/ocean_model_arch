@@ -188,8 +188,8 @@ contains
             print *, "MPP INFO: GPU MULTI: Can be error, if blocks are not equal to ", nDevices
 #endif
 
-#ifdef _DD_IGNORE_MPI_DECOMPOSITION_
-            print *, "MPP INFO: DD: IGNORE MPI DECOMPOSITION: yes"
+#ifdef _DD_MANUAL_BLOCK_GRID_
+            print *, "MPP INFO: DD: MANUAL BLOCK GRID: yes"
 #endif
 
 #ifdef _DD_BINARY_BLOCK_WEIGHTS_

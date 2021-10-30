@@ -628,7 +628,6 @@ contains
             if (mod(bnx, mpp_size(1)) /= 0) ierr = 1
             if (mod(bny, mpp_size(2)) /= 0) ierr = 1
             call check_error(ierr, 'Error in bny or bnx! mod(bnx, p_size(1)) or mod(bny, p_size(2)) not equal 0 !')
-
             loc_bnx = bnx / mpp_size(1)
             loc_bny = bny / mpp_size(2)
             !bcount = loc_bnx*loc_bny
@@ -854,7 +853,7 @@ contains
                   bcount_min => this%bcount_min)
 
             ! Set Cart grid of blocks
-#ifdef _DD_IGNORE_MPI_DECOMPOSITION_
+#ifdef _DD_MANUAL_BLOCK_GRID_
             bnx = bppnx
             bny = bppny
 #else
