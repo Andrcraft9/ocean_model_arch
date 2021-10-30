@@ -128,7 +128,7 @@ contains
             print *, "MPP INFO: MPP_HYBRID_BLOCK_MODE: yes"
 #endif
 
-            print *, "MPP INFO: Version 3.3, only NO_PARALLEL, BLOCK mode:"
+            print *, "MPP INFO: Version 3.4, only NO_PARALLEL, BLOCK mode:"
             print *, "MPP INFO: Single OMP PARALLEL, OMP for pack/unpack MPI buffers, nowait loops, one global sync at mpi_waitall"
             print *, "MPP INFO: dont use SIMUL syncs"
             print *, "MPP INFO: Tracers added"
@@ -186,6 +186,14 @@ contains
 #ifdef _GPU_MULTI_
             print *, "MPP INFO: GPU MULTI: yes"
             print *, "MPP INFO: GPU MULTI: Can be error, if blocks are not equal to ", nDevices
+#endif
+
+#ifdef _DD_IGNORE_MPI_DECOMPOSITION_
+            print *, "MPP INFO: DD: IGNORE MPI DECOMPOSITION: yes"
+#endif
+
+#ifdef _DD_BINARY_BLOCK_WEIGHTS_
+            print *, "MPP INFO: DD: BINARY BLOCK WEIGHTS: yes"
 #endif
             print *, "------------------------------------------------------------"
         endif

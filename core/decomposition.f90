@@ -505,7 +505,11 @@ contains
                     ! Compute load-balance
                     do i = glob_bnx_start(m, n), glob_bnx_end(m, n)
                         do j = glob_bny_start(m, n), glob_bny_end(m, n)
+#ifdef _DD_BINARY_BLOCK_WEIGHTS_
+                            bglob_weight(m, n) = MAX(bglob_weight(m, n), (glob_bny_end(m, n) - glob_bny_start(m, n) + 1) * (glob_bnx_end(m, n) - glob_bnx_start(m, n) + 1) * (1.0d0 - real(lbasins(i, j))))
+#else
                             bglob_weight(m, n) = bglob_weight(m, n) + (1.0d0 - real(lbasins(i, j)))
+#endif
                         enddo
                     enddo
                     ! Only-land blocks
@@ -843,9 +847,13 @@ contains
                   bcount_min => this%bcount_min)
 
             ! Set Cart grid of blocks
+#ifdef _DD_IGNORE_MPI_DECOMPOSITION_
+            bnx = bppnx
+            bny = bppny
+#else
             bnx = bppnx * mpp_size(1)
             bny = bppny * mpp_size(2)
-
+#endif
             if (mpp_is_master()) print *, 'DD INFO: nx, ny nz:', nx, ny, nz
             if (mpp_is_master()) print *, 'DD INFO: bnx, bny and Total blocks:', bnx, bny, bnx * bny
             if (mpp_is_master()) print *, 'DD INFO: pnx, pny and procs:', mpp_size(1), mpp_size(2), mpp_count

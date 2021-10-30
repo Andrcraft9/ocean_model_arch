@@ -32,6 +32,13 @@
 !#define _GPU_ASYNC_
 #define _GPU_MULTI_
 
+!-----------------------------------------------------------------------------!
+! Load balancing control
+#define _DD_IGNORE_MPI_DECOMPOSITION_
+#define _DD_BINARY_BLOCK_WEIGHTS_
+
+!-----------------------------------------------------------------------------!
+! Hetero
 !#define _GPU_CPU_HETERO_
 #define _CPU_GPU_RATIO_ 0.25
 
