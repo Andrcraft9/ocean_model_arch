@@ -1,15 +1,12 @@
-### Example of ocean model architecture. 
-### PSyKAl and Block Load-Balancing approach.
+### The shallow water model, formulated from the ocean general circulation sigma model INMOM (Institute of Numerical Mathematics Ocean Model). 
 ### Using modern Fortran (2003 at least).
-
-### Shallow Water only example.
 
 Structure:
 
 ```
 control         - Algorithm Layer       : work with grid_type and ocean_type
 
-core, interface - Parallel System Layer : data types and transfer data to kernel (core/kernel_interface.f90 - main envokes for kernels)
+core, interface - Interface Layer       : data types and transfer data to kernel (core/kernel_interface.f90 - main envokes for kernels)
 
 kernel          - Kernel Layer          : work with 1D, 2D and 3D fortran arrays, per one block
 
